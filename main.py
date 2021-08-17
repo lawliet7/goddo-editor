@@ -70,6 +70,13 @@ import imutils
 from PyQt5.QtGui import QImage
 
 
+def print_all_populated_openv_attrs(cap):
+    for attr in [x for x in dir(cv2) if x.startswith('CAP_PROP_')]:
+      attr_value = cap.get(getattr(cv2,attr))
+      if attr_value != 0:
+        print('{} = {}'.format(attr, attr_value))
+
+
 def get_video_dimensions(cap):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -104,6 +111,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.cap = cv2.VideoCapture(video)
+        print(print_all_populated_openv_attrs(self.cap))
         width, height = get_video_dimensions(self.cap)
 
         self.label = QtWidgets.QLabel()

@@ -91,10 +91,10 @@ def convert_cvimg_to_qimg(cvimg):
     return QImage(cvimg.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, video):
         super().__init__()
 
-        self.cap = cv2.VideoCapture(r'C:\Users\William\Downloads\xvsr049.HD.wmv')
+        self.cap = cv2.VideoCapture(video)
         width, height = get_video_dimensions(self.cap)
 
         self.label = QtWidgets.QLabel()
@@ -117,6 +117,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(sys.argv[1])
     window.show()
     app.exec()

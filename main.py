@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 import cv2
+import imutils
 
 
 # class _Bar(QtWidgets.QWidget):
@@ -77,7 +78,7 @@ def get_video_dimensions(cap):
 
 def get_next_frame(cap, specific_frame=None):
     if specific_frame:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 20000)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, specific_frame)
 
     if cap.grab():
         flag, frame = cap.retrieve()
@@ -87,8 +88,16 @@ def get_next_frame(cap, specific_frame=None):
 
 def convert_cvimg_to_qimg(cvimg):
     height, width, channel = cvimg.shape
-    bytesPerLine = 3 * width
-    return QImage(cvimg.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+    bytes_per_line = 3 * width
+    return QImage(cvimg.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+
+
+def scale_image(img, scale):
+    width = int(img.shape[1] * scale)
+    height = int(img.shape[0] * scale)
+    dim = (width, height)
+    return cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, video):
@@ -101,7 +110,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # canvas = QtGui.QPixmap(800, 600)
         # self.label.setPixmap(canvas)
         frame = get_next_frame(self.cap, specific_frame=20000)
-        self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(frame)))
+        # scaled_frame = resize(frame, (800, 600))
+        scaled_frame = imutils.resize(frame, width=1024)
+        self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
         self.setCentralWidget(self.label)
         self.draw_something()
 

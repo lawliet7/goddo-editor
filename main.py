@@ -90,7 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(10, 10)
 
         self.cap = cv2.VideoCapture(video)
-        print(print_all_populated_openv_attrs(self.cap))
+        print_all_populated_openv_attrs(self.cap)
         width, height = get_video_dimensions(self.cap)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
@@ -102,8 +102,6 @@ class MainWindow(QtWidgets.QMainWindow):
         scaled_frame = imutils.resize(frame, width=1280)
         self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
         self.setCentralWidget(self.label)
-
-        print(self.label.geometry())
 
         self.current_time = get_perf_counter_as_millis()
         self.slider_circle_radius = 5
@@ -120,7 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def get_slider_rect(self):
         rect = self.label.geometry()
-        y_of_timeline = rect.height() * 0.9 + rect.top()
+        y_of_timeline = convert_to_int(rect.height() * 0.9 + rect.top())
         return QRect(rect.left(), y_of_timeline - self.slider_circle_radius, rect.width(),
                      y_of_timeline - self.slider_circle_radius)
 

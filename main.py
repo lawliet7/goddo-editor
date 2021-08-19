@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect
 import cv2
 import imutils
 
-from PyQt5.QtGui import QImage, QColor, QBrush
+from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
 
 
 def print_all_populated_openv_attrs(cap):
@@ -80,7 +80,7 @@ def convert_to_int(value, round_num=True):
 
 
 class Communicate(QObject):
-    update_frame = pyqtSignal()
+    update_frame = pyqtSignal(int)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -88,6 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.move(10, 10)
+
+        app.setWindowIcon(QtGui.QIcon('icon.png'))
 
         self.cap = cv2.VideoCapture(video)
         print_all_populated_openv_attrs(self.cap)
@@ -97,10 +99,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label = QtWidgets.QLabel()
         # canvas = QtGui.QPixmap(800, 600)
         # self.label.setPixmap(canvas)
-        frame = get_next_frame(self.cap, specific_frame=initial_offset)
-        # scaled_frame = resize(frame, (800, 600))
-        scaled_frame = imutils.resize(frame, width=1280)
-        self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
+        # frame = get_next_frame(self.cap, specific_frame=initial_offset)
+        # # scaled_frame = resize(frame, (800, 600))
+        # scaled_frame = imutils.resize(frame, width=1280)
+        # self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
         self.setCentralWidget(self.label)
 
         self.current_time = get_perf_counter_as_millis()
@@ -116,26 +118,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
 
+        self.emit_update_frame_signal(initial_offset)
+
+    def paint(self, func):
+        painter = QPainter(self.label.pixmap())
+        func(painter)
+        painter.end()
+
     def get_slider_rect(self):
         rect = self.label.geometry()
         y_of_timeline = convert_to_int(rect.height() * 0.9 + rect.top())
         return QRect(rect.left(), y_of_timeline - self.slider_circle_radius, rect.width(),
-                     y_of_timeline - self.slider_circle_radius)
+                     self.slider_circle_radius*2)
 
     def resizeEvent(self, event):
         self.slider_rect = self.get_slider_rect()
         QtWidgets.QMainWindow.resizeEvent(self, event)
 
-    def update_frame(self):
+    def update_frame(self, frame_no):
         if not is_video_done(self.cap):
             new_time = get_perf_counter_as_millis()
-            time_diff = new_time - self.current_time
-            frame_diff = convert_to_int(time_diff/self.fps)
+            if frame_no < 0:
+                time_diff = new_time - self.current_time
+                target_frame = skip_until_frame(self.cap, convert_to_int(time_diff/self.fps))
+            else:
+                target_frame = get_next_frame(self.cap, frame_no)
 
-            frame = skip_until_frame(self.cap, frame_diff)
-            if frame is None:
+            if target_frame is None:
                 raise Exception("File is corrupted")
-            scaled_frame = imutils.resize(frame, width=1280)
+            scaled_frame = imutils.resize(target_frame, width=1280)
             self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
             self.current_time = new_time
 
@@ -143,27 +154,42 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.draw_seek_bar()
 
     def draw_seek_bar(self):
-        painter = QtGui.QPainter(self.label.pixmap())
-        painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
-        rect = self.label.geometry()
+        def draw_func(painter):
+            painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
+            rect = self.label.geometry()
 
-        y_of_timeline = rect.height()*0.9 + rect.top()
-        painter.drawLine(rect.left(),  convert_to_int(y_of_timeline), rect.right(),  convert_to_int(y_of_timeline))
+            y_of_timeline = rect.height()*0.9 + rect.top()
+            painter.drawLine(rect.left(),  convert_to_int(y_of_timeline), rect.right(),  convert_to_int(y_of_timeline))
 
-        pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
-        painter.drawLine(rect.left(), convert_to_int(y_of_timeline), convert_to_int(pct_done*rect.width()+rect.left()),
-                         convert_to_int(y_of_timeline))
+            pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+            painter.drawLine(rect.left(), convert_to_int(y_of_timeline), convert_to_int(pct_done*rect.width()+rect.left()),
+                             convert_to_int(y_of_timeline))
 
-        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
-        painter.drawEllipse(convert_to_int(pct_done*rect.width()+rect.left())-self.slider_circle_radius,
-                            convert_to_int(y_of_timeline)-self.slider_circle_radius,
-                            self.slider_circle_radius*2, self.slider_circle_radius*2)
+            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+            painter.drawEllipse(convert_to_int(pct_done*rect.width()+rect.left())-self.slider_circle_radius,
+                                convert_to_int(y_of_timeline)-self.slider_circle_radius,
+                                self.slider_circle_radius*2, self.slider_circle_radius*2)
 
-        painter.end()
+        self.paint(draw_func)
 
-    def emit_update_frame_signal(self):
-        self.c.update_frame.emit()
+    def emit_update_frame_signal(self, target_frame=-1):
+        self.c.update_frame.emit(target_frame)
+
+    def mousePressEvent(self, event: QMouseEvent):
+        print(event.pos())
+        print(self.slider_rect.contains(event.pos()))
+
+        if self.slider_rect.contains(event.pos()):
+            pct = (event.pos().x() - self.slider_rect.left()) / self.slider_rect.width()
+            target_frame = convert_to_int(pct*self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            print('target frame: {}, {}'.format(pct, target_frame))
+
+            self.emit_update_frame_signal(target_frame)
+
+    def mouseReleaseEvent(self, event):
+        cursor = QtGui.QCursor()
+        print(cursor.pos())
 
 
 if __name__ == '__main__':

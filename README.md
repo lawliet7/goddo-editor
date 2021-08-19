@@ -11,3 +11,5 @@ Environment - Use Conda
 - conda install -c conda-forge imutils
 
 **NOTE: conda forge unfortunately don't have pyqt6 so we are stuck with pyqt 5 for now
+
+* if you have icon put it in main folder as icon.png

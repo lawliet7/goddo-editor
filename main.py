@@ -1,12 +1,14 @@
 import sys
 import time
+import logging
 
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect
 import cv2
 import imutils
 
 from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow
 
 
 def print_all_populated_openv_attrs(cap):
@@ -54,6 +56,7 @@ def get_perf_counter_as_millis():
 
 
 def skip_until_frame(cap, num_frames):
+    frame = None
     for i in range(num_frames):
         if is_video_done(cap):
             break
@@ -79,17 +82,21 @@ def convert_to_int(value, round_num=True):
         return int(value)
 
 
-class Communicate(QObject):
+class MainLoopUpdateSignals(QObject):
     update_frame = pyqtSignal(int)
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class AdhocUpdateSignals(QObject):
+    update_frame = pyqtSignal(int)
+
+
+class MainWindow(QMainWindow):
     def __init__(self, video, initial_offset=None):
         super().__init__()
 
         self.move(10, 10)
 
-        app.setWindowIcon(QtGui.QIcon('icon.png'))
+        app.setWindowIcon(QtGui.QIcon('icon.jpg'))
 
         self.cap = cv2.VideoCapture(video)
         print_all_populated_openv_attrs(self.cap)
@@ -109,16 +116,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.slider_circle_radius = 5
         self.slider_rect = self.get_slider_rect()
 
-        self.c = Communicate()
-        self.c.update_frame.connect(self.update_frame)
+        self.main_signals = MainLoopUpdateSignals()
+        self.main_signals.update_frame.connect(self.update_frame)
+
+        self.adhoc_signals = AdhocUpdateSignals()
+        self.adhoc_signals.update_frame.connect(self.update_frame)
 
         self.timer = QTimer(self)
-        self.timer.setInterval(num_frames_to_num_millis(self.fps))
+        self.timer.setInterval(1)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
 
-        self.emit_update_frame_signal(initial_offset)
+        if initial_offset:
+            self.emit_update_frame_signal(initial_offset)
 
     def paint(self, func):
         painter = QPainter(self.label.pixmap())
@@ -128,15 +139,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_slider_rect(self):
         rect = self.label.geometry()
         y_of_timeline = convert_to_int(rect.height() * 0.9 + rect.top())
-        return QRect(rect.left(), y_of_timeline - self.slider_circle_radius, rect.width(),
-                     self.slider_circle_radius*2)
+        return QRect(rect.left(), y_of_timeline - self.slider_circle_radius-5, rect.width(),
+                     self.slider_circle_radius*2+10)
 
     def resizeEvent(self, event):
         self.slider_rect = self.get_slider_rect()
         QtWidgets.QMainWindow.resizeEvent(self, event)
 
     def update_frame(self, frame_no):
-        if not is_video_done(self.cap):
+        self.main_signals.blockSignals(True)
+        # print('updating frame {}'.format(frame_no))
+        if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
             if frame_no < 0:
                 time_diff = new_time - self.current_time
@@ -144,14 +157,14 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 target_frame = get_next_frame(self.cap, frame_no)
 
-            if target_frame is None:
-                raise Exception("File is corrupted")
-            scaled_frame = imutils.resize(target_frame, width=1280)
-            self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
-            self.current_time = new_time
+            if target_frame is not None:
+                scaled_frame = imutils.resize(target_frame, width=1280)
+                self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
+                self.current_time = new_time
 
-            if self.label.underMouse():
-                self.draw_seek_bar()
+                if self.label.underMouse():
+                    self.draw_seek_bar()
+        self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self):
         def draw_func(painter):
@@ -174,7 +187,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.paint(draw_func)
 
     def emit_update_frame_signal(self, target_frame=-1):
-        self.c.update_frame.emit(target_frame)
+        self.main_signals.update_frame.emit(target_frame)
 
     def mousePressEvent(self, event: QMouseEvent):
         print(event.pos())
@@ -185,7 +198,10 @@ class MainWindow(QtWidgets.QMainWindow):
             target_frame = convert_to_int(pct*self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
             print('target frame: {}, {}'.format(pct, target_frame))
 
-            self.emit_update_frame_signal(target_frame)
+            self.main_signals.blockSignals(True)
+            self.adhoc_signals.update_frame.emit(target_frame)
+            self.main_signals.blockSignals(False)
+
 
     def mouseReleaseEvent(self, event):
         cursor = QtGui.QCursor()

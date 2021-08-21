@@ -3,7 +3,7 @@ import time
 import logging
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint
 import cv2
 import imutils
 
@@ -164,6 +164,7 @@ class MainWindow(QMainWindow):
 
                 if self.label.underMouse():
                     self.draw_seek_bar()
+
         self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self):
@@ -184,7 +185,26 @@ class MainWindow(QMainWindow):
                                 convert_to_int(y_of_timeline)-self.slider_circle_radius,
                                 self.slider_circle_radius*2, self.slider_circle_radius*2)
 
+            y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
+            # self.fps
+            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            frames = int(cur_frames % self.fps)
+            secs = int(cur_frames/self.fps % 60)
+            mins = int(cur_frames/self.fps/60 % 60)
+            hours = int(cur_frames / self.fps / 60 / 60 % 60)
+            painter.setPen(create_pen())
+            painter.drawText(QPoint(5, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames))
+
+            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            frames = int(total_frames % self.fps)
+            secs = int(total_frames / self.fps % 60)
+            mins = int(total_frames / self.fps / 60 % 60)
+            hours = int(total_frames / self.fps / 60 / 60 % 60)
+            painter.setPen(create_pen())
+            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames))
+
         self.paint(draw_func)
+
 
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)

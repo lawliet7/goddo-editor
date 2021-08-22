@@ -1,18 +1,18 @@
+import logging
 import os
 import sys
-import time
-import logging
 import threading
+import time
 
 import cv2
 import imutils
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QRunnable, pyqtSlot, QThread
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint
 from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
 from PyQt5.QtWidgets import QMainWindow
 
-from number_utils import convert_to_int
 from AudioPlayer import AudioPlayer
+from number_utils import convert_to_int
 
 
 def print_all_populated_openv_attrs(cap):
@@ -79,13 +79,11 @@ def is_video_done(cap):
     return cap.get(cv2.CAP_PROP_POS_FRAMES) >= cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
 
-def to_frames(cap):
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cur_frames = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-    frames = int(cur_frames % fps)
-    secs = int(cur_frames / fps % 60)
-    mins = int(cur_frames / fps / 60 % 60)
-    hours = int(cur_frames / fps / 60 / 60 % 60)
+def frames_to_time_components(total_frames, fps):
+    frames = int(total_frames % fps)
+    secs = int(total_frames / fps % 60)
+    mins = int(total_frames / fps / 60 % 60)
+    hours = int(total_frames / fps / 60 / 60 % 60)
     return hours, mins, secs, frames
 
 
@@ -118,12 +116,6 @@ class MainWindow(QMainWindow):
         self.audio_player = AudioPlayer(video, self.fps)
 
         self.label = QtWidgets.QLabel()
-        # canvas = QtGui.QPixmap(800, 600)
-        # self.label.setPixmap(canvas)
-        # frame = get_next_frame(self.cap, specific_frame=initial_offset)
-        # # scaled_frame = resize(frame, (800, 600))
-        # scaled_frame = imutils.resize(frame, width=1280)
-        # self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
         self.setCentralWidget(self.label)
 
         self.current_time = get_perf_counter_as_millis()
@@ -133,10 +125,8 @@ class MainWindow(QMainWindow):
         self.main_signals = MainLoopUpdateSignals()
         self.main_signals.update_frame.connect(self.update_frame)
 
-
         self.adhoc_signals = AdhocUpdateSignals()
         self.adhoc_signals.update_frame.connect(self.update_frame)
-
 
         self.timer = QTimer(self)
         self.timer.setInterval(self.fps_as_ms)
@@ -219,19 +209,15 @@ class MainWindow(QMainWindow):
                                 self.slider_circle_radius*2, self.slider_circle_radius*2)
 
             y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
-            # self.fps
-            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            to_frames(self.cap)
             painter.setPen(create_pen())
-            painter.drawText(QPoint(5, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(*to_frames(self.cap)))
+
+            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            painter.drawText(QPoint(5, y_of_elapsed_time),
+                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
 
             total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            frames = int(total_frames % self.fps)
-            secs = int(total_frames / self.fps % 60)
-            mins = int(total_frames / self.fps / 60 % 60)
-            hours = int(total_frames / self.fps / 60 / 60 % 60)
-            painter.setPen(create_pen())
-            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames))
+            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time),
+                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
         self.paint(draw_func)
 

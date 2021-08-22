@@ -9,8 +9,12 @@ Environment - Use Conda
 - conda install pyqt
 - conda install -c conda-forge opencv
 - conda install -c conda-forge imutils
+- conda install -c anaconda pyaudio
 
 **NOTE: conda forge unfortunately don't have pyqt6 so we are stuck with pyqt 5 for now
+
+**NOTE: to play audio, player will create temp file in same directory called audio.wav.
+Because of this start will be very slow if we are processing big video files.
 
 Environment Variables:
 - LOG LEVEL (optional) = levels in logging pkg

@@ -1,14 +1,18 @@
+import logging
 import os
 import sys
+import threading
 import time
-import logging
 
 import cv2
 import imutils
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QRunnable, pyqtSlot
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint
 from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
 from PyQt5.QtWidgets import QMainWindow
+
+from AudioPlayer import AudioPlayer
+from number_utils import convert_to_int
 
 
 def print_all_populated_openv_attrs(cap):
@@ -75,20 +79,11 @@ def is_video_done(cap):
     return cap.get(cv2.CAP_PROP_POS_FRAMES) >= cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
 
-def convert_to_int(value, round_num=True):
-    if round_num:
-        return int(round(value))
-    else:
-        return int(value)
-
-
-def to_frames(cap):
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cur_frames = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-    frames = int(cur_frames % fps)
-    secs = int(cur_frames / fps % 60)
-    mins = int(cur_frames / fps / 60 % 60)
-    hours = int(cur_frames / fps / 60 / 60 % 60)
+def frames_to_time_components(total_frames, fps):
+    frames = int(total_frames % fps)
+    secs = int(total_frames / fps % 60)
+    mins = int(total_frames / fps / 60 % 60)
+    hours = int(total_frames / fps / 60 / 60 % 60)
     return hours, mins, secs, frames
 
 
@@ -118,13 +113,9 @@ class MainWindow(QMainWindow):
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
 
+        self.audio_player = AudioPlayer(video, self.fps)
+
         self.label = QtWidgets.QLabel()
-        # canvas = QtGui.QPixmap(800, 600)
-        # self.label.setPixmap(canvas)
-        # frame = get_next_frame(self.cap, specific_frame=initial_offset)
-        # # scaled_frame = resize(frame, (800, 600))
-        # scaled_frame = imutils.resize(frame, width=1280)
-        # self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
         self.setCentralWidget(self.label)
 
         self.current_time = get_perf_counter_as_millis()
@@ -138,7 +129,7 @@ class MainWindow(QMainWindow):
         self.adhoc_signals.update_frame.connect(self.update_frame)
 
         self.timer = QTimer(self)
-        self.timer.setInterval(self.fps_as_ms)
+        self.timer.setInterval(self.fps_as_ms+1)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
@@ -162,27 +153,30 @@ class MainWindow(QMainWindow):
         QtWidgets.QMainWindow.resizeEvent(self, event)
 
     def update_frame(self, frame_no=-1):
-        self.main_signals.blockSignals(True)
+        logging.debug("[{}] updating frame".format(threading.get_ident()))
+        # self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
             cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
             target_frame = None
             if frame_no < 0:
-                logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
-                                                                  new_time - self.current_time))
+                # logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
+                #                                                   new_time - self.current_time))
                 time_diff = new_time - self.current_time
                 frame_diff = convert_to_int(time_diff/self.fps_as_ms)
-                logging.debug('diffs {} {}'.format(time_diff, frame_diff))
-                # frame_diff = 1
+                # logging.debug('diffs {} {}'.format(time_diff, frame_diff))
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
+                    self.audio_player.emit_play_audio_signal(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
+                    self.audio_player.emit_play_audio_signal(frame_diff)
             else:
                 target_frame = get_next_frame(self.cap, frame_no)
+                self.audio_player.emit_go_to_audio_signal(frame_no)
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
@@ -195,7 +189,7 @@ class MainWindow(QMainWindow):
             else:
                 logging.debug("skipped advancing frame")
 
-        self.main_signals.blockSignals(False)
+        # self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self):
         def draw_func(painter):
@@ -216,19 +210,15 @@ class MainWindow(QMainWindow):
                                 self.slider_circle_radius*2, self.slider_circle_radius*2)
 
             y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
-            # self.fps
-            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            to_frames(self.cap)
             painter.setPen(create_pen())
-            painter.drawText(QPoint(5, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(*to_frames(self.cap)))
+
+            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            painter.drawText(QPoint(5, y_of_elapsed_time),
+                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
 
             total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            frames = int(total_frames % self.fps)
-            secs = int(total_frames / self.fps % 60)
-            mins = int(total_frames / self.fps / 60 % 60)
-            hours = int(total_frames / self.fps / 60 / 60 % 60)
-            painter.setPen(create_pen())
-            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time), "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames))
+            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time),
+                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
         self.paint(draw_func)
 
@@ -262,7 +252,7 @@ def convert_to_log_level(log_level_str: str):
 
 if __name__ == '__main__':
     log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=log_level)
+    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
 
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) == 2:

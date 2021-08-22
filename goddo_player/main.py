@@ -2,13 +2,17 @@ import os
 import sys
 import time
 import logging
+import threading
 
 import cv2
 import imutils
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QRunnable, pyqtSlot
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QRunnable, pyqtSlot, QThread
 from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
 from PyQt5.QtWidgets import QMainWindow
+
+from number_utils import convert_to_int
+from AudioPlayer import AudioPlayer
 
 
 def print_all_populated_openv_attrs(cap):
@@ -75,13 +79,6 @@ def is_video_done(cap):
     return cap.get(cv2.CAP_PROP_POS_FRAMES) >= cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
 
-def convert_to_int(value, round_num=True):
-    if round_num:
-        return int(round(value))
-    else:
-        return int(value)
-
-
 def to_frames(cap):
     fps = cap.get(cv2.CAP_PROP_FPS)
     cur_frames = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -118,6 +115,8 @@ class MainWindow(QMainWindow):
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
 
+        self.audio_player = AudioPlayer(video, self.fps)
+
         self.label = QtWidgets.QLabel()
         # canvas = QtGui.QPixmap(800, 600)
         # self.label.setPixmap(canvas)
@@ -134,8 +133,10 @@ class MainWindow(QMainWindow):
         self.main_signals = MainLoopUpdateSignals()
         self.main_signals.update_frame.connect(self.update_frame)
 
+
         self.adhoc_signals = AdhocUpdateSignals()
         self.adhoc_signals.update_frame.connect(self.update_frame)
+
 
         self.timer = QTimer(self)
         self.timer.setInterval(self.fps_as_ms)
@@ -162,6 +163,7 @@ class MainWindow(QMainWindow):
         QtWidgets.QMainWindow.resizeEvent(self, event)
 
     def update_frame(self, frame_no=-1):
+        logging.debug("[{}] updating frame".format(threading.get_ident()))
         self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
@@ -169,14 +171,15 @@ class MainWindow(QMainWindow):
             cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
             target_frame = None
             if frame_no < 0:
-                logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
-                                                                  new_time - self.current_time))
+                # logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
+                #                                                   new_time - self.current_time))
                 time_diff = new_time - self.current_time
                 frame_diff = convert_to_int(time_diff/self.fps_as_ms)
-                logging.debug('diffs {} {}'.format(time_diff, frame_diff))
+                # logging.debug('diffs {} {}'.format(time_diff, frame_diff))
                 # frame_diff = 1
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
+                    self.audio_player.play_audio.emit(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
@@ -262,7 +265,7 @@ def convert_to_log_level(log_level_str: str):
 
 if __name__ == '__main__':
     log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=log_level)
+    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
 
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) == 2:

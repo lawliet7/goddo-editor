@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         self.adhoc_signals.update_frame.connect(self.update_frame)
 
         self.timer = QTimer(self)
-        self.timer.setInterval(self.fps_as_ms)
+        self.timer.setInterval(self.fps_as_ms+1)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
 
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
-        self.main_signals.blockSignals(True)
+        # self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
@@ -166,16 +166,17 @@ class MainWindow(QMainWindow):
                 time_diff = new_time - self.current_time
                 frame_diff = convert_to_int(time_diff/self.fps_as_ms)
                 # logging.debug('diffs {} {}'.format(time_diff, frame_diff))
-                # frame_diff = 1
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    self.audio_player.play_audio.emit(frame_diff)
+                    self.audio_player.emit_play_audio_signal(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
+                    self.audio_player.emit_play_audio_signal(frame_diff)
             else:
                 target_frame = get_next_frame(self.cap, frame_no)
+                self.audio_player.emit_go_to_audio_signal(frame_no)
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
@@ -188,7 +189,7 @@ class MainWindow(QMainWindow):
             else:
                 logging.debug("skipped advancing frame")
 
-        self.main_signals.blockSignals(False)
+        # self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self):
         def draw_func(painter):

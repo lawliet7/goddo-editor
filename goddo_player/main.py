@@ -5,13 +5,12 @@ import threading
 import time
 
 import cv2
-import imutils
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint
-from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
+from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat
+from PyQt5.QtWidgets import QWidget, QApplication, QStyle
+from pyglet.media import Player, load
 
-from AudioPlayer import AudioPlayer
 from number_utils import convert_to_int
 
 
@@ -99,24 +98,58 @@ class AdhocUpdateSignals(QObject):
     update_frame = pyqtSignal(int)
 
 
-class MainWindow(QMainWindow):
+# class Worker(QRunnable):
+#     def __init__(self, video_path):
+#         super().__init__()
+#         self.player = Player()
+#         self.player.queue(load(video_path))
+#
+#     def get_audio_pos(self):
+#         return self.player.position()
+#
+#     @pyqtSlot()
+#     def run(self):
+#         self.player.play()
+#         # self.player.play()
+#         # p = pyaudio.PyAudio()
+#         #
+#         # CHUNK = int(self.wf.getframerate() / 25)
+#         #
+#         # stream = p.open(format=p.get_format_from_width(self.wf.getsampwidth()),
+#         #                 channels=self.wf.getnchannels(),
+#         #                 rate=self.wf.getframerate(),
+#         #                 output=True)
+#         #
+#         # print(self.wf.getparams())
+#         # print()
+#         #
+#         # data = self.wf.readframes(CHUNK)
+#         #
+#         # while data != '':
+#         #     stream.write(data)
+#         #     data = self.wf.readframes(CHUNK)
+#         #
+#         # stream.stop_stream()
+#         # stream.close()
+#         #
+#         # p.terminate()
+
+
+class MainWindow(QOpenGLWindow):
     def __init__(self, video, initial_offset=None):
         super().__init__()
-
-        self.move(10, 10)
-
-        app.setWindowIcon(QtGui.QIcon('icon.jpg'))
 
         self.cap = cv2.VideoCapture(video)
         print_all_populated_openv_attrs(self.cap)
         # width, height = get_video_dimensions(self.cap)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
+        self.pixmap = None
 
-        self.audio_player = AudioPlayer(video, self.fps)
+        # self.audio_player = AudioPlayer(video, self.fps)
 
-        self.label = QtWidgets.QLabel()
-        self.setCentralWidget(self.label)
+        # self.label = QtWidgets.QLabel()
+        # self.setCentralWidget(self.label)
 
         self.current_time = get_perf_counter_as_millis()
         self.slider_circle_radius = 5
@@ -134,93 +167,155 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
 
-        if initial_offset:
-            self.emit_update_frame_signal(initial_offset)
+        # if initial_offset:
+        #     self.emit_update_frame_signal(initial_offset)
 
-    def paint(self, func):
-        painter = QPainter(self.label.pixmap())
-        func(painter)
+        # self.worker = Worker(video_path=video)
+        # self.cur_audio_pos = 0
+        # self.threadpool = QThreadPool()
+        # self.threadpool.start(self.worker)
+
+        self.player = Player()
+        self.player.queue(load(video))
+        self.cur_audio_pos = 0
+        self.player.play()
+
+        self.is_mouse_over = False
+
+
+    def initializeGL(self) -> None:
+        super().initializeGL()
+
+        fmt = QSurfaceFormat()
+        fmt.setSamples(4)
+        QSurfaceFormat.setDefaultFormat(fmt)
+
+        width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.resize(*get_resize_dim_keep_aspect(width, height, 1280))
+
+        # draw text seems to need to be 'warmed up' to run quickly
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.drawText(QPoint(0, 0), "x")
         painter.end()
 
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() == QMouseEvent.Enter:
+            return True
+        elif event.type() == QMouseEvent.Leave:
+            return True
+        return super().eventFilter(obj, event)
+
+    def event(self, event: QtCore.QEvent) -> bool:
+        if event.type() == QMouseEvent.Enter:
+            print('mouse enter')
+            self.is_mouse_over = True
+            return True
+        elif event.type() == QMouseEvent.Leave:
+            print('mouse leave')
+            self.is_mouse_over = False
+            return True
+        return super().event(event)
+
+    def paintGL(self) -> None:
+        # super().paintGL()
+
+        if self.pixmap is not None:
+            logging.debug("painting")
+            painter = QPainter()
+            painter.begin(self)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.drawPixmap(0,0,self.pixmap)
+            painter.end()
+
+    def paintOverGL(self) -> None:
+        # super().paintOverGL()
+
+        print(self.is_mouse_over)
+        if self.is_mouse_over:
+            painter = QPainter()
+            painter.begin(self)
+            painter.setRenderHint(QPainter.Antialiasing)
+            self.draw_seek_bar(painter)
+            painter.end()
+
     def get_slider_rect(self):
-        rect = self.label.geometry()
-        y_of_timeline = convert_to_int(rect.height() * 0.9 + rect.top())
+        rect = self.geometry()
+        y_of_timeline = convert_to_int(rect.height() * 0.8 + rect.top())
         return QRect(rect.left(), y_of_timeline - self.slider_circle_radius-5, rect.width(),
                      self.slider_circle_radius*2+10)
 
-    def resizeEvent(self, event):
-        self.slider_rect = self.get_slider_rect()
-        QtWidgets.QMainWindow.resizeEvent(self, event)
-
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
-        # self.main_signals.blockSignals(True)
-        # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
-            new_time = get_perf_counter_as_millis()
-            cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            audio_pos = self.player.time
+            logging.debug("audio pos {} - {}".format(self.cur_audio_pos, audio_pos))
+            # print(audio_pos)
+            cur_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             target_frame = None
             if frame_no < 0:
-                # logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
-                #                                                   new_time - self.current_time))
-                time_diff = new_time - self.current_time
-                frame_diff = convert_to_int(time_diff/self.fps_as_ms)
-                # logging.debug('diffs {} {}'.format(time_diff, frame_diff))
+                to_frame = convert_to_int(audio_pos * self.fps)
+                frame_diff = to_frame - cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    self.audio_player.emit_play_audio_signal(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    self.audio_player.emit_play_audio_signal(frame_diff)
+                    # self.audio_player.emit_play_audio_signal(frame_diff)
             else:
                 target_frame = get_next_frame(self.cap, frame_no)
-                self.audio_player.emit_go_to_audio_signal(frame_no)
+                # self.audio_player.emit_go_to_audio_signal(frame_no)
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
-                scaled_frame = imutils.resize(target_frame, width=1280)
-                self.label.setPixmap(QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame)))
-                self.current_time = new_time
-
-                if self.label.underMouse():
-                    self.draw_seek_bar()
+                width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                scaled_frame = cv2.resize(target_frame, get_resize_dim_keep_aspect(width, height, 1280), interpolation = cv2.INTER_AREA )
+                self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
+                self.update()
+                self.cur_audio_pos = audio_pos
+                logging.debug("update audio pos")
             else:
                 logging.debug("skipped advancing frame")
 
         # self.main_signals.blockSignals(False)
 
-    def draw_seek_bar(self):
-        def draw_func(painter):
-            painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
-            rect = self.label.geometry()
+    def draw_seek_bar(self, painter: QPainter):
+        print(self.slider_rect)
 
-            y_of_timeline = rect.height()*0.9 + rect.top()
-            painter.drawLine(rect.left(),  convert_to_int(y_of_timeline), rect.right(),  convert_to_int(y_of_timeline))
+        painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
+        rect = self.geometry()
 
-            pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
-            painter.drawLine(rect.left(), convert_to_int(y_of_timeline),
-                             convert_to_int(pct_done*rect.width()+rect.left()), convert_to_int(y_of_timeline))
+        # painter.drawRect(QRect(10,10,100,100))
 
-            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
-            painter.drawEllipse(convert_to_int(pct_done*rect.width()+rect.left())-self.slider_circle_radius,
-                                convert_to_int(y_of_timeline)-self.slider_circle_radius,
-                                self.slider_circle_radius*2, self.slider_circle_radius*2)
+        y_of_timeline = rect.height()*0.8 + rect.top()
+        painter.drawLine(rect.left(),  convert_to_int(y_of_timeline), rect.right(),  convert_to_int(y_of_timeline))
 
-            y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
-            painter.setPen(create_pen())
+        pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+        painter.drawLine(self.slider_rect.left(), convert_to_int(y_of_timeline),
+                         convert_to_int(pct_done*rect.width()+rect.left()), convert_to_int(y_of_timeline))
+        print('line coor: {}, {}, {}, {}'.format(rect.left(), convert_to_int(y_of_timeline),
+                         convert_to_int(pct_done*rect.width()+rect.left()), convert_to_int(y_of_timeline)))
 
-            cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            painter.drawText(QPoint(5, y_of_elapsed_time),
-                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
+        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+        painter.drawEllipse(convert_to_int(pct_done*rect.width()+rect.left())-self.slider_circle_radius,
+                            convert_to_int(y_of_timeline)-self.slider_circle_radius,
+                            self.slider_circle_radius*2, self.slider_circle_radius*2)
 
-            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time),
-                             "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
+        y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
+        painter.setPen(create_pen())
 
-        self.paint(draw_func)
+        cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        painter.drawText(QPoint(5, y_of_elapsed_time),
+                         "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
+
+        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time),
+                         "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)
@@ -250,16 +345,43 @@ def convert_to_log_level(log_level_str: str):
         return None
 
 
+def move_window(window_instance, x, y):
+    if isinstance(window_instance, QWidget):
+        window_instance.move(x, y)
+    elif isinstance(window_instance, QWindow):
+        # opengl windows don't take into account title bar
+        title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
+        window_instance.setX(x)
+        window_instance.setY(y+title_bar_height)
+    else:
+        raise Exception("Invalid window type")
+
+
+def get_resize_dim_keep_aspect(original_width: int, original_height: int, target_width: int):
+    if original_width > target_width:
+        new_width = target_width
+        adjusted_height = convert_to_int(new_width * original_height / original_width)
+    else:
+        new_width = int(original_width)
+        adjusted_height = int(original_height)
+
+    return new_width, adjusted_height
+
+
 if __name__ == '__main__':
     log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
     logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('icon.jpg'))
+
     if len(sys.argv) == 2:
         window = MainWindow(sys.argv[1])
     elif len(sys.argv) == 3:
         window = MainWindow(sys.argv[1], int(sys.argv[2]))
     else:
         raise Exception("usage: main.py {video_file} {initial offset (optional)}")
+
+    move_window(window, 10, 10)
     window.show()
     app.exec()

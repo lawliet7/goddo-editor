@@ -7,7 +7,7 @@ import time
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
-from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat
+from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
 from pyglet.media import Player, load
 
@@ -152,8 +152,9 @@ class MainWindow(QOpenGLWindow):
         # self.setCentralWidget(self.label)
 
         self.current_time = get_perf_counter_as_millis()
+
         self.slider_circle_radius = 5
-        self.slider_rect = self.get_slider_rect()
+        self.slider_rect: QRect = None
 
         self.main_signals = MainLoopUpdateSignals()
         self.main_signals.update_frame.connect(self.update_frame)
@@ -179,6 +180,7 @@ class MainWindow(QOpenGLWindow):
         self.player.queue(load(video))
         self.cur_audio_pos = 0
         self.player.play()
+        self.player.volume = 0.1
 
         self.is_mouse_over = False
 
@@ -192,7 +194,13 @@ class MainWindow(QOpenGLWindow):
 
         width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.resize(*get_resize_dim_keep_aspect(width, height, 1280))
+        new_dim = get_resize_dim_keep_aspect(width, height, 1280)
+        self.resize(*new_dim)
+
+        # get slider rect
+        distince_from_rect_to_bottom = 100
+        height_of_slider_rect = 30
+        self.slider_rect = QRect(0,new_dim[1]-distince_from_rect_to_bottom, new_dim[0], height_of_slider_rect)
 
         # draw text seems to need to be 'warmed up' to run quickly
         painter = QPainter()
@@ -239,13 +247,18 @@ class MainWindow(QOpenGLWindow):
             painter.begin(self)
             painter.setRenderHint(QPainter.Antialiasing)
             self.draw_seek_bar(painter)
+
+            # print(self.slider_rect)
+            # painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
+            # painter.drawRect(self.slider_rect)
+
             painter.end()
 
-    def get_slider_rect(self):
-        rect = self.geometry()
-        y_of_timeline = convert_to_int(rect.height() * 0.8 + rect.top())
-        return QRect(rect.left(), y_of_timeline - self.slider_circle_radius-5, rect.width(),
-                     self.slider_circle_radius*2+10)
+    # def get_slider_rect(self):
+    #     rect = self.geometry()
+    #     y_of_timeline = convert_to_int(rect.height() * 0.8 + rect.top())
+    #     return QRect(rect.left(), y_of_timeline - self.slider_circle_radius-5, rect.width(),
+    #                  self.slider_circle_radius*2+10)
 
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
@@ -273,7 +286,8 @@ class MainWindow(QOpenGLWindow):
             if target_frame is not None:
                 width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                scaled_frame = cv2.resize(target_frame, get_resize_dim_keep_aspect(width, height, 1280), interpolation = cv2.INTER_AREA )
+                new_dim = get_resize_dim_keep_aspect(width, height, 1280)
+                scaled_frame = cv2.resize(target_frame, new_dim, interpolation = cv2.INTER_AREA )
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
                 self.update()
                 self.cur_audio_pos = audio_pos
@@ -284,25 +298,18 @@ class MainWindow(QOpenGLWindow):
         # self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self, painter: QPainter):
-        print(self.slider_rect)
-
         painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
-        rect = self.geometry()
 
-        # painter.drawRect(QRect(10,10,100,100))
-
-        y_of_timeline = rect.height()*0.8 + rect.top()
-        painter.drawLine(rect.left(),  convert_to_int(y_of_timeline), rect.right(),  convert_to_int(y_of_timeline))
+        y_of_timeline = self.slider_rect.height() / 2 + self.slider_rect.top()
+        painter.drawLine(self.slider_rect.left(),  convert_to_int(y_of_timeline), self.slider_rect.right(),  convert_to_int(y_of_timeline))
 
         pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
         painter.drawLine(self.slider_rect.left(), convert_to_int(y_of_timeline),
-                         convert_to_int(pct_done*rect.width()+rect.left()), convert_to_int(y_of_timeline))
-        print('line coor: {}, {}, {}, {}'.format(rect.left(), convert_to_int(y_of_timeline),
-                         convert_to_int(pct_done*rect.width()+rect.left()), convert_to_int(y_of_timeline)))
+                         convert_to_int(pct_done*self.slider_rect.width()+self.slider_rect.left()), convert_to_int(y_of_timeline))
 
         painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
-        painter.drawEllipse(convert_to_int(pct_done*rect.width()+rect.left())-self.slider_circle_radius,
+        painter.drawEllipse(convert_to_int(pct_done*self.slider_rect.width()+self.slider_rect.left())-self.slider_circle_radius,
                             convert_to_int(y_of_timeline)-self.slider_circle_radius,
                             self.slider_circle_radius*2, self.slider_circle_radius*2)
 
@@ -314,8 +321,11 @@ class MainWindow(QOpenGLWindow):
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
 
         total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        painter.drawText(QPoint(rect.width()-70, y_of_elapsed_time),
+        painter.drawText(QPoint(self.slider_rect.width()-70, y_of_elapsed_time),
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
+
+        painter.setPen(QPen())
+        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
 
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)

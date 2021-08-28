@@ -98,43 +98,6 @@ class AdhocUpdateSignals(QObject):
     update_frame = pyqtSignal(int)
 
 
-# class Worker(QRunnable):
-#     def __init__(self, video_path):
-#         super().__init__()
-#         self.player = Player()
-#         self.player.queue(load(video_path))
-#
-#     def get_audio_pos(self):
-#         return self.player.position()
-#
-#     @pyqtSlot()
-#     def run(self):
-#         self.player.play()
-#         # self.player.play()
-#         # p = pyaudio.PyAudio()
-#         #
-#         # CHUNK = int(self.wf.getframerate() / 25)
-#         #
-#         # stream = p.open(format=p.get_format_from_width(self.wf.getsampwidth()),
-#         #                 channels=self.wf.getnchannels(),
-#         #                 rate=self.wf.getframerate(),
-#         #                 output=True)
-#         #
-#         # print(self.wf.getparams())
-#         # print()
-#         #
-#         # data = self.wf.readframes(CHUNK)
-#         #
-#         # while data != '':
-#         #     stream.write(data)
-#         #     data = self.wf.readframes(CHUNK)
-#         #
-#         # stream.stop_stream()
-#         # stream.close()
-#         #
-#         # p.terminate()
-
-
 class MainWindow(QOpenGLWindow):
     def __init__(self, video, initial_offset=None):
         super().__init__()
@@ -177,10 +140,13 @@ class MainWindow(QOpenGLWindow):
         # self.threadpool.start(self.worker)
 
         self.player = Player()
-        self.player.queue(load(video))
+        self.source = load(video)
+        self.source.video_format = None
+        self.video_path = video
+        self.player.queue(self.source)
         self.cur_audio_pos = 0
         self.player.play()
-        self.player.volume = 0.1
+        # self.player.volume = 0.1
 
         self.is_mouse_over = False
 
@@ -235,7 +201,7 @@ class MainWindow(QOpenGLWindow):
             painter = QPainter()
             painter.begin(self)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.drawPixmap(0,0,self.pixmap)
+            painter.drawPixmap(0, 0, self.pixmap)
             painter.end()
 
     def paintOverGL(self) -> None:
@@ -261,7 +227,7 @@ class MainWindow(QOpenGLWindow):
     #                  self.slider_circle_radius*2+10)
 
     def update_frame(self, frame_no=-1):
-        logging.debug("[{}] updating frame".format(threading.get_ident()))
+        logging.debug("[{}] updating frame to {}".format(threading.get_ident(),frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             audio_pos = self.player.time
             logging.debug("audio pos {} - {}".format(self.cur_audio_pos, audio_pos))
@@ -269,31 +235,42 @@ class MainWindow(QOpenGLWindow):
             cur_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             target_frame = None
             if frame_no < 0:
+                print('audio pos {} - {}'.format(audio_pos,self.cur_audio_pos))
                 to_frame = convert_to_int(audio_pos * self.fps)
+                print('to_frame {}'.format(to_frame))
                 frame_diff = to_frame - cur_frame
+                print('frame_diff {}'.format(frame_diff))
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
+                    print('target_frame {}'.format(len(target_frame)))
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    # self.audio_player.emit_play_audio_signal(frame_diff)
+                    self.player.seek((frame_diff+cur_frame) / self.fps)
             else:
+                print('frame_no {}'.format(frame_no))
                 target_frame = get_next_frame(self.cap, frame_no)
-                # self.audio_player.emit_go_to_audio_signal(frame_no)
+                audio_pos = frame_no / self.fps
+                print('audio pos {}'.format(audio_pos))
+                # do not pause, otherwise will be out of sync
+                self.player.source.seek(audio_pos)
+                # need to hack it as pyglet requires window to seek properly
+                self.player._timer.set_time(audio_pos)
+
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
                 width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 new_dim = get_resize_dim_keep_aspect(width, height, 1280)
-                scaled_frame = cv2.resize(target_frame, new_dim, interpolation = cv2.INTER_AREA )
+                scaled_frame = cv2.resize(target_frame, new_dim, interpolation=cv2.INTER_AREA)
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
                 self.update()
                 self.cur_audio_pos = audio_pos
-                logging.debug("update audio pos")
+                logging.info("update audio pos")
             else:
-                logging.debug("skipped advancing frame")
+                logging.info("skipped advancing frame")
 
         # self.main_signals.blockSignals(False)
 
@@ -337,7 +314,7 @@ class MainWindow(QOpenGLWindow):
         if self.slider_rect.contains(event.pos()):
             pct = (event.pos().x() - self.slider_rect.left()) / self.slider_rect.width()
             target_frame = convert_to_int(pct*self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            logging.debug('target frame: {}, {}'.format(pct, target_frame))
+            logging.info('target frame: {}, {}'.format(pct, target_frame))
 
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)

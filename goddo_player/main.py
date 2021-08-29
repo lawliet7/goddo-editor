@@ -9,8 +9,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
 from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
-from pyglet.media import Player, load
 
+from goddo_player.AudioPlayer import AudioPlayer
 from number_utils import convert_to_int
 
 
@@ -109,7 +109,7 @@ class MainWindow(QOpenGLWindow):
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
         self.pixmap = None
 
-        # self.audio_player = AudioPlayer(video, self.fps)
+        self.audio_player = AudioPlayer(video, self.fps)
 
         # self.label = QtWidgets.QLabel()
         # self.setCentralWidget(self.label)
@@ -139,13 +139,13 @@ class MainWindow(QOpenGLWindow):
         # self.threadpool = QThreadPool()
         # self.threadpool.start(self.worker)
 
-        self.player = Player()
-        self.source = load(video)
-        self.source.video_format = None
-        self.video_path = video
-        self.player.queue(self.source)
-        self.cur_audio_pos = 0
-        self.player.play()
+        # self.player = Player()
+        # self.source = load(video)
+        # self.source.video_format = None
+        # self.video_path = video
+        # self.player.queue(self.source)
+        # self.cur_audio_pos = 0
+        # self.player.play()
         # self.player.volume = 0.1
 
         self.is_mouse_over = False
@@ -184,11 +184,11 @@ class MainWindow(QOpenGLWindow):
 
     def event(self, event: QtCore.QEvent) -> bool:
         if event.type() == QMouseEvent.Enter:
-            print('mouse enter')
+            logging.debug('mouse enter')
             self.is_mouse_over = True
             return True
         elif event.type() == QMouseEvent.Leave:
-            print('mouse leave')
+            logging.debug('mouse leave')
             self.is_mouse_over = False
             return True
         return super().event(event)
@@ -207,7 +207,7 @@ class MainWindow(QOpenGLWindow):
     def paintOverGL(self) -> None:
         # super().paintOverGL()
 
-        print(self.is_mouse_over)
+        logging.debug(self.is_mouse_over)
         if self.is_mouse_over:
             painter = QPainter()
             painter.begin(self)
@@ -227,37 +227,31 @@ class MainWindow(QOpenGLWindow):
     #                  self.slider_circle_radius*2+10)
 
     def update_frame(self, frame_no=-1):
-        logging.debug("[{}] updating frame to {}".format(threading.get_ident(),frame_no))
+        logging.debug("[{}] updating frame".format(threading.get_ident()))
+        self.main_signals.blockSignals(True)
+        # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
-            audio_pos = self.player.time
-            logging.debug("audio pos {} - {}".format(self.cur_audio_pos, audio_pos))
-            # print(audio_pos)
-            cur_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            new_time = get_perf_counter_as_millis()
+            cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
             target_frame = None
             if frame_no < 0:
-                print('audio pos {} - {}'.format(audio_pos,self.cur_audio_pos))
-                to_frame = convert_to_int(audio_pos * self.fps)
-                print('to_frame {}'.format(to_frame))
-                frame_diff = to_frame - cur_frame
-                print('frame_diff {}'.format(frame_diff))
+                logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
+                                                                  new_time - self.current_time))
+                time_diff = new_time - self.current_time
+                frame_diff = convert_to_int(time_diff/self.fps_as_ms)
+                logging.debug('diffs {} {}'.format(time_diff, frame_diff))
+                frame_diff = 1
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    print('target_frame {}'.format(len(target_frame)))
+                self.audio_player.emit_play_audio_signal(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = skip_until_frame(self.cap, frame_diff)
-                    self.player.seek((frame_diff+cur_frame) / self.fps)
+                    self.audio_player.emit_play_audio_signal(frame_diff)
             else:
-                print('frame_no {}'.format(frame_no))
                 target_frame = get_next_frame(self.cap, frame_no)
-                audio_pos = frame_no / self.fps
-                print('audio pos {}'.format(audio_pos))
-                # do not pause, otherwise will be out of sync
-                self.player.source.seek(audio_pos)
-                # need to hack it as pyglet requires window to seek properly
-                self.player._timer.set_time(audio_pos)
-
+                self.audio_player.emit_go_to_audio_signal(frame_no)
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
@@ -267,12 +261,12 @@ class MainWindow(QOpenGLWindow):
                 scaled_frame = cv2.resize(target_frame, new_dim, interpolation=cv2.INTER_AREA)
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
                 self.update()
-                self.cur_audio_pos = audio_pos
+                self.current_time = new_time
                 logging.info("update audio pos")
             else:
-                logging.info("skipped advancing frame")
+                logging.debug("skipped advancing frame")
 
-        # self.main_signals.blockSignals(False)
+        self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self, painter: QPainter):
         painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))

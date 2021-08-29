@@ -131,25 +131,7 @@ class MainWindow(QOpenGLWindow):
         self.timer.timeout.connect(self.emit_update_frame_signal)
         self.timer.start()
 
-        # if initial_offset:
-        #     self.emit_update_frame_signal(initial_offset)
-
-        # self.worker = Worker(video_path=video)
-        # self.cur_audio_pos = 0
-        # self.threadpool = QThreadPool()
-        # self.threadpool.start(self.worker)
-
-        # self.player = Player()
-        # self.source = load(video)
-        # self.source.video_format = None
-        # self.video_path = video
-        # self.player.queue(self.source)
-        # self.cur_audio_pos = 0
-        # self.player.play()
-        # self.player.volume = 0.1
-
         self.is_mouse_over = False
-
 
     def initializeGL(self) -> None:
         super().initializeGL()
@@ -162,11 +144,7 @@ class MainWindow(QOpenGLWindow):
         height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_dim = get_resize_dim_keep_aspect(width, height, 1280)
         self.resize(*new_dim)
-
-        # get slider rect
-        distince_from_rect_to_bottom = 100
-        height_of_slider_rect = 30
-        self.slider_rect = QRect(0,new_dim[1]-distince_from_rect_to_bottom, new_dim[0], height_of_slider_rect)
+        self.slider_rect = self.get_slider_rect()
 
         # draw text seems to need to be 'warmed up' to run quickly
         painter = QPainter()
@@ -214,21 +192,18 @@ class MainWindow(QOpenGLWindow):
             painter.setRenderHint(QPainter.Antialiasing)
             self.draw_seek_bar(painter)
 
-            # print(self.slider_rect)
-            # painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
-            # painter.drawRect(self.slider_rect)
-
             painter.end()
 
-    # def get_slider_rect(self):
-    #     rect = self.geometry()
-    #     y_of_timeline = convert_to_int(rect.height() * 0.8 + rect.top())
-    #     return QRect(rect.left(), y_of_timeline - self.slider_circle_radius-5, rect.width(),
-    #                  self.slider_circle_radius*2+10)
+    def get_slider_rect(self):
+        distance = 100
+        height_of_slider_rect = 30
+        width = self.geometry().width()
+        height = self.geometry().height()
+        return QRect(0, height - distance, width, height_of_slider_rect)
 
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
-        self.main_signals.blockSignals(True)
+        # self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
         if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
@@ -262,11 +237,11 @@ class MainWindow(QOpenGLWindow):
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
                 self.update()
                 self.current_time = new_time
-                logging.info("update audio pos")
+                logging.debug("update audio pos")
             else:
                 logging.debug("skipped advancing frame")
 
-        self.main_signals.blockSignals(False)
+        # self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self, painter: QPainter):
         painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
@@ -308,7 +283,7 @@ class MainWindow(QOpenGLWindow):
         if self.slider_rect.contains(event.pos()):
             pct = (event.pos().x() - self.slider_rect.left()) / self.slider_rect.width()
             target_frame = convert_to_int(pct*self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            logging.info('target frame: {}, {}'.format(pct, target_frame))
+            logging.debug('target frame: {}, {}'.format(pct, target_frame))
 
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)

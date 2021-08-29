@@ -33,8 +33,12 @@ class AudioThread(QObject):
     def play_audio_handler(self, num_of_video_frames):
         logging.debug("play audio")
 
-        audio_frames_to_get = convert_to_int(num_of_video_frames * self.audio_wave.getframerate() / self.video_fps)
-        self.audio_stream.write(self.audio_wave.readframes(audio_frames_to_get))
+        audio_frames_to_get = None
+        for _ in range(num_of_video_frames):
+            audio_frames_to_get = convert_to_int(self.audio_wave.getframerate() / self.video_fps)
+
+        if audio_frames_to_get is not None:
+            self.audio_stream.write(self.audio_wave.readframes(audio_frames_to_get))
 
     @pyqtSlot(int)
     def go_to_audio_handler(self, frame):

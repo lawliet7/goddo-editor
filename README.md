@@ -10,6 +10,7 @@ Environment - Use Conda
 - conda install -c conda-forge opencv
 - conda install -c conda-forge imutils
 - conda install -c anaconda pyaudio
+- conda install -c conda-forge pyglet
 
 **NOTE: conda forge unfortunately don't have pyqt6 so we are stuck with pyqt 5 for now
 

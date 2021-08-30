@@ -42,9 +42,8 @@ class AudioThread(QObject):
 
     @pyqtSlot(int)
     def go_to_audio_handler(self, frame):
-        logging.debug("go to audio")
-
         audio_frames_to_go = convert_to_int(frame * self.audio_wave.getframerate() / self.video_fps)
+        logging.debug(f'{audio_frames_to_go} - {frame} - {self.audio_wave.getframerate()} - {self.video_fps}')
         self.audio_wave.setpos(audio_frames_to_go)
 
 

@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import sys
 import threading
@@ -7,7 +8,8 @@ import time
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
-from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen
+from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen, \
+    QKeyEvent, QPolygonF
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
 
 from goddo_player.AudioPlayer import AudioPlayer
@@ -110,10 +112,6 @@ class MainWindow(QOpenGLWindow):
         self.pixmap = None
 
         self.audio_player = AudioPlayer(video, self.fps)
-
-        # self.label = QtWidgets.QLabel()
-        # self.setCentralWidget(self.label)
-
         self.current_time = get_perf_counter_as_millis()
 
         self.slider_circle_radius = 5
@@ -132,6 +130,23 @@ class MainWindow(QOpenGLWindow):
         self.timer.start()
 
         self.is_mouse_over = False
+        self.is_playing = True
+        self.in_frame = None
+        self.out_frame = None
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Space:
+            self.is_playing = not self.is_playing
+        elif event.key() == Qt.Key_I:
+            self.in_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            if self.out_frame and self.in_frame > self.out_frame:
+                self.out_frame = None
+        elif event.key() == Qt.Key_O:
+            self.out_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            if self.in_frame and self.out_frame < self.in_frame:
+                self.in_frame = None
+        else:
+            super().keyPressEvent(event)
 
     def initializeGL(self) -> None:
         super().initializeGL()
@@ -190,6 +205,7 @@ class MainWindow(QOpenGLWindow):
             painter = QPainter()
             painter.begin(self)
             painter.setRenderHint(QPainter.Antialiasing)
+
             self.draw_seek_bar(painter)
 
             painter.end()
@@ -205,7 +221,9 @@ class MainWindow(QOpenGLWindow):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
         # self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
-        if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
+        if not self.is_playing and frame_no == -1:
+            pass
+        elif not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
             cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
             target_frame = None
@@ -235,19 +253,39 @@ class MainWindow(QOpenGLWindow):
                 new_dim = get_resize_dim_keep_aspect(width, height, 1280)
                 scaled_frame = cv2.resize(target_frame, new_dim, interpolation=cv2.INTER_AREA)
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
-                self.update()
                 self.current_time = new_time
                 logging.debug("update audio pos")
             else:
                 logging.debug("skipped advancing frame")
 
+        self.update()
+
         # self.main_signals.blockSignals(False)
 
     def draw_seek_bar(self, painter: QPainter):
+
+        if self.in_frame is not None or self.out_frame is not None:
+            left = self.slider_rect.left()
+            if self.in_frame:
+                in_pct_done = self.in_frame / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                left = convert_to_int(in_pct_done*self.slider_rect.width()+self.slider_rect.left())
+
+            right = self.slider_rect.right()
+            if self.out_frame:
+                out_pct_done = self.out_frame / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                right = convert_to_int(out_pct_done * self.slider_rect.width() + self.slider_rect.left())
+
+            painter.setPen(create_pen(color=QColor(191, 191, 191, 0)))
+            painter.setBrush(QBrush(QColor(191, 191, 191, 50), Qt.SolidPattern))
+            painter.drawRect(QRect(QPoint(left, self.slider_rect.top()), QPoint(right, self.slider_rect.bottom())))
+            painter.setPen(QPen())
+            painter.setBrush(Qt.NoBrush)
+
         painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
 
         y_of_timeline = self.slider_rect.height() / 2 + self.slider_rect.top()
-        painter.drawLine(self.slider_rect.left(),  convert_to_int(y_of_timeline), self.slider_rect.right(),  convert_to_int(y_of_timeline))
+        painter.drawLine(self.slider_rect.left(),  convert_to_int(y_of_timeline),
+                         self.slider_rect.right(),  convert_to_int(y_of_timeline))
 
         pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
@@ -270,6 +308,45 @@ class MainWindow(QOpenGLWindow):
         painter.drawText(QPoint(self.slider_rect.width()-70, y_of_elapsed_time),
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
+        # draw circle
+        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
+        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+        bottom = self.slider_rect.bottom()
+        rect = QRect(0,bottom+1,self.slider_rect.width(),self.geometry().height()-bottom-1)
+        play_btn_radius = convert_to_int(rect.height()*0.8)
+        x = convert_to_int(rect.width() / 2 + rect.x() - play_btn_radius / 2)
+        y = convert_to_int(rect.height() / 2 + rect.y() - play_btn_radius / 2)
+        painter.drawEllipse(x, y, play_btn_radius, play_btn_radius)
+
+        if self.is_playing:
+            # draw triangle
+            center_right_x = convert_to_int(x + play_btn_radius * 3 / 4)
+            center_y = convert_to_int(y + play_btn_radius / 2)
+            triangle_length = play_btn_radius * 0.5
+            base_length = convert_to_int(math.sqrt(triangle_length ** 2 - (triangle_length / 2) ** 2))
+            polygon = QPolygonF([QPoint(center_right_x, center_y),
+                                 QPoint(center_right_x - base_length, convert_to_int(center_y + triangle_length / 2)),
+                                 QPoint(center_right_x - base_length, convert_to_int(center_y - triangle_length / 2))])
+            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+            painter.drawPolygon(polygon)
+        else:
+            # draw 2 bars
+            left = convert_to_int(x + play_btn_radius * 1 / 4)
+            right = convert_to_int(x + play_btn_radius * 3 / 4)
+            top = convert_to_int(y + play_btn_radius * 1 / 4)
+            bottom = convert_to_int(y + play_btn_radius * 3 / 4)
+
+            right_of_left_bar = convert_to_int((right - left) * 0.4 + left)
+            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+            left_bar_polygon = QPolygonF([QPoint(left, top), QPoint(left, bottom),
+                                          QPoint(right_of_left_bar, bottom), QPoint(right_of_left_bar, top)])
+            painter.drawPolygon(left_bar_polygon)
+
+            left_of_right_bar = convert_to_int((right - left) * 0.6 + left)
+            right_bar_polygon = QPolygonF([QPoint(left_of_right_bar, top), QPoint(left_of_right_bar, bottom),
+                                           QPoint(right, bottom), QPoint(right, top)])
+            painter.drawPolygon(right_bar_polygon)
+
         painter.setPen(QPen())
         painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
 
@@ -288,6 +365,8 @@ class MainWindow(QOpenGLWindow):
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
+        # else:
+
 
     def mouseReleaseEvent(self, event):
         cursor = QtGui.QCursor()
@@ -341,3 +420,4 @@ if __name__ == '__main__':
     move_window(window, 10, 10)
     window.show()
     app.exec()
+

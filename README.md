@@ -35,3 +35,5 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 
 shortcuts:
 - spacebar to pause/play
+- i to mark in
+- o to mark out

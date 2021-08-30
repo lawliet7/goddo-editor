@@ -32,3 +32,6 @@ Environment Variables:
 Run like this:
 
 python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
+
+shortcuts:
+- spacebar to pause/play

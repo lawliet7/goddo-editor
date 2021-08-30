@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import sys
 import threading
@@ -7,7 +8,8 @@ import time
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
-from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen
+from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen, \
+    QKeyEvent, QPolygonF
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
 
 from goddo_player.AudioPlayer import AudioPlayer
@@ -132,6 +134,15 @@ class MainWindow(QOpenGLWindow):
         self.timer.start()
 
         self.is_mouse_over = False
+        self.is_playing = True
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Space:
+            print('spacebar')
+            self.is_playing = not self.is_playing
+            # self.timer.blockSignals(not self.timer.signalsBlocked())
+        else:
+            super().keyPressEvent(event)
 
     def initializeGL(self) -> None:
         super().initializeGL()
@@ -205,7 +216,9 @@ class MainWindow(QOpenGLWindow):
         logging.debug("[{}] updating frame".format(threading.get_ident()))
         # self.main_signals.blockSignals(True)
         # print('updating frame {}'.format(frame_no))
-        if not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
+        if not self.is_playing:
+            self.update()
+        elif not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
             new_time = get_perf_counter_as_millis()
             cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
             target_frame = None
@@ -270,6 +283,45 @@ class MainWindow(QOpenGLWindow):
         painter.drawText(QPoint(self.slider_rect.width()-70, y_of_elapsed_time),
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
+        # draw circle
+        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
+        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+        bottom = self.slider_rect.bottom()
+        rect = QRect(0,bottom+1,self.slider_rect.width(),self.geometry().height()-bottom-1)
+        play_btn_radius = convert_to_int(rect.height()*0.8)
+        x = convert_to_int(rect.width() / 2 + rect.x() - play_btn_radius / 2)
+        y = convert_to_int(rect.height() / 2 + rect.y() - play_btn_radius / 2)
+        painter.drawEllipse(x, y, play_btn_radius, play_btn_radius)
+
+        if self.is_playing:
+            # draw triangle
+            center_right_x = convert_to_int(x + play_btn_radius * 3 / 4)
+            center_y = convert_to_int(y + play_btn_radius / 2)
+            triangle_length = play_btn_radius * 0.5
+            base_length = convert_to_int(math.sqrt(triangle_length ** 2 - (triangle_length / 2) ** 2))
+            polygon = QPolygonF([QPoint(center_right_x, center_y),
+                                 QPoint(center_right_x - base_length, convert_to_int(center_y + triangle_length / 2)),
+                                 QPoint(center_right_x - base_length, convert_to_int(center_y - triangle_length / 2))])
+            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+            painter.drawPolygon(polygon)
+        else:
+            # draw 2 bars
+            left = convert_to_int(x + play_btn_radius * 1 / 4)
+            right = convert_to_int(x + play_btn_radius * 3 / 4)
+            top = convert_to_int(y + play_btn_radius * 1 / 4)
+            bottom = convert_to_int(y + play_btn_radius * 3 / 4)
+
+            right_of_left_bar = (right - left) * 0.4 + left
+            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+            left_bar_polygon = QPolygonF([QPoint(left, top),QPoint(left, bottom),
+                                          QPoint(right_of_left_bar, bottom),QPoint(right_of_left_bar, top)])
+            painter.drawPolygon(left_bar_polygon)
+
+            left_of_right_bar = (right - left) * 0.6 + left
+            right_bar_polygon = QPolygonF([QPoint(left_of_right_bar, top), QPoint(left_of_right_bar, bottom),
+                                           QPoint(right, bottom), QPoint(right, top)])
+            painter.drawPolygon(right_bar_polygon)
+
         painter.setPen(QPen())
         painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
 
@@ -288,6 +340,8 @@ class MainWindow(QOpenGLWindow):
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
+        # else:
+
 
     def mouseReleaseEvent(self, event):
         cursor = QtGui.QCursor()
@@ -341,3 +395,4 @@ if __name__ == '__main__':
     move_window(window, 10, 10)
     window.show()
     app.exec()
+

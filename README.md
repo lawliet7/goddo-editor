@@ -12,6 +12,8 @@ Environment - Use Conda
 - conda install -c anaconda pyaudio
 - conda install -c conda-forge pyglet
 
+**use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
+
 **NOTE: conda forge unfortunately don't have pyqt6 so we are stuck with pyqt 5 for now
 
 **NOTE: to play audio, player will create temp file in same directory called audio.wav.

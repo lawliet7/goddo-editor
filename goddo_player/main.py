@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+from typing import Callable
 
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -13,6 +14,7 @@ from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, 
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
 
 from goddo_player.AudioPlayer import AudioPlayer
+from goddo_player.VideoPlayer import VideoPlayer
 from number_utils import convert_to_int
 
 
@@ -27,16 +29,6 @@ def get_video_dimensions(cap):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     return width, height
-
-
-def get_next_frame(cap, specific_frame=None):
-    if specific_frame:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, specific_frame)
-
-    if cap.grab():
-        flag, frame = cap.retrieve()
-        if flag:
-            return frame
 
 
 def convert_cvimg_to_qimg(cvimg):
@@ -60,24 +52,11 @@ def get_perf_counter_as_millis():
     return int(time.perf_counter() * 1000)
 
 
-def skip_until_frame(cap, num_frames):
-    frame = None
-    for i in range(num_frames):
-        if is_video_done(cap):
-            break
-        frame = get_next_frame(cap)
-    return frame
-
-
 def create_pen(width=1, color=Qt.white):
     pen = QtGui.QPen()
     pen.setWidth(width)
     pen.setColor(color)
     return pen
-
-
-def is_video_done(cap):
-    return cap.get(cv2.CAP_PROP_POS_FRAMES) >= cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
 
 def frames_to_time_components(total_frames, fps):
@@ -104,10 +83,10 @@ class MainWindow(QOpenGLWindow):
     def __init__(self, video, initial_offset=None):
         super().__init__()
 
-        self.cap = cv2.VideoCapture(video)
-        print_all_populated_openv_attrs(self.cap)
+        self.video_player = VideoPlayer(video)
+        print_all_populated_openv_attrs(self.video_player.cap)
         # width, height = get_video_dimensions(self.cap)
-        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        self.fps = self.video_player.fps
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
         self.pixmap = None
 
@@ -134,15 +113,27 @@ class MainWindow(QOpenGLWindow):
         self.in_frame = None
         self.out_frame = None
 
+    def paint_with_painter(self, fn: Callable[[QPainter], None]):
+        painter = QPainter()
+        painter.begin(self)
+        pen = painter.pen()
+        brush = painter.brush()
+
+        fn(painter)
+
+        painter.setPen(pen)
+        painter.setBrush(brush)
+        painter.end()
+
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Space:
             self.is_playing = not self.is_playing
         elif event.key() == Qt.Key_I:
-            self.in_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.in_frame = self.video_player.get_current_frame()
             if self.out_frame and self.in_frame > self.out_frame:
                 self.out_frame = None
         elif event.key() == Qt.Key_O:
-            self.out_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.out_frame = self.video_player.get_current_frame()
             if self.in_frame and self.out_frame < self.in_frame:
                 self.in_frame = None
         else:
@@ -155,18 +146,14 @@ class MainWindow(QOpenGLWindow):
         fmt.setSamples(4)
         QSurfaceFormat.setDefaultFormat(fmt)
 
-        width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        width = int(self.video_player.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.video_player.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_dim = get_resize_dim_keep_aspect(width, height, 1280)
         self.resize(*new_dim)
         self.slider_rect = self.get_slider_rect()
 
         # draw text seems to need to be 'warmed up' to run quickly
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.drawText(QPoint(0, 0), "x")
-        painter.end()
+        self.paint_with_painter(lambda painter: painter.drawText(QPoint(0, 0), "x"))
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if event.type() == QMouseEvent.Enter:
@@ -190,25 +177,16 @@ class MainWindow(QOpenGLWindow):
         # super().paintGL()
 
         if self.pixmap is not None:
+            logging.info(self.video_player.get_current_frame())
             logging.debug("painting")
-            painter = QPainter()
-            painter.begin(self)
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.drawPixmap(0, 0, self.pixmap)
-            painter.end()
+            self.paint_with_painter(lambda painter: painter.drawPixmap(0, 0, self.pixmap))
 
     def paintOverGL(self) -> None:
         # super().paintOverGL()
 
         logging.debug(self.is_mouse_over)
         if self.is_mouse_over:
-            painter = QPainter()
-            painter.begin(self)
-            painter.setRenderHint(QPainter.Antialiasing)
-
-            self.draw_seek_bar(painter)
-
-            painter.end()
+            self.paint_with_painter(self.draw_seek_bar)
 
     def get_slider_rect(self):
         distance = 100
@@ -223,9 +201,9 @@ class MainWindow(QOpenGLWindow):
         # print('updating frame {}'.format(frame_no))
         if not self.is_playing and frame_no == -1:
             pass
-        elif not is_video_done(self.cap) or (is_video_done(self.cap) and frame_no > -1):
+        elif not self.video_player.is_video_done() or (self.video_player.is_video_done() and frame_no > -1):
             new_time = get_perf_counter_as_millis()
-            cur_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            cur_frame = self.video_player.get_current_frame()
             target_frame = None
             if frame_no < 0:
                 logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
@@ -235,21 +213,21 @@ class MainWindow(QOpenGLWindow):
                 logging.debug('diffs {} {}'.format(time_diff, frame_diff))
                 frame_diff = 1
                 if frame_diff > 0:
-                    target_frame = skip_until_frame(self.cap, frame_diff)
+                    target_frame = self.video_player.skip_until_frame(frame_diff)
                 self.audio_player.emit_play_audio_signal(frame_diff)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
-                    target_frame = skip_until_frame(self.cap, frame_diff)
+                    target_frame = self.video_player.skip_until_frame(frame_diff)
                     self.audio_player.emit_play_audio_signal(frame_diff)
             else:
-                target_frame = get_next_frame(self.cap, frame_no)
+                target_frame = self.video_player.get_next_frame(frame_no)
                 self.audio_player.emit_go_to_audio_signal(frame_no)
             # target_frame = get_next_frame(self.cap)
 
             if target_frame is not None:
-                width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                width = int(self.video_player.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(self.video_player.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 new_dim = get_resize_dim_keep_aspect(width, height, 1280)
                 scaled_frame = cv2.resize(target_frame, new_dim, interpolation=cv2.INTER_AREA)
                 self.pixmap = QtGui.QPixmap(convert_cvimg_to_qimg(scaled_frame))
@@ -258,7 +236,9 @@ class MainWindow(QOpenGLWindow):
             else:
                 logging.debug("skipped advancing frame")
 
+        logging.info("before update")
         self.update()
+        logging.info("after update")
 
         # self.main_signals.blockSignals(False)
 
@@ -267,19 +247,17 @@ class MainWindow(QOpenGLWindow):
         if self.in_frame is not None or self.out_frame is not None:
             left = self.slider_rect.left()
             if self.in_frame:
-                in_pct_done = self.in_frame / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                in_pct_done = self.in_frame / self.video_player.total_frames
                 left = convert_to_int(in_pct_done*self.slider_rect.width()+self.slider_rect.left())
 
             right = self.slider_rect.right()
             if self.out_frame:
-                out_pct_done = self.out_frame / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                out_pct_done = self.out_frame / self.video_player.total_frames
                 right = convert_to_int(out_pct_done * self.slider_rect.width() + self.slider_rect.left())
 
             painter.setPen(create_pen(color=QColor(191, 191, 191, 0)))
             painter.setBrush(QBrush(QColor(191, 191, 191, 50), Qt.SolidPattern))
             painter.drawRect(QRect(QPoint(left, self.slider_rect.top()), QPoint(right, self.slider_rect.bottom())))
-            painter.setPen(QPen())
-            painter.setBrush(Qt.NoBrush)
 
         painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
 
@@ -287,7 +265,7 @@ class MainWindow(QOpenGLWindow):
         painter.drawLine(self.slider_rect.left(),  convert_to_int(y_of_timeline),
                          self.slider_rect.right(),  convert_to_int(y_of_timeline))
 
-        pct_done = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        pct_done = self.video_player.get_current_frame() / self.video_player.total_frames
         painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
         painter.drawLine(self.slider_rect.left(), convert_to_int(y_of_timeline),
                          convert_to_int(pct_done*self.slider_rect.width()+self.slider_rect.left()), convert_to_int(y_of_timeline))
@@ -300,11 +278,11 @@ class MainWindow(QOpenGLWindow):
         y_of_elapsed_time = int(y_of_timeline+self.slider_circle_radius+10)
         painter.setPen(create_pen())
 
-        cur_frames = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        cur_frames = self.video_player.get_current_frame()
         painter.drawText(QPoint(5, y_of_elapsed_time),
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
 
-        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        total_frames = self.video_player.total_frames
         painter.drawText(QPoint(self.slider_rect.width()-70, y_of_elapsed_time),
                          "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
 
@@ -312,7 +290,7 @@ class MainWindow(QOpenGLWindow):
         painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
         painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
         bottom = self.slider_rect.bottom()
-        rect = QRect(0,bottom+1,self.slider_rect.width(),self.geometry().height()-bottom-1)
+        rect = QRect(0, bottom+1, self.slider_rect.width(), self.geometry().height()-bottom-1)
         play_btn_radius = convert_to_int(rect.height()*0.8)
         x = convert_to_int(rect.width() / 2 + rect.x() - play_btn_radius / 2)
         y = convert_to_int(rect.height() / 2 + rect.y() - play_btn_radius / 2)
@@ -347,9 +325,6 @@ class MainWindow(QOpenGLWindow):
                                            QPoint(right, bottom), QPoint(right, top)])
             painter.drawPolygon(right_bar_polygon)
 
-        painter.setPen(QPen())
-        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
-
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)
 
@@ -359,7 +334,7 @@ class MainWindow(QOpenGLWindow):
 
         if self.slider_rect.contains(event.pos()):
             pct = (event.pos().x() - self.slider_rect.left()) / self.slider_rect.width()
-            target_frame = convert_to_int(pct*self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            target_frame = convert_to_int(pct*self.video_player.total_frames)
             logging.debug('target frame: {}, {}'.format(pct, target_frame))
 
             self.main_signals.blockSignals(True)

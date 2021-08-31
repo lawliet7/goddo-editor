@@ -4,18 +4,19 @@ import os
 import sys
 import threading
 import time
-from typing import Callable
+from typing import Callable, List, Tuple
 
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QRect, QPoint, QEvent
-from PyQt5.QtGui import QImage, QColor, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, QPen, \
+from PyQt5.QtGui import QImage, QBrush, QPainter, QMouseEvent, QWindow, QOpenGLWindow, QSurfaceFormat, \
     QKeyEvent, QPolygonF
 from PyQt5.QtWidgets import QWidget, QApplication, QStyle
 
 from goddo_player.AudioPlayer import AudioPlayer
 from goddo_player.VideoPlayer import VideoPlayer
 from number_utils import convert_to_int
+from theme import Theme
 
 
 def print_all_populated_openv_attrs(cap):
@@ -71,6 +72,25 @@ def build_time_str(hours=0, mins=0, secs=0, frames=0):
     return "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames)
 
 
+def draw_polygon_points(painter: QPainter, points: List[QPoint], brush=None, pen=None):
+    polygon = QPolygonF(points)
+
+    if brush:
+        painter.setBrush(brush)
+    if pen:
+        painter.setPen(pen)
+
+    painter.drawPolygon(polygon)
+
+
+def draw_polygon_tuple(painter: QPainter, points: List[Tuple[int,int]], brush=None, pen=None):
+    draw_polygon_points(painter, [QPoint(t[0], t[1]) for t in points], brush=brush, pen=pen)
+
+
+def format_time(hour, min, sec, ms):
+    "{}:{:02d}:{:02d}.{:02d}".format(hour, min, sec, ms)
+
+
 class MainLoopUpdateSignals(QObject):
     update_frame = pyqtSignal(int)
 
@@ -112,6 +132,8 @@ class MainWindow(QOpenGLWindow):
         self.is_playing = True
         self.in_frame = None
         self.out_frame = None
+
+        self.theme = Theme()
 
     def paint_with_painter(self, fn: Callable[[QPainter], None]):
         painter = QPainter()
@@ -174,16 +196,10 @@ class MainWindow(QOpenGLWindow):
         return super().event(event)
 
     def paintGL(self) -> None:
-        # super().paintGL()
-
         if self.pixmap is not None:
-            logging.info(self.video_player.get_current_frame())
-            logging.debug("painting")
             self.paint_with_painter(lambda painter: painter.drawPixmap(0, 0, self.pixmap))
 
     def paintOverGL(self) -> None:
-        # super().paintOverGL()
-
         logging.debug(self.is_mouse_over)
         if self.is_mouse_over:
             self.paint_with_painter(self.draw_seek_bar)
@@ -211,7 +227,7 @@ class MainWindow(QOpenGLWindow):
                 time_diff = new_time - self.current_time
                 frame_diff = convert_to_int(time_diff/self.fps_as_ms)
                 logging.debug('diffs {} {}'.format(time_diff, frame_diff))
-                frame_diff = 1
+                frame_diff = 1  # this might be slightly slower sometimes but at least it's in sync
                 if frame_diff > 0:
                     target_frame = self.video_player.skip_until_frame(frame_diff)
                 self.audio_player.emit_play_audio_signal(frame_diff)
@@ -236,9 +252,7 @@ class MainWindow(QOpenGLWindow):
             else:
                 logging.debug("skipped advancing frame")
 
-        logging.info("before update")
         self.update()
-        logging.info("after update")
 
         # self.main_signals.blockSignals(False)
 
@@ -255,22 +269,22 @@ class MainWindow(QOpenGLWindow):
                 out_pct_done = self.out_frame / self.video_player.total_frames
                 right = convert_to_int(out_pct_done * self.slider_rect.width() + self.slider_rect.left())
 
-            painter.setPen(create_pen(color=QColor(191, 191, 191, 0)))
-            painter.setBrush(QBrush(QColor(191, 191, 191, 50), Qt.SolidPattern))
+            painter.setPen(create_pen(color=self.theme.color.half_opacity_gray))
+            painter.setBrush(QBrush(self.theme.color.half_opacity_gray, Qt.SolidPattern))
             painter.drawRect(QRect(QPoint(left, self.slider_rect.top()), QPoint(right, self.slider_rect.bottom())))
 
-        painter.setPen(create_pen(color=QColor(242, 242, 242, 100)))
+        painter.setPen(create_pen(color=self.theme.color.gray))
 
         y_of_timeline = self.slider_rect.height() / 2 + self.slider_rect.top()
         painter.drawLine(self.slider_rect.left(),  convert_to_int(y_of_timeline),
                          self.slider_rect.right(),  convert_to_int(y_of_timeline))
 
         pct_done = self.video_player.get_current_frame() / self.video_player.total_frames
-        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+        painter.setPen(create_pen(width=3, color=self.theme.color.controls))
         painter.drawLine(self.slider_rect.left(), convert_to_int(y_of_timeline),
                          convert_to_int(pct_done*self.slider_rect.width()+self.slider_rect.left()), convert_to_int(y_of_timeline))
 
-        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
+        painter.setBrush(QBrush(self.theme.color.controls, Qt.SolidPattern))
         painter.drawEllipse(convert_to_int(pct_done*self.slider_rect.width()+self.slider_rect.left())-self.slider_circle_radius,
                             convert_to_int(y_of_timeline)-self.slider_circle_radius,
                             self.slider_circle_radius*2, self.slider_circle_radius*2)
@@ -279,16 +293,15 @@ class MainWindow(QOpenGLWindow):
         painter.setPen(create_pen())
 
         cur_frames = self.video_player.get_current_frame()
-        painter.drawText(QPoint(5, y_of_elapsed_time),
-                         "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(cur_frames, self.fps)))
+        painter.drawText(QPoint(5, y_of_elapsed_time), format_time(*frames_to_time_components(cur_frames, self.fps)))
 
         total_frames = self.video_player.total_frames
         painter.drawText(QPoint(self.slider_rect.width()-70, y_of_elapsed_time),
-                         "{}:{:02d}:{:02d}.{:02d}".format(*frames_to_time_components(total_frames, self.fps)))
+                         format_time(*frames_to_time_components(total_frames, self.fps)))
 
         # draw circle
-        painter.setBrush(QBrush(QColor(153, 0, 153), Qt.NoBrush))
-        painter.setPen(create_pen(width=3, color=QColor(153, 0, 153)))
+        painter.setBrush(QBrush(self.theme.color.controls, Qt.NoBrush))
+        painter.setPen(create_pen(width=3, color=self.theme.color.controls))
         bottom = self.slider_rect.bottom()
         rect = QRect(0, bottom+1, self.slider_rect.width(), self.geometry().height()-bottom-1)
         play_btn_radius = convert_to_int(rect.height()*0.8)
@@ -302,11 +315,10 @@ class MainWindow(QOpenGLWindow):
             center_y = convert_to_int(y + play_btn_radius / 2)
             triangle_length = play_btn_radius * 0.5
             base_length = convert_to_int(math.sqrt(triangle_length ** 2 - (triangle_length / 2) ** 2))
-            polygon = QPolygonF([QPoint(center_right_x, center_y),
-                                 QPoint(center_right_x - base_length, convert_to_int(center_y + triangle_length / 2)),
-                                 QPoint(center_right_x - base_length, convert_to_int(center_y - triangle_length / 2))])
-            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
-            painter.drawPolygon(polygon)
+            draw_polygon_tuple(painter, [(center_right_x, center_y),
+                                         (center_right_x - base_length, convert_to_int(center_y + triangle_length / 2)),
+                                         (center_right_x - base_length, convert_to_int(center_y - triangle_length / 2))],
+                               brush=QBrush(self.theme.color.controls, Qt.SolidPattern))
         else:
             # draw 2 bars
             left = convert_to_int(x + play_btn_radius * 1 / 4)
@@ -315,15 +327,14 @@ class MainWindow(QOpenGLWindow):
             bottom = convert_to_int(y + play_btn_radius * 3 / 4)
 
             right_of_left_bar = convert_to_int((right - left) * 0.4 + left)
-            painter.setBrush(QBrush(QColor(153, 0, 153), Qt.SolidPattern))
-            left_bar_polygon = QPolygonF([QPoint(left, top), QPoint(left, bottom),
-                                          QPoint(right_of_left_bar, bottom), QPoint(right_of_left_bar, top)])
-            painter.drawPolygon(left_bar_polygon)
+            draw_polygon_tuple(painter, [(left, top), (left, bottom),
+                                         (right_of_left_bar, bottom), (right_of_left_bar, top)],
+                               brush=QBrush(self.theme.color.controls, Qt.SolidPattern))
 
             left_of_right_bar = convert_to_int((right - left) * 0.6 + left)
-            right_bar_polygon = QPolygonF([QPoint(left_of_right_bar, top), QPoint(left_of_right_bar, bottom),
-                                           QPoint(right, bottom), QPoint(right, top)])
-            painter.drawPolygon(right_bar_polygon)
+            draw_polygon_tuple(painter, [(left_of_right_bar, top), (left_of_right_bar, bottom),
+                                         (right, bottom), (right, top)],
+                               brush=QBrush(self.theme.color.controls, Qt.SolidPattern))
 
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)
@@ -340,12 +351,6 @@ class MainWindow(QOpenGLWindow):
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
-        # else:
-
-
-    def mouseReleaseEvent(self, event):
-        cursor = QtGui.QCursor()
-        logging.debug(cursor.pos())
 
 
 def convert_to_log_level(log_level_str: str):

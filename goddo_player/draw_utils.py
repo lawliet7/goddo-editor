@@ -2,7 +2,7 @@ import math
 from typing import List, Tuple, Callable
 
 from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtGui import QImage, QPixmap, QPen, QPainter, QPolygonF, QPaintDevice, QBrush
+from PyQt5.QtGui import QImage, QPixmap, QPen, QPainter, QPolygonF, QPaintDevice, QBrush, QColor
 
 from goddo_player.number_utils import convert_to_int
 from theme import Theme
@@ -23,6 +23,10 @@ def create_pen(width=1, color=Qt.white):
     pen.setWidth(width)
     pen.setColor(color)
     return pen
+
+
+def create_fill_in_brush(color: QColor):
+    return QBrush(color, Qt.SolidPattern)
 
 
 def draw_polygon_points(painter: QPainter, points: List[QPoint], brush=None, pen=None):

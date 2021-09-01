@@ -32,3 +32,9 @@ class VideoPlayer(QObject):
             flag, frame = self.cap.retrieve()
             if flag:
                 return frame
+
+    def get_video_dimensions(self):
+        width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        return width, height
+

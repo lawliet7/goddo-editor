@@ -1,7 +1,11 @@
+import pickle
+
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QMargins
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QVBoxLayout, QLabel
 
+from goddo_player.DragAndDrop import VideoClipDragItem
 from goddo_player.draw_utils import *
 from goddo_player.time_frame_utils import *
 from goddo_player.window_util import *
@@ -42,6 +46,19 @@ class TimelineWindow(QWidget):
 
         self.grid_offset = 0
         self.scrollbar_x_offset = 0
+        self.videos: List[VideoClipDragItem] = []
+
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+        event.accept()
+
+    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+        data = pickle.loads(event.mimeData().data("custom"))
+        print(data)
+
+        self.videos.append(data)
+        self.update()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
@@ -73,14 +90,18 @@ class TimelineWindow(QWidget):
         height = 30
         painter.drawLine(0, height, self.geometry().width(), height)
 
+        tick_time_in_secs = 6
         tick_spacing = 10
         tick_height = 10
         # num_of_ticks = int(self.geometry().width() / tick_spacing)
         # print(num_of_ticks)
         i = 0
         x = 0
+        # total_scrollbar_offset = 0
         while x < self.geometry().width():
-            x = i*tick_spacing+self.scrollbar_x_offset*self.scrollbar_speed*-1
+            offset = self.scrollbar_x_offset*self.scrollbar_speed*-1
+            x = i*tick_spacing+offset
+            # total_scrollbar_offset = total_scrollbar_offset + offset*-1
             # print(x)
             # if x < 0:
             #     continue
@@ -113,6 +134,30 @@ class TimelineWindow(QWidget):
                                     self.scrollbar_width, self.scrollbar_height-8)
         painter.setBrush(create_fill_in_brush(Qt.white))
         painter.drawRoundedRect(self.scrollbar_rect, 3, 3)
+
+        midpoint = (height + self.scrollbar_rect.y()) / 2
+
+        print(self.videos)
+
+        x = -self.scrollbar_x_offset*self.scrollbar_speed
+        for v in self.videos:
+
+            width = v.total_secs / tick_time_in_secs * tick_spacing
+
+            if width+x >= 0:
+                color = QColor(0, 179, 60)
+                border_color = QColor(0, 77, 26)
+                painter.setPen(border_color)
+                painter.setBrush(QBrush(color))
+                box_height = 50
+                video_rect = QRect(x, midpoint-box_height, width, box_height)
+                painter.drawRect(video_rect)
+
+                video_text = f"{v.video_name}\n{format_time(*frames_to_time_components(v.total_frames, v.fps))}"
+                painter.setPen(Qt.black)
+                painter.drawText(video_rect.adjusted(2, 2, -2, -2), Qt.TextWordWrap, video_text)
+
+            x = x + width
 
         print(self.geometry())
 

@@ -1,15 +1,19 @@
 import logging
 import os
+import pickle
 import sys
 import threading
 import time
+from dataclasses import dataclass
+from io import BytesIO
 
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QEvent
-from PyQt5.QtGui import QMouseEvent, QOpenGLWindow, QSurfaceFormat, QKeyEvent, QFont, QCloseEvent
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QEvent, QMimeData
+from PyQt5.QtGui import QMouseEvent, QOpenGLWindow, QSurfaceFormat, QKeyEvent, QFont, QCloseEvent, QDrag
 
 from goddo_player.AudioPlayer import AudioPlayer
+from goddo_player.DragAndDrop import VideoClipDragItem
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import *
 from goddo_player.time_frame_utils import *
@@ -260,6 +264,22 @@ class MainWindow(QOpenGLWindow):
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
+        else:
+
+            if self.in_frame and self.out_frame:
+                drag = QDrag(self)
+                mime_data = QMimeData()
+
+                data = VideoClipDragItem(self.in_frame, self.out_frame,
+                                         self.video_player.video_path,
+                                         self.video_player.fps)
+                bytes_output = BytesIO()
+                pickle.dump(data, bytes_output)
+
+                mime_data.setData("custom", bytes_output.getvalue())
+                print(mime_data)
+                drag.setMimeData(mime_data)
+                drag.exec()
 
 
 def convert_to_log_level(log_level_str: str):

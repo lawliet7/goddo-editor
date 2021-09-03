@@ -6,7 +6,8 @@ class VideoPlayer(QObject):
     def __init__(self, video_path):
         super().__init__()
 
-        self.cap = cv2.VideoCapture(video_path)
+        self.video_path = video_path
+        self.cap = cv2.VideoCapture(self.video_path)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 

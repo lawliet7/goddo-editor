@@ -44,9 +44,13 @@ def draw_polygon_tuple(painter: QPainter, points: List[Tuple[int,int]], brush=No
     draw_polygon_points(painter, [QPoint(t[0], t[1]) for t in points], brush=brush, pen=pen)
 
 
-def paint_helper(paint_device: QPaintDevice, fn: Callable[[QPainter], None]):
+def paint_helper(paint_device: QPaintDevice, fn: Callable[[QPainter], None], antialias=True):
     painter = QPainter()
     painter.begin(paint_device)
+
+    if antialias:
+        painter.setRenderHint(QPainter.Antialiasing)
+
     pen = painter.pen()
     brush = painter.brush()
 

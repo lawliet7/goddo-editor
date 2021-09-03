@@ -69,6 +69,10 @@ class AudioPlayer(QObject):
         self.worker.moveToThread(thread)
         thread.start()
 
+    @property
+    def volume(self):
+        return self.worker.volume
+
     def emit_play_audio_signal(self, num_of_frames):
         self.worker.signals.play_audio.emit(num_of_frames)
 

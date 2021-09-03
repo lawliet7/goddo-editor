@@ -6,6 +6,7 @@ from PyQt5.QtGui import QColor
 @dataclass
 class Color:
     controls = QColor(153, 0, 153)
+    controls_sub = QColor(102, 0, 102)
     half_opacity_gray = QColor(191, 191, 191, 50)
     gray = QColor(242, 242, 242)
 

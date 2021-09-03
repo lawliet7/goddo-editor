@@ -1,9 +1,8 @@
 import pickle
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QMargins
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QVBoxLayout
 
 from goddo_player.DragAndDrop import VideoClipDragItem
 from goddo_player.draw_utils import *
@@ -31,8 +30,6 @@ class TimelineWindow(QWidget):
         self.setGeometry(x, y, screen_rect.width()-20, screen_rect.bottom() - y - 10)
 
         layout = QVBoxLayout()
-        # self.label = QLabel("Another Window")
-        # layout.addWidget(self.label)
         self.setLayout(layout)
 
         self.scrolling = False
@@ -84,27 +81,19 @@ class TimelineWindow(QWidget):
         regular_pen = create_pen(width=0.1, color=Qt.white)
         half_opacity_pen = create_pen(width=0.1, color=QColor(255,255,255,100))
         painter.setPen(regular_pen)
-        # painter.setBrush(create_fill_in_brush(Qt.white))
 
-        # painter.drawLine(QLine(self.geometry().left(), tick_bar_y, self.geometry().right(), tick_bar_y))
         height = 30
         painter.drawLine(0, height, self.geometry().width(), height)
 
         tick_time_in_secs = 6
         tick_spacing = 10
         tick_height = 10
-        # num_of_ticks = int(self.geometry().width() / tick_spacing)
-        # print(num_of_ticks)
+
         i = 0
         x = 0
-        # total_scrollbar_offset = 0
         while x < self.geometry().width():
             offset = self.scrollbar_x_offset*self.scrollbar_speed*-1
             x = i*tick_spacing+offset
-            # total_scrollbar_offset = total_scrollbar_offset + offset*-1
-            # print(x)
-            # if x < 0:
-            #     continue
             if x >= 0:
                 if i % 10 == 0:
                     cur_tick_height = height - tick_height * 1.5

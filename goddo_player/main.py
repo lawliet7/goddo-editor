@@ -84,8 +84,8 @@ class MainWindow(QOpenGLWindow):
 
         self.child_windows = []
 
-    def paint_with_painter(self, fn: Callable[[QPainter], None]):
-        paint_helper(self, fn)
+    def paint_with_painter(self, fn: Callable[[QPainter], None], antialias=True):
+        paint_helper(self, fn, antialias=antialias)
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Space:
@@ -176,6 +176,7 @@ class MainWindow(QOpenGLWindow):
             self.paint_with_painter(self.draw_seek_bar)
             self.paint_with_painter(self.draw_timestamp)
             self.paint_with_painter(self.draw_play_button)
+            self.paint_with_painter(self.draw_volume_button)
 
     def get_slider_rect(self):
         distance = 100
@@ -267,6 +268,49 @@ class MainWindow(QOpenGLWindow):
         rect = QRect(0, slider_bottom, self.slider_rect.width(), self.geometry().height() - slider_bottom-5)
         draw_play_button(painter, rect, self.is_playing, color=self.theme.color.controls)
 
+    def draw_volume_button(self, painter: QPainter):
+        slider_bottom = self.slider_rect.bottom()
+        rect = QRect(int(self.slider_rect.width()-100-100), slider_bottom+5,
+                     100, self.geometry().height() - slider_bottom-10)
+        # painter.drawRect(rect)
+
+        painter.setPen(create_pen(4, self.theme.color.controls))
+
+        len_of_side = math.sqrt(((rect.height() * 0.6 / 2) ** 2) / 2)
+        len_of_handle = len_of_side / 2
+
+        draw_polygon_tuple(painter, [
+            (rect.center().x(), int(rect.top() + rect.height() * 0.8)),  # right top
+            (rect.center().x(), int(rect.top() + rect.height() * 0.2)),  # right bottom
+            (int(rect.center().x() - len_of_side), int(rect.top() + rect.height() * 0.2 + len_of_side)),
+            (int(rect.center().x() - len_of_side - len_of_handle), int(rect.top() + rect.height() * 0.2 + len_of_side)),  # back top
+            (int(rect.center().x() - len_of_side - len_of_handle), int(rect.top() + rect.height() * 0.8 - len_of_side)),  # back bottom
+            (int(rect.center().x() - len_of_side), int(rect.top() + rect.height() * 0.8 - len_of_side))
+        ])
+
+        # draw 3 bars
+        painter.setPen(create_pen(4, self.theme.color.controls_sub))
+        painter.drawLine(int(rect.center().x() + len_of_handle), int(rect.center().y() + rect.height() * 0.4 / 2),
+                         int(rect.center().x() + len_of_handle), int(rect.center().y() - rect.height() * 0.4 / 2))
+        painter.drawLine(int(rect.center().x() + len_of_handle * 2), int(rect.center().y() + rect.height() * 0.3 / 2),
+                         int(rect.center().x() + len_of_handle * 2), int(rect.center().y() - rect.height() * 0.3 / 2))
+        painter.drawLine(int(rect.center().x() + len_of_handle * 3), int(rect.center().y() + rect.height() * 0.2 / 2),
+                         int(rect.center().x() + len_of_handle * 3), int(rect.center().y() - rect.height() * 0.2 / 2))
+
+        # draw slider bar
+        slider_bar_star = rect.center().x() + len_of_handle * 3 + len_of_side
+        bar_width = 100
+        bar_height = 6
+        painter.setPen(create_pen(color=self.theme.color.controls_sub))
+        painter.setBrush(create_fill_in_brush(color=self.theme.color.controls_sub))
+        painter.drawRoundedRect(QRect(slider_bar_star, rect.center().y() - bar_height / 2, bar_width, bar_height), 3, 3)
+
+        circle_radius = 15
+        circle_center_x = slider_bar_star + self.audio_player.volume * 100
+        painter.setPen(self.theme.color.controls)
+        painter.setBrush(create_fill_in_brush(self.theme.color.controls))
+        painter.drawEllipse(circle_center_x-circle_radius, rect.center().y()-circle_radius/2+1, circle_radius, circle_radius)
+
     def emit_update_frame_signal(self, target_frame=-1):
         self.main_signals.update_frame.emit(target_frame)
 
@@ -282,8 +326,7 @@ class MainWindow(QOpenGLWindow):
             self.main_signals.blockSignals(True)
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
-        else:
-
+        elif event.pos().y() < self.slider_rect.top():
             if self.in_frame and self.out_frame:
                 drag = QDrag(self)
                 mime_data = QMimeData()
@@ -336,5 +379,6 @@ if __name__ == '__main__':
     window.show()
 
     app.exec()
+
 
 

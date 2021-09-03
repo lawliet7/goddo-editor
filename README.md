@@ -37,3 +37,4 @@ shortcuts:
 - spacebar to pause/play
 - i to mark in
 - o to mark out
+- left/right to move 1 frame

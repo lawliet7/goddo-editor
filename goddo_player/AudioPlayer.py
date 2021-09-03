@@ -1,5 +1,6 @@
 import logging
 import wave
+import numpy as np
 
 import pyaudio
 from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot
@@ -16,6 +17,8 @@ class AudioThread(QObject):
     def __init__(self, audio_path, video_fps, parent=None):
         super().__init__(parent)
         self.signals = AudioSignals()
+
+        self.volume = 1
 
         self.audio_wave = wave.open(audio_path, 'rb')
         self.pyaudio = pyaudio.PyAudio()
@@ -38,7 +41,10 @@ class AudioThread(QObject):
             audio_frames_to_get = convert_to_int(self.audio_wave.getframerate() / self.video_fps)
 
         if audio_frames_to_get is not None:
-            self.audio_stream.write(self.audio_wave.readframes(audio_frames_to_get))
+            frames = self.audio_wave.readframes(audio_frames_to_get)
+            if self.volume != 1:
+                frames = (np.frombuffer(frames, dtype=np.int16)).astype(np.int16).tobytes()
+            self.audio_stream.write(frames)
 
     @pyqtSlot(int)
     def go_to_audio_handler(self, frame):

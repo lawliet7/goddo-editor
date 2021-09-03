@@ -39,3 +39,4 @@ class VideoPlayer(QObject):
         height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         return width, height
 
+

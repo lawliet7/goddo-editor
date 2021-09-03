@@ -98,6 +98,24 @@ class MainWindow(QOpenGLWindow):
             self.out_frame = self.video_player.get_current_frame()
             if self.in_frame and self.out_frame < self.in_frame:
                 self.in_frame = None
+        elif event.key() == Qt.Key_Left:
+            if self.is_playing:
+                self.is_playing = not self.is_playing
+
+            self.main_signals.blockSignals(True)
+            to_frame = max(0, self.video_player.get_current_frame()-2)
+            self.adhoc_signals.update_frame.emit(to_frame)
+            print(f"updating to {to_frame}")
+            self.main_signals.blockSignals(False)
+        elif event.key() == Qt.Key_Right:
+            if self.is_playing:
+                self.is_playing = not self.is_playing
+
+            self.main_signals.blockSignals(True)
+            to_frame = min(self.video_player.total_frames, self.video_player.get_current_frame()+1)
+            self.adhoc_signals.update_frame.emit(to_frame)
+            print(f"updating to {to_frame}")
+            self.main_signals.blockSignals(False)
         else:
             super().keyPressEvent(event)
 

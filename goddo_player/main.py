@@ -16,6 +16,7 @@ from goddo_player.AudioPlayer import AudioPlayer
 from goddo_player.DragAndDrop import VideoClipDragItem
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import *
+from goddo_player.save_state import State
 from goddo_player.time_frame_utils import *
 from goddo_player.timeline_window import TimelineWindow
 from goddo_player.window_util import *
@@ -46,7 +47,7 @@ class AdhocUpdateSignals(QObject):
 
 
 class MainWindow(QOpenGLWindow):
-    def __init__(self, video, initial_offset=None):
+    def __init__(self, video, state: State, initial_offset=None):
         super().__init__()
 
         self.base_width = 1024
@@ -83,6 +84,9 @@ class MainWindow(QOpenGLWindow):
         self.theme = Theme()
 
         self.child_windows = []
+
+        if initial_offset:
+            self.emit_update_frame_signal(initial_offset)
 
     def paint_with_painter(self, fn: Callable[[QPainter], None], antialias=True):
         paint_helper(self, fn, antialias=antialias)
@@ -204,12 +208,12 @@ class MainWindow(QOpenGLWindow):
                 frame_diff = 1  # this might be slightly slower sometimes but at least it's in sync
                 if frame_diff > 0:
                     target_frame = self.video_player.skip_until_frame(frame_diff)
-                self.audio_player.emit_play_audio_signal(frame_diff)
+                self.audio_player.emit_play_audio_signal(frame_diff, not self.is_playing)
             elif frame_no > cur_frame and frame_no - cur_frame < 10:
                 frame_diff = frame_no > cur_frame
                 if frame_diff > 0:
                     target_frame = self.video_player.skip_until_frame(frame_diff)
-                    self.audio_player.emit_play_audio_signal(frame_diff)
+                    self.audio_player.emit_play_audio_signal(frame_diff, not self.is_playing)
             else:
                 target_frame = self.video_player.get_next_frame(frame_no)
                 self.audio_player.emit_go_to_audio_signal(frame_no)
@@ -360,6 +364,7 @@ def get_resize_dim_keep_aspect(original_width: int, original_height: int, target
 
     return new_width, adjusted_height
 
+import argparse
 
 if __name__ == '__main__':
     log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
@@ -368,12 +373,14 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon('icon.jpg'))
 
-    if len(sys.argv) == 2:
-        window = MainWindow(sys.argv[1])
-    elif len(sys.argv) == 3:
-        window = MainWindow(sys.argv[1], int(sys.argv[2]))
+    state = State(sys.argv[2])
+
+    if len(sys.argv) == 3:
+        window = MainWindow(sys.argv[1], state)
+    elif len(sys.argv) == 4:
+        window = MainWindow(sys.argv[1], state, int(sys.argv[3]))
     else:
-        raise Exception("usage: main.py {video_file} {initial offset (optional)}")
+        raise Exception("usage: main.py video_file_path save_file_path [initial_offset]")
 
     move_window(window, 10, 10)
     window.show()

@@ -2,6 +2,7 @@ import logging
 import wave
 import numpy as np
 
+
 import pyaudio
 from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot
 
@@ -9,7 +10,7 @@ from number_utils import convert_to_int
 
 
 class AudioSignals(QObject):
-    play_audio = pyqtSignal(int)
+    play_audio = pyqtSignal(int, bool)
     goto_audio = pyqtSignal(int)
 
 
@@ -18,7 +19,7 @@ class AudioThread(QObject):
         super().__init__(parent)
         self.signals = AudioSignals()
 
-        self.volume = 1
+        self.volume = 0.1
 
         self.audio_wave = wave.open(audio_path, 'rb')
         self.pyaudio = pyaudio.PyAudio()
@@ -32,8 +33,8 @@ class AudioThread(QObject):
         self.signals.play_audio.connect(self.play_audio_handler)
         self.signals.goto_audio.connect(self.go_to_audio_handler)
 
-    @pyqtSlot(int)
-    def play_audio_handler(self, num_of_video_frames):
+    @pyqtSlot(int, bool)
+    def play_audio_handler(self, num_of_video_frames, skip):
         logging.debug("play audio")
 
         audio_frames_to_get = None
@@ -42,9 +43,10 @@ class AudioThread(QObject):
 
         if audio_frames_to_get is not None:
             frames = self.audio_wave.readframes(audio_frames_to_get)
-            if self.volume != 1:
-                frames = (np.frombuffer(frames, dtype=np.int16)).astype(np.int16).tobytes()
-            self.audio_stream.write(frames)
+            if not skip:
+                if self.volume != 1:
+                    frames = (np.frombuffer(frames, dtype=np.int16) * self.volume).astype(np.int16).tobytes()
+                self.audio_stream.write(frames)
 
     @pyqtSlot(int)
     def go_to_audio_handler(self, frame):
@@ -73,8 +75,8 @@ class AudioPlayer(QObject):
     def volume(self):
         return self.worker.volume
 
-    def emit_play_audio_signal(self, num_of_frames):
-        self.worker.signals.play_audio.emit(num_of_frames)
+    def emit_play_audio_signal(self, num_of_frames, skip=False):
+        self.worker.signals.play_audio.emit(num_of_frames, skip)
 
     def emit_go_to_audio_signal(self, frame_no):
         self.worker.signals.goto_audio.emit(frame_no)

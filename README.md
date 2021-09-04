@@ -1,5 +1,5 @@
 # goddo-editor
-Goddo Serenade's Video Editor
+Goddo Serenade's Video Editor  (** WIP **)
 
 Supported Video Formats:
 *.avi, *.mp4, *.wmv, *.webm, *.mov, *.flv, *.mkv
@@ -10,6 +10,7 @@ Environment - Use Conda
 - conda install -c conda-forge opencv
 - conda install -c conda-forge imutils
 - conda install -c anaconda pyaudio
+- conda install -c anaconda sqlite 
 
 **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
 

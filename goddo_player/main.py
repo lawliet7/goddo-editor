@@ -84,12 +84,20 @@ class MainWindow(QOpenGLWindow):
 
         self.theme = Theme()
 
-        self.volume_control_widget = VolumeControl(self.geometry, color=self.theme.color.controls)
+        self.volume_control_widget = VolumeControl(self.geometry, self.update_volume, self.manual_update_ui,
+                                                   color=self.theme.color.controls)
 
         self.child_windows = []
 
         if initial_offset:
             self.emit_update_frame_signal(initial_offset)
+
+    def update_volume(self, volume):
+        self.audio_player.volume = volume
+
+    def manual_update_ui(self):
+        if not self.is_playing:
+            self.update()
 
     def paint_with_painter(self, fn: Callable[[QPainter], None], antialias=True):
         paint_helper(self, fn, antialias=antialias)
@@ -158,6 +166,10 @@ class MainWindow(QOpenGLWindow):
         return super().eventFilter(obj, event)
 
     def event(self, event: QtCore.QEvent) -> bool:
+        if dir(self).__contains__('volume_control_widget'):
+            # print('in volume control event')
+            self.volume_control_widget.event(event)
+
         if event.type() == QMouseEvent.Enter:
             logging.debug('mouse enter')
             self.requestActivate()

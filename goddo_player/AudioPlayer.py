@@ -75,6 +75,10 @@ class AudioPlayer(QObject):
     def volume(self):
         return self.worker.volume
 
+    @volume.setter
+    def volume(self, volume):
+        self.worker.volume = volume
+
     def emit_play_audio_signal(self, num_of_frames, skip=False):
         self.worker.signals.play_audio.emit(num_of_frames, skip)
 

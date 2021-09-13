@@ -8,13 +8,16 @@ from PyQt5.QtWidgets import QWidget, QApplication
 
 
 class VolumeControl(QWidget):
-    def __init__(self, get_geometry_fn, color: QColor = QColor('black')):
+    def __init__(self, get_geometry_fn, update_volume_callback_fn, update_ui_fn,
+                 color: QColor = QColor('black')):
         super().__init__()
 
         # self.setGeometry(10, 60, 1024, 768)
         # self.setWindowTitle('Icon')
 
         self.get_geometry = get_geometry_fn
+        self.update_volume_callback = update_volume_callback_fn
+        self.update_ui = update_ui_fn
         self.color = color
 
         self.text_rect: QRect = None
@@ -137,26 +140,33 @@ class VolumeControl(QWidget):
     #         super().keyPressEvent(event)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        print('mouse presss in volume')
         if self.icon_rect.contains(event.pos()):
             self.mute = not self.mute
-            self.update()
+            self.update_ui()
+            self.update_volume_callback(0 if self.mute else self.volume)
         elif self.precise_slider_rect.contains(event.pos()):
             self.volume = self.calc_volume_from_pos(event.pos().x())
             self.mouse_down_volume = True
-            self.update()
+            self.update_ui()
+            self.update_volume_callback(self.volume)
         else:
             super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        print('mouse release in volume')
+
         if self.mouse_down_volume:
             self.mouse_down_volume = False
 
         super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        print('mouse move in volume')
         if self.mouse_down_volume:
             self.volume = self.calc_volume_from_pos(event.pos().x())
-            self.update()
+            self.update_ui()
+            self.update_volume_callback(self.volume)
 
     def calc_volume_from_pos(self, x):
         volume = (x - self.precise_slider_rect.left()) / self.precise_slider_rect.width()

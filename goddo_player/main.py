@@ -19,6 +19,7 @@ from goddo_player.draw_utils import *
 from goddo_player.save_state import State
 from goddo_player.time_frame_utils import *
 from goddo_player.timeline_window import TimelineWindow
+from goddo_player.volume import VolumeControl
 from goddo_player.window_util import *
 from number_utils import convert_to_int
 from theme import Theme
@@ -82,6 +83,8 @@ class MainWindow(QOpenGLWindow):
         self.out_frame = None
 
         self.theme = Theme()
+
+        self.volume_control_widget = VolumeControl(self.geometry, color=self.theme.color.controls)
 
         self.child_windows = []
 
@@ -180,7 +183,9 @@ class MainWindow(QOpenGLWindow):
             self.paint_with_painter(self.draw_seek_bar)
             self.paint_with_painter(self.draw_timestamp)
             self.paint_with_painter(self.draw_play_button)
-            self.paint_with_painter(self.draw_volume_button)
+            self.paint_with_painter(self.volume_control_widget.paint)
+
+            # self.paint_with_painter(self.draw_volume_button)
 
     def get_slider_rect(self):
         distance = 100

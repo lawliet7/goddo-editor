@@ -3,13 +3,15 @@ from PyQt5.QtCore import QObject
 
 
 class VideoPlayer(QObject):
-    def __init__(self, video_path):
+    def __init__(self, state):
         super().__init__()
 
-        self.video_path = video_path
-        self.cap = cv2.VideoCapture(self.video_path)
+        self.state = state
+        self.cap = cv2.VideoCapture(self.state.video_file)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.state.source['position'])
 
     def get_current_frame(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -31,6 +33,7 @@ class VideoPlayer(QObject):
 
         if self.cap.grab():
             flag, frame = self.cap.retrieve()
+            self.state.source['position'] = self.get_current_frame()
             if flag:
                 return frame
 

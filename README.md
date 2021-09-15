@@ -10,7 +10,7 @@ Environment - Use Conda
 - conda install -c conda-forge opencv
 - conda install -c conda-forge imutils
 - conda install -c anaconda pyaudio
-- conda install -c anaconda sqlite 
+- conda install -c conda-forge tinydb
 
 **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
 

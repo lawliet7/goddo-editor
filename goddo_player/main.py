@@ -1,10 +1,9 @@
+import argparse
 import logging
 import os
 import pickle
 import sys
 import threading
-import time
-from dataclasses import dataclass
 from io import BytesIO
 
 import cv2
@@ -48,18 +47,19 @@ class AdhocUpdateSignals(QObject):
 
 
 class MainWindow(QOpenGLWindow):
-    def __init__(self, video, state: State, initial_offset=None):
+    def __init__(self, state: State, initial_offset=None):
         super().__init__()
 
         self.base_width = 1024
+        self.state = state
 
-        self.video_player = VideoPlayer(video)
+        self.video_player = VideoPlayer(state)
         print_all_populated_openv_attrs(self.video_player.cap)
         self.fps = self.video_player.fps
         self.fps_as_ms = num_frames_to_num_millis(self.fps)
         self.pixmap = None
 
-        self.audio_player = AudioPlayer(video, self.fps)
+        self.audio_player = AudioPlayer(state, self.fps)
         self.current_time = get_perf_counter_as_millis()
 
         self.slider_circle_radius = 5
@@ -79,8 +79,6 @@ class MainWindow(QOpenGLWindow):
 
         self.is_mouse_over = False
         self.is_playing = True
-        self.in_frame = None
-        self.out_frame = None
 
         self.theme = Theme()
 
@@ -89,8 +87,8 @@ class MainWindow(QOpenGLWindow):
 
         self.child_windows = []
 
-        if initial_offset:
-            self.emit_update_frame_signal(initial_offset)
+        # if initial_offset:
+        #     self.emit_update_frame_signal(initial_offset)
 
     def update_volume(self, volume):
         self.audio_player.volume = volume
@@ -106,13 +104,13 @@ class MainWindow(QOpenGLWindow):
         if event.key() == Qt.Key_Space:
             self.is_playing = not self.is_playing
         elif event.key() == Qt.Key_I:
-            self.in_frame = self.video_player.get_current_frame()
-            if self.out_frame and self.in_frame > self.out_frame:
-                self.out_frame = None
+            self.state.source['in_frame'] = self.video_player.get_current_frame()
+            if self.state.source['out_frame'] and self.state.source['in_frame'] > self.state.source['out_frame']:
+                self.state.source['out_frame'] = None
         elif event.key() == Qt.Key_O:
-            self.out_frame = self.video_player.get_current_frame()
-            if self.in_frame and self.out_frame < self.in_frame:
-                self.in_frame = None
+            self.state.source['out_frame'] = self.video_player.get_current_frame()
+            if self.state.source['in_frame'] and self.state.source['out_frame'] < self.state.source['in_frame']:
+                self.state.source['in_frame'] = None
         elif event.key() == Qt.Key_Left:
             if self.is_playing:
                 self.is_playing = not self.is_playing
@@ -131,6 +129,10 @@ class MainWindow(QOpenGLWindow):
             self.adhoc_signals.update_frame.emit(to_frame)
             print(f"updating to {to_frame}")
             self.main_signals.blockSignals(False)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            print("save it")
+            self.is_playing = False
+            self.state.save(self)
         else:
             super().keyPressEvent(event)
 
@@ -248,15 +250,15 @@ class MainWindow(QOpenGLWindow):
         # self.main_signals.blockSignals(False)
 
     def draw_in_out_box(self, painter):
-        if self.in_frame is not None or self.out_frame is not None:
+        if self.state.source['in_frame'] is not None or self.state.source['out_frame'] is not None:
             left = self.slider_rect.left()
-            if self.in_frame:
-                in_pct_done = self.in_frame / self.video_player.total_frames
+            if self.state.source['in_frame']:
+                in_pct_done = self.state.source['in_frame'] / self.video_player.total_frames
                 left = convert_to_int(in_pct_done*self.slider_rect.width()+self.slider_rect.left())
 
             right = self.slider_rect.right()
-            if self.out_frame:
-                out_pct_done = self.out_frame / self.video_player.total_frames
+            if self.state.source['out_frame']:
+                out_pct_done = self.state.source['out_frame'] / self.video_player.total_frames
                 right = convert_to_int(out_pct_done * self.slider_rect.width() + self.slider_rect.left())
 
             painter.setPen(create_pen(color=self.theme.color.half_opacity_gray))
@@ -303,11 +305,11 @@ class MainWindow(QOpenGLWindow):
             self.adhoc_signals.update_frame.emit(target_frame)
             self.main_signals.blockSignals(False)
         elif event.pos().y() < self.slider_rect.top():
-            if self.in_frame and self.out_frame:
+            if self.state.source['in_frame'] and self.state.source['out_frame']:
                 drag = QDrag(self)
                 mime_data = QMimeData()
 
-                data = VideoClipDragItem(self.in_frame, self.out_frame,
+                data = VideoClipDragItem(self.state.source['in_frame'], self.state.source['out_frame'],
                                          self.video_player.video_path,
                                          self.video_player.fps)
                 bytes_output = BytesIO()
@@ -336,23 +338,28 @@ def get_resize_dim_keep_aspect(original_width: int, original_height: int, target
 
     return new_width, adjusted_height
 
-import argparse
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Goddo Serenade's video editor")
+    parser.add_argument('video', help='video file')
+    parser.add_argument('--offset', type=int, help='offset frame to start from')
+    parser.add_argument('--save', help='save file')
+
+    args = parser.parse_args()
+    print(args)
+
     log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
     logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
 
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon('icon.jpg'))
 
-    state = State(sys.argv[2])
+    state = State(args.save, args.video)
 
-    if len(sys.argv) == 3:
-        window = MainWindow(sys.argv[1], state)
-    elif len(sys.argv) == 4:
-        window = MainWindow(sys.argv[1], state, int(sys.argv[3]))
+    if args.offset:
+        window = MainWindow(state, args.offset)
     else:
-        raise Exception("usage: main.py video_file_path save_file_path [initial_offset]")
+        window = MainWindow(state)
 
     move_window(window, 10, 10)
     window.show()

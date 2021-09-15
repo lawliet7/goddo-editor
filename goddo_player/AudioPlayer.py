@@ -15,11 +15,11 @@ class AudioSignals(QObject):
 
 
 class AudioThread(QObject):
-    def __init__(self, audio_path, video_fps, parent=None):
+    def __init__(self, state, audio_path, video_fps, parent=None):
         super().__init__(parent)
         self.signals = AudioSignals()
 
-        self.volume = 0.1
+        self.state = state
 
         self.audio_wave = wave.open(audio_path, 'rb')
         self.pyaudio = pyaudio.PyAudio()
@@ -33,6 +33,8 @@ class AudioThread(QObject):
         self.signals.play_audio.connect(self.play_audio_handler)
         self.signals.goto_audio.connect(self.go_to_audio_handler)
 
+        self.go_to_audio_handler(self.state.source['position'])
+
     @pyqtSlot(int, bool)
     def play_audio_handler(self, num_of_video_frames, skip):
         logging.debug("play audio")
@@ -44,8 +46,8 @@ class AudioThread(QObject):
         if audio_frames_to_get is not None:
             frames = self.audio_wave.readframes(audio_frames_to_get)
             if not skip:
-                if self.volume != 1:
-                    frames = (np.frombuffer(frames, dtype=np.int16) * self.volume).astype(np.int16).tobytes()
+                if self.state.source['volume'] != 1:
+                    frames = (np.frombuffer(frames, dtype=np.int16) * self.state.source['volume']).astype(np.int16).tobytes()
                 self.audio_stream.write(frames)
 
     @pyqtSlot(int)
@@ -58,14 +60,15 @@ class AudioThread(QObject):
 class AudioPlayer(QObject):
     audio_path = 'audio.wav'
 
-    def __init__(self, video_path, video_fps):
+    def __init__(self, state, video_fps):
         super().__init__()
 
+        self.state = state
         # import subprocess
-        # command = "ffmpeg -y -i {} -vn {}".format(video_path, self.audio_path)
+        # command = "ffmpeg -y -i {} -vn {}".format(self.state.video_path, self.audio_path)
         # subprocess.call(command, shell=True)
 
-        self.worker = AudioThread(self.audio_path, video_fps)
+        self.worker = AudioThread(self.state, self.audio_path, video_fps)
 
         thread = QThread(self)
         self.worker.moveToThread(thread)
@@ -73,11 +76,11 @@ class AudioPlayer(QObject):
 
     @property
     def volume(self):
-        return self.worker.volume
+        return self.state.source['volume']
 
     @volume.setter
     def volume(self, volume):
-        self.worker.volume = volume
+        self.state.source['volume'] = volume
 
     def emit_play_audio_signal(self, num_of_frames, skip=False):
         self.worker.signals.play_audio.emit(num_of_frames, skip)

@@ -13,6 +13,10 @@ class VideoPlayer(QObject):
 
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.state.source['position'])
 
+    @property
+    def video_path(self):
+        return self.state.video_file
+
     def get_current_frame(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 

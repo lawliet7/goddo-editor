@@ -1,6 +1,10 @@
+from typing import List
+
 from tinydb import TinyDB, Query
 from dataclasses import dataclass
 import pathlib
+
+from goddo_player.DragAndDrop import VideoClipDragItem
 
 
 @dataclass
@@ -19,9 +23,9 @@ class State:
         abs_path_str = str(pathlib.Path(self.video_file).resolve())
 
         if is_existing_file:
-            video = self.video_table.get(Query().video_path == abs_path_str)
-            if not video:
-                self.video_table.insert({'video_path': abs_path_str, 'alias': None})
+            self.cur_video = self.video_table.get(Query().video_path == abs_path_str)
+            if not self.cur_video:
+                self.cur_video = self.video_table.insert({'video_path': abs_path_str, 'alias': None})
 
             self.videos = self.video_table.all()
 
@@ -32,14 +36,15 @@ class State:
             if preview_window_state:
                 self.source = preview_window_state['source']
 
-            self.timeline = {}
+            timeline = self.timeline_table.get(Query().name == 'default') or {'name': 'default', 'clips': []}
+            self.timeline = Timeline(timeline['name'], [VideoClipDragItem(**x) for x in timeline['clips']])
         else:
             self.video_table.insert({'video_path': abs_path_str, 'alias': None})
-            video = self.video_table.get(Query().video_path == abs_path_str)
-            self.videos = [video]
-            self.source = {'video_id': None, 'position': 0, 'in_frame': None, 'out_frame': None, 'volume': 1,
+            self.cur_video = self.video_table.get(Query().video_path == abs_path_str)
+            self.videos = [self.cur_video]
+            self.source = {'video_id': self.cur_video.doc_id, 'position': 0, 'in_frame': None, 'out_frame': None, 'volume': 1,
                            'is_muted': False}
-            self.timeline = {}
+            self.timeline = Timeline('default', [])
 
         print(self.videos)
         print(self.source)
@@ -63,9 +68,15 @@ class State:
         print(self.timeline)
         # video_id = self.video_table.upsert({'video_path': str(abs_path), 'alias': None}, Query().video_path == str(abs_path))[0]
         self.preview_window_table.upsert({'tab': 'source', 'source': self.source }, Query().tab.one_of(['source', 'timeline']))
-        # self.timeline_table.upsert({'video_path': str(abs_path), 'alias': None}, Query().name == str(abs_path))
+        # print(self.timeline['clips'][0].__dict__)
+        clips = [x.__dict__ for x in self.timeline.clips]
+        self.timeline_table.upsert({'name': 'default', 'clips': clips}, Query().name == self.timeline.name)
 
         # pass
         # self.db_conn.execute("")
 
 
+@dataclass
+class Timeline:
+    name: str
+    clips: List[VideoClipDragItem]

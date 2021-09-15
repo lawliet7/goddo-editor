@@ -151,7 +151,7 @@ class MainWindow(QOpenGLWindow):
         self.resize(*new_dim)
         self.slider_rect = self.get_slider_rect()
 
-        timeline_window = TimelineWindow(self)
+        timeline_window = TimelineWindow(self.geometry, self.state)
         timeline_window.show()
         self.child_windows.append(timeline_window)
 
@@ -310,8 +310,8 @@ class MainWindow(QOpenGLWindow):
                 mime_data = QMimeData()
 
                 data = VideoClipDragItem(self.state.source['in_frame'], self.state.source['out_frame'],
-                                         self.video_player.video_path,
-                                         self.video_player.fps)
+                                         self.video_player.fps,
+                                         self.state.cur_video)
                 bytes_output = BytesIO()
                 pickle.dump(data, bytes_output)
 

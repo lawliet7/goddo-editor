@@ -1,12 +1,18 @@
 from dataclasses import dataclass
 
+from tinydb.table import Document
+
 
 @dataclass
 class VideoClipDragItem:
     in_frame: int
     out_frame: int
-    video_name: str
     fps: float
+    video: Document
+
+    @property
+    def video_id(self):
+        return self.video.doc_id
 
     @property
     def total_frames(self):

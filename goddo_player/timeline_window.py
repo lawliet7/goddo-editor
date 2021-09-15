@@ -15,13 +15,14 @@ class TimelineWindow(QWidget):
     This "window" is a QWidget. If it has no parent, it
     will appear as a free-floating window as we want.
     """
-    def __init__(self, parent_window: QWindow):
+    def __init__(self, get_geometry_fn, state):
         super().__init__()
-        self.parent_window = parent_window
+        self.get_parent_geometry = get_geometry_fn
+        self.state = state
 
-        print(parent_window.geometry())
+        # print(parent_window.geometry())
 
-        y = parent_window.geometry().bottom() + get_title_bar_height() + 10
+        y = self.get_parent_geometry().bottom() + get_title_bar_height() + 10
         x = 10
 
         screen = QApplication.primaryScreen()
@@ -43,7 +44,7 @@ class TimelineWindow(QWidget):
 
         self.grid_offset = 0
         self.scrollbar_x_offset = 0
-        self.videos: List[VideoClipDragItem] = []
+        # self.state.timeline['clips'] = []
 
         self.setAcceptDrops(True)
 
@@ -54,7 +55,7 @@ class TimelineWindow(QWidget):
         data = pickle.loads(event.mimeData().data("custom"))
         print(data)
 
-        self.videos.append(data)
+        self.state.timeline.clips.append(data)
         self.update()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
@@ -126,10 +127,11 @@ class TimelineWindow(QWidget):
 
         midpoint = (height + self.scrollbar_rect.y()) / 2
 
-        print(self.videos)
+        # print(self.videos)
 
+        # print(self.state.timeline['clips'])
         x = -self.scrollbar_x_offset*self.scrollbar_speed
-        for v in self.videos:
+        for v in self.state.timeline.clips:
 
             width = v.total_secs / tick_time_in_secs * tick_spacing
 
@@ -142,7 +144,7 @@ class TimelineWindow(QWidget):
                 video_rect = QRect(x, midpoint-box_height, width, box_height)
                 painter.drawRect(video_rect)
 
-                video_text = f"{v.video_name}\n{format_time(*frames_to_time_components(v.total_frames, v.fps))}"
+                video_text = f"{v.video['video_path']}\n{format_time(*frames_to_time_components(v.total_frames, v.fps))}"
                 painter.setPen(Qt.black)
                 painter.drawText(video_rect.adjusted(2, 2, -2, -2), Qt.TextWordWrap, video_text)
 

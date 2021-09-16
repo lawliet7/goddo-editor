@@ -67,6 +67,36 @@ class TimelineWindow(QWidget):
             self.scrollbar_x_offset = self.scrollbar_x_offset + 1
             print(f"right {self.scrollbar_x_offset}")
             self.update()
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            print("save it")
+            self.state.save(self)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
+            import subprocess
+            import os
+
+            tmp_dir = 'tmp'
+            for f in os.listdir(tmp_dir):
+                os.remove(os.path.join(tmp_dir, f))
+
+            for i, x in enumerate(self.state.timeline.clips):
+                start_time = x.in_frame * x.video['fps'] / 1000
+                end_time = x.out_frame * x.video['fps'] / 1000
+                cmd = f"ffmpeg -ss {start_time} -i {x.video['video_path']} -to {end_time - start_time} -cbr 15 -metadata title=\"you suck\" tmp/{i:04}.mp4"
+                print(f'executing cmd: {cmd}')
+                subprocess.call(cmd, shell=True)
+
+            # concat_data = '\n'.join([f'file {os.path.join(tmp_dir, f)}' for f in os.listdir(tmp_dir)])
+            tmp_vid_files = [f"file '{os.path.join(tmp_dir, f)}'\n" for f in os.listdir(tmp_dir)]
+            with open(os.path.join(tmp_dir, 'concat.txt'), mode='w', encoding='utf-8') as f:
+                f.writelines(tmp_vid_files)
+
+            cmd = f"ffmpeg -f concat -safe 0 -i tmp\concat.txt -c copy output\output_{time.time()}.mp4"
+            print(f'executing cmd: {cmd}')
+            subprocess.call(cmd, shell=True)
+
+            print('output generated!!')
+
+
         else:
             super().keyPressEvent(event)
 

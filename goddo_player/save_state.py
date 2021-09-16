@@ -1,5 +1,6 @@
 from typing import List
 
+import cv2
 from tinydb import TinyDB, Query
 from dataclasses import dataclass
 import pathlib
@@ -22,11 +23,13 @@ class State:
 
         abs_path_str = str(pathlib.Path(self.video_file).resolve())
 
-        if is_existing_file:
-            self.cur_video = self.video_table.get(Query().video_path == abs_path_str)
-            if not self.cur_video:
-                self.cur_video = self.video_table.insert({'video_path': abs_path_str, 'alias': None})
+        cap = cv2.VideoCapture(self.video_file)
+        fps = cap.get(cv2.CAP_PROP_FPS)
 
+        if is_existing_file:
+            id = self.video_table.upsert({'video_path': abs_path_str, 'alias': None, 'fps': fps},
+                                         Query().video_path == abs_path_str)
+            self.cur_video = self.video_table.get(Query().video_path == abs_path_str)
             self.videos = self.video_table.all()
 
             # self.videos
@@ -37,13 +40,14 @@ class State:
                 self.source = preview_window_state['source']
 
             timeline = self.timeline_table.get(Query().name == 'default') or {'name': 'default', 'clips': []}
-            self.timeline = Timeline(timeline['name'], [VideoClipDragItem(**x) for x in timeline['clips']])
+            self.timeline = Timeline(timeline['name'],
+                                     [VideoClipDragItem(**x, video=self.cur_video) for x in timeline['clips']])
         else:
-            self.video_table.insert({'video_path': abs_path_str, 'alias': None})
+            self.video_table.insert({'video_path': abs_path_str, 'alias': None, 'fps': fps})
             self.cur_video = self.video_table.get(Query().video_path == abs_path_str)
             self.videos = [self.cur_video]
-            self.source = {'video_id': self.cur_video.doc_id, 'position': 0, 'in_frame': None, 'out_frame': None, 'volume': 1,
-                           'is_muted': False}
+            self.source = {'video_id': self.cur_video.doc_id, 'position': 0, 'in_frame': None, 'out_frame': None,
+                           'volume': 1, 'is_muted': False}
             self.timeline = Timeline('default', [])
 
         print(self.videos)

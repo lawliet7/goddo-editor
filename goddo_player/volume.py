@@ -8,10 +8,12 @@ from PyQt5.QtWidgets import QWidget, QApplication
 
 
 class VolumeControl(QWidget):
-    def __init__(self, get_geometry_fn, update_volume_callback_fn, update_ui_fn,
+    def __init__(self, state,
+                 get_geometry_fn, update_volume_callback_fn, update_ui_fn,
                  color: QColor = QColor('black')):
         super().__init__()
 
+        self.state = state
         # self.setGeometry(10, 60, 1024, 768)
         # self.setWindowTitle('Icon')
 
@@ -24,8 +26,6 @@ class VolumeControl(QWidget):
         self.slider_rect: QRect = None
         self.precise_slider_rect: QRect = None
         self.icon_rect: QRect = None
-        self.is_muted = False
-        self.volume = 1
         self.mouse_down_volume = False
 
         # print(f'volume: {self.get_geometry()}')
@@ -62,7 +62,7 @@ class VolumeControl(QWidget):
         font.setFamily("cursive")
         font.setPointSize(14)
         painter.setFont(font)
-        volume = 0 if self.is_muted else round(self.volume*100)
+        volume = 0 if self.state.source['is_muted'] else round(self.state.source['volume']*100)
         painter.drawText(QRect(self.text_rect.x()+5, self.text_rect.center().y()-11, self.text_rect.width()-25,
                                self.text_rect.height()),
                          Qt.AlignHCenter, str(volume))
@@ -75,7 +75,7 @@ class VolumeControl(QWidget):
         painter.drawRoundedRect(rect, 1, 1)
 
         radius = 6
-        x_pos = rect.left() if self.is_muted else rect.width() * self.volume + rect.left()
+        x_pos = rect.left() if self.state.source['is_muted'] else rect.width() * self.state.source['volume'] + rect.left()
         painter.setBrush(QBrush(painter.pen().color()))
         painter.drawEllipse(QPoint(x_pos, rect.center().y()+1), radius, radius)
         painter.setBrush(QBrush())
@@ -118,7 +118,7 @@ class VolumeControl(QWidget):
                           40, self.icon_rect.height())
         painter.drawArc(arc3_rect, 16 * 45, 16 * -90)
 
-        if self.is_muted:
+        if self.state.source['is_muted']:
             # cur_pen = painter.pen()
             pen = QPen(self.color)
             pen.setWidth(2)
@@ -142,14 +142,14 @@ class VolumeControl(QWidget):
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         # print('mouse presss in volume')
         if self.icon_rect.contains(event.pos()):
-            self.is_muted = not self.is_muted
+            self.state.source['is_muted'] = not self.state.source['is_muted']
             self.update_ui()
-            self.update_volume_callback(0 if self.is_muted else self.volume)
+            self.update_volume_callback(0 if self.state.source['is_muted'] else self.state.source['volume'])
         elif self.precise_slider_rect.contains(event.pos()):
-            self.volume = self.calc_volume_from_pos(event.pos().x())
+            self.state.source['volume'] = self.calc_volume_from_pos(event.pos().x())
             self.mouse_down_volume = True
             self.update_ui()
-            self.update_volume_callback(self.volume)
+            self.update_volume_callback(self.state.source['volume'])
         else:
             super().mousePressEvent(event)
 
@@ -164,9 +164,9 @@ class VolumeControl(QWidget):
     def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
         # print('mouse move in volume')
         if self.mouse_down_volume:
-            self.volume = self.calc_volume_from_pos(event.pos().x())
+            self.state.source['volume'] = self.calc_volume_from_pos(event.pos().x())
             self.update_ui()
-            self.update_volume_callback(self.volume)
+            self.update_volume_callback(self.state.source['volume'])
 
     def calc_volume_from_pos(self, x):
         volume = (x - self.precise_slider_rect.left()) / self.precise_slider_rect.width()

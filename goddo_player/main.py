@@ -78,11 +78,12 @@ class MainWindow(QOpenGLWindow):
         self.timer.start()
 
         self.is_mouse_over = False
-        self.is_playing = True
+        self.is_playing = False
 
         self.theme = Theme()
 
-        self.volume_control_widget = VolumeControl(self.geometry, self.update_volume, self.manual_update_ui,
+        self.volume_control_widget = VolumeControl(self.state,
+                                                   self.geometry, self.update_volume, self.manual_update_ui,
                                                    color=self.theme.color.controls)
 
         self.child_windows = []

@@ -14,7 +14,7 @@ class PreviewWindow(QOpenGLWindow):
 
         self.setMinimumWidth(640)
         self.setMinimumHeight(360)
-        self.preview = VideoPreview(self.update, lambda: QRect(0, 0, self.minimumWidth(), self.minimumHeight()))
+        self.preview = VideoPreview(self.update, lambda: QRect(0, 0, self.size().width(), self.size().height()))
 
     def paintGL(self):
         painter = QPainter()

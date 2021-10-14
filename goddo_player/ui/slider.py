@@ -26,7 +26,7 @@ class Slider(UiComponent):
         self.value_update_slot.emit(value)
 
     def paint(self, painter, color=QColor('white')):
-        print(f"paint slider {self.get_rect()}")
+        # print(f"paint slider {self.get_rect()}")
 
         painter.setPen(QPen(color))
 
@@ -44,12 +44,12 @@ class Slider(UiComponent):
         painter.drawEllipse(QPoint(x_pos, self.get_rect().center().y() + 1), radius, radius)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        print(f'slider mouse press {event.pos()} rect {self.get_rect()} self {self}')
+        # print(f'slider mouse press {event.pos()} rect {self.get_rect()} self {self}')
         # if self.icon_rect.contains(event.pos()):
         #     # self.mute = not self.mute
         #     self.screen_update()
         if self.get_rect().contains(event.pos()):
-            print(f'mouse press {event.pos()}')
+            # print(f'mouse press {event.pos()}')
             # self.volume = self.calc_volume_from_pos(event.pos().x())
             self.pos_pct = self.calc_pos_pct(event.pos().x())
             self.mouse_down = True

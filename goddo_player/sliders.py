@@ -123,7 +123,7 @@ class SliderWindow(QWidget):
         painter.setPen(QPen(QColor("black")))
         print(f'rect height {self.rect_height}')
 
-        painter.drawRect(self.rect)
+        # painter.drawRect(self.rect)
 
         print(f'x margin {self.x_margin}')
         print(f'y margin {self.y_margin}')

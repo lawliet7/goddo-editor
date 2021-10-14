@@ -21,11 +21,11 @@ class PreviewWindow(QOpenGLWindow):
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        painter.fillRect(self.geometry(), QColor("black"))
+        painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
 
         painter.setPen(QColor("white"))
-        print(f"preview  {self.preview.get_rect()}")
-        painter.drawRect(self.preview.get_rect())
+        # print(f"preview  {self.preview.get_rect()}")
+        # painter.drawRect(self.preview.get_rect())
         self.preview.paint(painter)
 
         painter.end()

@@ -1,5 +1,4 @@
 import math
-from typing import Callable
 
 from PyQt5.QtCore import QRect, Qt, QPoint, pyqtSlot
 from PyQt5.QtGui import QMouseEvent, QPen, QBrush, QPolygon, QFont, QColor
@@ -13,17 +12,15 @@ class VolumeControl(UiComponent):
     SLIDER_WIDTH = 100
     ICON_WIDTH = 70
 
-    def __init__(self, update_screen, get_rect, color=QColor("white")):
-        super().__init__()
+    def __init__(self, screen_update_fn, get_rect, color=QColor("white")):
+        super().__init__(screen_update_fn, get_rect)
 
         self.color = color
-        self.update_screen = update_screen
-        self.get_rect: Callable[[], QRect] = get_rect
 
         self.volume = 1
         self.text_rect = self.__calc_text_rect()
         self.volume_slider_rect: QRect = self.__calc_volume_slider_rect()
-        self.volume_slider = Slider(self.update_screen, lambda: self.volume_slider_rect, initial_value=self.volume)
+        self.volume_slider = Slider(self.screen_update, lambda: self.volume_slider_rect, initial_value=self.volume)
         self.volume_slider.value_update_slot.connect(self.volume_slider_update_handler)
 
         self.icon_rect: QRect = self.__calc_icon_rect()
@@ -109,7 +106,7 @@ class VolumeControl(UiComponent):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self.icon_rect.contains(event.pos()):
             self.mute = not self.mute
-            self.update_screen()
+            self.screen_update()
 
     def calc_volume_from_pos(self, x):
         volume = (x - self.precise_slider_rect.left()) / self.precise_slider_rect.width()

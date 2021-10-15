@@ -1,8 +1,7 @@
 import sys
 
-from PyQt5 import QtGui
 from PyQt5.QtCore import QRect, Qt, QEvent
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -34,7 +33,7 @@ class PreviewWindow(QOpenGLWindow):
         super().resizeGL(w, h)
         self.update()
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
         else:

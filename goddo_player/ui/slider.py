@@ -8,11 +8,9 @@ class Slider(UiComponent):
     value_update_slot = pyqtSignal(float)
 
     def __init__(self, screen_update_fn, get_rect, initial_value=1):
-        super().__init__()
+        super().__init__(screen_update_fn, get_rect)
 
         # self.slider_rect = None
-        self.screen_update = screen_update_fn
-        self.get_rect = get_rect
         self.mouse_down = False
         self._pos_pct = initial_value
 

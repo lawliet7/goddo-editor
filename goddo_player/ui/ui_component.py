@@ -1,12 +1,16 @@
 from abc import abstractmethod
+from typing import Callable
 
-from PyQt5.QtCore import QObject, QEvent
-from PyQt5.QtGui import QPainter, QMouseEvent
+from PyQt5.QtCore import QObject, QEvent, QRect
+from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent
 
 
 class UiComponent(QObject):
-    def __init__(self):
+    def __init__(self, screen_update_fn, get_rect):
         super().__init__()
+
+        self.screen_update = screen_update_fn
+        self.get_rect: Callable[[], QRect] = get_rect
 
     def __get_child_ui_components(self):
         return [x for x in vars(self).values() if isinstance(x, UiComponent)]
@@ -28,7 +32,10 @@ class UiComponent(QObject):
             self.mouseMoveEvent(event)
         elif event.type() == QEvent.MouseButtonRelease:
             self.mouseReleaseEvent(event)
-        return super().event(event)
+        elif event.type() == QKeyEvent.KeyPress:
+            self.keyPressEvent(event)
+        else:
+            return super().event(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         pass
@@ -37,6 +44,9 @@ class UiComponent(QObject):
         pass
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        pass
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         pass
 
 

@@ -1,7 +1,7 @@
 import sys
 
-from PyQt5.QtCore import QRect, Qt, QEvent
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
+from PyQt5.QtCore import QRect, Qt, QEvent, QObject
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QMouseEvent, QHoverEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -15,6 +15,8 @@ class PreviewWindow(QOpenGLWindow):
         self.setMinimumHeight(360)
         self.preview = VideoPreview(self.update, lambda: QRect(0, 0, self.size().width(), self.size().height()))
 
+        self.installEventFilter(self)
+
     def paintGL(self):
         painter = QPainter()
         painter.begin(self)
@@ -23,8 +25,6 @@ class PreviewWindow(QOpenGLWindow):
         painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
 
         painter.setPen(QColor("white"))
-        # print(f"preview  {self.preview.get_rect()}")
-        # painter.drawRect(self.preview.get_rect())
         self.preview.paint(painter)
 
         painter.end()
@@ -38,6 +38,12 @@ class PreviewWindow(QOpenGLWindow):
             QApplication.exit(0)
         else:
             super().keyPressEvent(event)
+
+    def eventFilter(self, obj: 'QObject', event: 'QEvent') -> bool:
+        if super().eventFilter(obj, event):
+            return True
+
+        return self.preview.eventFilter(obj, event)
 
     def event(self, event: QEvent) -> bool:
         self.preview.event(event)

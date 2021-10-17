@@ -34,6 +34,10 @@ class UiComponent(QObject):
             self.mouseReleaseEvent(event)
         elif event.type() == QKeyEvent.KeyPress:
             self.keyPressEvent(event)
+        elif event.type() == QEvent.Enter:
+            self.mouseEnterEvent(event)
+        elif event.type() == QEvent.Leave:
+            self.mouseLeaveEvent(event)
         else:
             return super().event(event)
 
@@ -47,6 +51,12 @@ class UiComponent(QObject):
         pass
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        pass
+
+    def mouseEnterEvent(self, event: QEvent) -> None:
+        pass
+
+    def mouseLeaveEvent(self, event: QEvent) -> None:
         pass
 
 

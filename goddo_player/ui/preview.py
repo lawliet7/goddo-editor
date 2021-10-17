@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QRect, Qt
-from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtCore import QRect, QEvent
+from PyQt5.QtGui import QPainter
 
 from goddo_player.ui.play_button import PlayButton
 from goddo_player.ui.slider import Slider
@@ -15,6 +15,9 @@ class VideoPreview(UiComponent):
         self.time_bar_slider = Slider(self.screen_update, self.__get_time_bar_rect, 0)
         self.play_button = PlayButton(self.screen_update, self.__get_play_btn_rect)
 
+        self.installEventFilter(self)
+        self.is_mouse_over = False
+
     def __get_volume_control_rect(self):
         height = 50
         width = VolumeControl.TEXT_WIDTH + VolumeControl.SLIDER_WIDTH + VolumeControl.ICON_WIDTH
@@ -28,4 +31,28 @@ class VideoPreview(UiComponent):
     def __get_play_btn_rect(self):
         height = 50
         return QRect(self.get_rect().left()+5, self.get_rect().bottom() - height, height, height)
+
+    def eventFilter(self, obj: 'QObject', event: 'QEvent') -> bool:
+        if event.type() == QEvent.Enter:
+            return False
+        elif event.type() == QEvent.Leave:
+            return False
+
+        return super().eventFilter(obj, event)
+
+    def mouseEnterEvent(self, event: QEvent) -> None:
+        self.is_mouse_over = True
+        self.screen_update()
+
+    def mouseLeaveEvent(self, event: QEvent) -> None:
+        self.is_mouse_over = False
+        self.screen_update()
+
+    def paint(self, painter: QPainter):
+        if self.is_mouse_over:
+            super().paint(painter)
+
+
+
+
 

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Callable
 
 from PyQt5.QtCore import QObject, QEvent, QRect
-from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent
+from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent
 
 
 class UiComponent(QObject):
@@ -38,6 +38,10 @@ class UiComponent(QObject):
             self.mouseEnterEvent(event)
         elif event.type() == QEvent.Leave:
             self.mouseLeaveEvent(event)
+        elif event.type() == QEvent.DragEnter:
+            self.dragEnterEvent(event)
+        elif event.type() == QEvent.Drop:
+            self.onDropEvent(event)
         else:
             return super().event(event)
 
@@ -59,4 +63,9 @@ class UiComponent(QObject):
     def mouseLeaveEvent(self, event: QEvent) -> None:
         pass
 
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        pass
+
+    def onDropEvent(self, event: QDragEnterEvent) -> None:
+        pass
 

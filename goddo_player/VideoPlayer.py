@@ -7,17 +7,18 @@ class VideoPlayer(QObject):
         super().__init__()
 
         self.state = state
-        self.cap = cv2.VideoCapture(self.state.video_file)
+        self.__init_cap(self.state.video_file)
+
+    def __init_cap(self, video_file):
+        self.cap = cv2.VideoCapture(video_file)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.state.source['position'])
 
     @property
     def video_path(self):
         return self.state.video_file
 
-    def get_current_frame(self):
+    def get_current_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 
     def is_video_done(self):
@@ -37,7 +38,7 @@ class VideoPlayer(QObject):
 
         if self.cap.grab():
             flag, frame = self.cap.retrieve()
-            self.state.source['position'] = self.get_current_frame()
+            self.state.source['position'] = self.get_current_frame_no()
             if flag:
                 return frame
 
@@ -46,4 +47,8 @@ class VideoPlayer(QObject):
         height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         return width, height
 
+    def switch_source(self, file_path):
+        self.cap.release()
+        self.__init_cap(file_path)
+        print(f'source switched to {file_path}')
 

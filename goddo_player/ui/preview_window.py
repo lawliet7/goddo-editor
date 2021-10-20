@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5.QtCore import QRect, Qt, QEvent, QObject
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QMouseEvent, QHoverEvent
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -61,3 +61,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # cap = cv2.VideoCapture('file:///C:/Users/William/Downloads/xvsr049.HD.wmv')
+    # print(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # print(cap.isOpened())

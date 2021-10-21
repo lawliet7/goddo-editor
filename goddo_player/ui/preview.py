@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtCore import QRect, QEvent, QTimer, Qt, pyqtSlot
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent
 
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
@@ -30,6 +30,7 @@ class VideoPreview(UiComponent):
         state.save(self)
 
         self.frame = None
+        self.is_playing = False
 
     def __get_volume_control_rect(self):
         height = 50
@@ -65,6 +66,13 @@ class VideoPreview(UiComponent):
         self.is_mouse_over = False
         self.window.update()
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if self.play_button.get_rect().contains(event.pos()):
+            if self.is_playing:
+                self.__emit_pause_event()
+            else:
+                self.__emit_play_event()
+
     def paint(self, painter: QPainter):
         if self.frame is not None:
             painter.drawPixmap(self.get_rect(), numpy_to_pixmap(self.frame))
@@ -85,9 +93,10 @@ class VideoPreview(UiComponent):
 
         no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
         self.video_player.switch_source(no_prefix_file_path)
+        self.__emit_play_event()
 
         self.window.setTitle(file_name)
-        self.play_button.play_slot.emit()
+        self.window.requestActivate()
 
     @pyqtSlot(object)
     def update_next_frame(self, frame):
@@ -96,13 +105,22 @@ class VideoPreview(UiComponent):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Space:
-            if self.play_button.is_playing:
-                self.play_button.pause_slot.emit()
-                self.video_player.pause_slot.emit()
+            if self.is_playing:
+                self.__emit_pause_event()
             else:
-                self.play_button.play_slot.emit()
-                self.video_player.play_slot.emit()
+                self.__emit_play_event()
 
         else:
             super().keyPressEvent(event)
 
+    def __emit_play_event(self):
+        if self.video_player.cap:
+            self.is_playing = True
+            self.play_button.play_slot.emit()
+            self.video_player.play_slot.emit()
+
+    def __emit_pause_event(self):
+        if self.video_player.cap:
+            self.is_playing = False
+            self.play_button.pause_slot.emit()
+            self.video_player.pause_slot.emit()

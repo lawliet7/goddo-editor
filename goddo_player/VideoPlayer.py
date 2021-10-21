@@ -23,6 +23,10 @@ class VideoPlayer(QObject):
         self.play_slot.connect(self.play_handler)
         self.pause_slot.connect(self.pause_handler)
 
+    @property
+    def is_playing(self):
+        return self.timer.isActive()
+
     @pyqtSlot()
     def play_handler(self):
         if not self.timer.isActive():

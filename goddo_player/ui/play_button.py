@@ -13,19 +13,24 @@ class PlayButton(UiComponent):
         super().__init__(parent, get_rect)
 
         self.rect_scale_pct = 0.15
-        self.is_playing = False
+        # self.is_playing = False
 
         self.play_slot.connect(self.play_handler)
         self.pause_slot.connect(self.pause_handler)
+        self.draw_function = self.__draw_play
+
+    @property
+    def is_playing(self):
+        return self.draw_function == self.__draw_pause
 
     @pyqtSlot()
     def play_handler(self):
-        self.is_playing = True
+        self.draw_function = self.__draw_pause
         self.window.update()
 
     @pyqtSlot()
     def pause_handler(self):
-        self.is_playing = False
+        self.draw_function = self.__draw_play
         self.window.update()
 
     def __draw_play(self, painter: QPainter):
@@ -48,18 +53,6 @@ class PlayButton(UiComponent):
         painter.drawRoundedRect(bar2, radius, radius)
 
     def paint(self, painter, color=QColor('white')):
-        # print(f"paint slider {self.get_rect()}")
-
         painter.setPen(QPen(color))
+        self.draw_function(painter)
 
-        if self.is_playing:
-            self.__draw_pause(painter)
-        else:
-            self.__draw_play(painter)
-
-    # def keyPressEvent(self, event: QKeyEvent) -> None:
-    #     if event.key() == Qt.Key_Space:
-    #         self.is_playing = not self.is_playing
-    #         self.window.update()
-    #     else:
-    #         super().keyPressEvent(event)

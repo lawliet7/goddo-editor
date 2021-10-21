@@ -1,8 +1,12 @@
 import cv2
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot
 
 
 class VideoPlayer(QObject):
+    next_frame_slot = pyqtSignal(object)
+    play_slot = pyqtSignal()
+    pause_slot = pyqtSignal()
+
     def __init__(self, state):
         super().__init__()
 
@@ -11,8 +15,25 @@ class VideoPlayer(QObject):
         self.fps = -1
         self.total_frames = 0
 
+        self.timer = QTimer()
+
         if self.state.video_file:
             self.__init_cap(self.state.video_file)
+
+        self.play_slot.connect(self.play_handler)
+        self.pause_slot.connect(self.pause_handler)
+
+    @pyqtSlot()
+    def play_handler(self):
+        if not self.timer.isActive():
+            self.timer.start(int(round(1000 / self.fps)))
+
+    @pyqtSlot()
+    def pause_handler(self):
+        print('pause')
+        if self.timer.isActive():
+            print('stopping timer')
+            self.timer.stop()
 
     def __init_cap(self, video_file):
         self.cap = cv2.VideoCapture(video_file)
@@ -63,5 +84,14 @@ class VideoPlayer(QObject):
             self.cap.release()
 
         self.__init_cap(file_path)
+
+        if self.timer.isActive():
+            self.timer.stop()
+        self.timer.timeout.connect(self.__emit_next_frame)
+        self.timer.start(int(round(1000 / self.fps)))
+
         print(f'source switched to {file_path}')
+
+    def __emit_next_frame(self):
+        self.next_frame_slot.emit(self.get_next_frame())
 

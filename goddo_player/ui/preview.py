@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtCore import QRect, QEvent, QTimer, Qt
+from PyQt5.QtCore import QRect, QEvent, QTimer, Qt, pyqtSlot
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
 
 from goddo_player.VideoPlayer import VideoPlayer
@@ -22,7 +22,7 @@ class VideoPreview(UiComponent):
 
         state = State(os.path.join('..', '..', 'state', 'a.json'), '')
         self.video_player = VideoPlayer(state)
-        self.timer = QTimer()
+        self.video_player.next_frame_slot.connect(self.update_next_frame)
 
         self.installEventFilter(self)
         self.is_mouse_over = False
@@ -86,24 +86,23 @@ class VideoPreview(UiComponent):
         no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
         self.video_player.switch_source(no_prefix_file_path)
 
-        self.timer.stop()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_next_frame)
-        self.timer.start(int(round(1000 / self.video_player.fps)))
-
         self.window.setTitle(file_name)
         self.play_button.play_slot.emit()
 
-    def update_next_frame(self):
-        self.frame = self.video_player.get_next_frame()
+    @pyqtSlot(object)
+    def update_next_frame(self, frame):
+        self.frame = frame
         self.window.update()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Space:
             if self.play_button.is_playing:
                 self.play_button.pause_slot.emit()
+                self.video_player.pause_slot.emit()
             else:
                 self.play_button.play_slot.emit()
+                self.video_player.play_slot.emit()
+
         else:
             super().keyPressEvent(event)
 

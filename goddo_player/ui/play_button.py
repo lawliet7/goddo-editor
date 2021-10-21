@@ -15,16 +15,16 @@ class PlayButton(UiComponent):
         self.rect_scale_pct = 0.15
         self.is_playing = False
 
-        self.play_slot.connect(self.play)
-        self.pause_slot.connect(self.pause)
+        self.play_slot.connect(self.play_handler)
+        self.pause_slot.connect(self.pause_handler)
 
     @pyqtSlot()
-    def play(self):
+    def play_handler(self):
         self.is_playing = True
         self.window.update()
 
     @pyqtSlot()
-    def pause(self):
+    def pause_handler(self):
         self.is_playing = False
         self.window.update()
 

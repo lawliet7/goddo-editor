@@ -2,14 +2,24 @@ from abc import abstractmethod
 from typing import Callable
 
 from PyQt5.QtCore import QObject, QEvent, QRect
-from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent
+from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent, QWindow, QPaintDeviceWindow
+
+
+def get_window(obj: QObject) -> QPaintDeviceWindow:
+    if obj is None:
+        raise Exception("no window found in object hierarchy")
+    elif isinstance(obj, QPaintDeviceWindow):
+        return obj
+    else:
+        return get_window(obj.parent())
 
 
 class UiComponent(QObject):
-    def __init__(self, screen_update_fn, get_rect):
-        super().__init__()
+    def __init__(self, parent, get_rect):
+        super().__init__(parent=parent)
 
-        self.screen_update = screen_update_fn
+        self.window: QPaintDeviceWindow = get_window(self)
+
         self.get_rect: Callable[[], QRect] = get_rect
 
     def __get_child_ui_components(self):

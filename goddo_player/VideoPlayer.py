@@ -7,7 +7,12 @@ class VideoPlayer(QObject):
         super().__init__()
 
         self.state = state
-        self.__init_cap(self.state.video_file)
+        self.cap = None
+        self.fps = -1
+        self.total_frames = 0
+
+        if self.state.video_file:
+            self.__init_cap(self.state.video_file)
 
     def __init_cap(self, video_file):
         self.cap = cv2.VideoCapture(video_file)
@@ -19,10 +24,10 @@ class VideoPlayer(QObject):
         return self.state.video_file
 
     def get_current_frame_no(self):
-        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else -1
 
     def is_video_done(self):
-        return self.cap.get(cv2.CAP_PROP_POS_FRAMES) >= self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        return self.cap.get(cv2.CAP_PROP_POS_FRAMES) >= self.cap.get(cv2.CAP_PROP_FRAME_COUNT) if self.cap else True
 
     def skip_until_frame(self, num_frames):
         frame = None
@@ -33,22 +38,30 @@ class VideoPlayer(QObject):
         return frame
 
     def get_next_frame(self, specific_frame=None):
-        if specific_frame:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, specific_frame)
+        if self.cap:
+            if specific_frame:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, specific_frame)
 
-        if self.cap.grab():
-            flag, frame = self.cap.retrieve()
-            self.state.source['position'] = self.get_current_frame_no()
-            if flag:
-                return frame
+            if self.cap.grab():
+                flag, frame = self.cap.retrieve()
+                self.state.source['position'] = self.get_current_frame_no()
+                if flag:
+                    return frame
+        else:
+            return None
 
     def get_video_dimensions(self):
-        width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        return width, height
+        if self.cap:
+            width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            return width, height
+        else:
+            return 0, 0
 
     def switch_source(self, file_path):
-        self.cap.release()
+        if self.cap:
+            self.cap.release()
+
         self.__init_cap(file_path)
         print(f'source switched to {file_path}')
 

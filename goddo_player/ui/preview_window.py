@@ -1,7 +1,8 @@
 import sys
 
+import cv2
 from PyQt5.QtCore import QRect, Qt, QEvent, QObject
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QFont
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -13,9 +14,19 @@ class PreviewWindow(QOpenGLWindow):
 
         self.setMinimumWidth(640)
         self.setMinimumHeight(360)
-        self.preview = VideoPreview(self.update, lambda: QRect(0, 0, self.size().width(), self.size().height()))
+        self.preview = VideoPreview(self, lambda: QRect(0, 0, self.size().width(), self.size().height()))
 
         self.installEventFilter(self)
+
+    def initializeGL(self) -> None:
+        super().initializeGL()
+
+        # just to load the text engine or something, first time writing text always take time
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.drawText(0, 0, ' ')
+        painter.end()
 
     def paintGL(self):
         painter = QPainter()
@@ -46,7 +57,9 @@ class PreviewWindow(QOpenGLWindow):
         return self.preview.eventFilter(obj, event)
 
     def event(self, event: QEvent) -> bool:
-        self.preview.event(event)
+        # print(event.type())
+        if event.type() != QEvent.ChildAdded:
+            self.preview.event(event)
 
         return super().event(event)
 
@@ -62,6 +75,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-    # cap = cv2.VideoCapture('file:///C:/Users/William/Downloads/xvsr049.HD.wmv')
-    # print(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    # print(cap.isOpened())

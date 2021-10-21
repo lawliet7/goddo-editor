@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QPoint, QEvent, pyqtSignal, QRect, Qt
+from PyQt5.QtCore import QObject, QPoint, QEvent, pyqtSignal, QRect, Qt, pyqtSlot
 from PyQt5.QtGui import QMouseEvent, QColor, QBrush, QPen, QPainter, QPolygon, QKeyEvent
 
 from goddo_player.ui.draw_utils import scale_rect, midpoint
@@ -6,13 +6,27 @@ from goddo_player.ui.ui_component import UiComponent
 
 
 class PlayButton(UiComponent):
-    # value_update_slot = pyqtSignal(float)
+    play_slot = pyqtSignal()
+    pause_slot = pyqtSignal()
 
-    def __init__(self, screen_update_fn, get_rect):
-        super().__init__(screen_update_fn, get_rect)
+    def __init__(self, parent, get_rect):
+        super().__init__(parent, get_rect)
 
         self.rect_scale_pct = 0.15
         self.is_playing = False
+
+        self.play_slot.connect(self.play)
+        self.pause_slot.connect(self.pause)
+
+    @pyqtSlot()
+    def play(self):
+        self.is_playing = True
+        self.window.update()
+
+    @pyqtSlot()
+    def pause(self):
+        self.is_playing = False
+        self.window.update()
 
     def __draw_play(self, painter: QPainter):
         rect = scale_rect(self.get_rect(), self.rect_scale_pct)
@@ -39,13 +53,13 @@ class PlayButton(UiComponent):
         painter.setPen(QPen(color))
 
         if self.is_playing:
-            self.__draw_play(painter)
-        else:
             self.__draw_pause(painter)
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Space:
-            self.is_playing = not self.is_playing
-            self.screen_update()
         else:
-            super().keyPressEvent(event)
+            self.__draw_play(painter)
+
+    # def keyPressEvent(self, event: QKeyEvent) -> None:
+    #     if event.key() == Qt.Key_Space:
+    #         self.is_playing = not self.is_playing
+    #         self.window.update()
+    #     else:
+    #         super().keyPressEvent(event)

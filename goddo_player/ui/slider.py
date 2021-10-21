@@ -7,8 +7,8 @@ from goddo_player.ui.ui_component import UiComponent
 class Slider(UiComponent):
     value_update_slot = pyqtSignal(float)
 
-    def __init__(self, screen_update_fn, get_rect, initial_value=1):
-        super().__init__(screen_update_fn, get_rect)
+    def __init__(self, parent, get_rect, initial_value=1):
+        super().__init__(parent, get_rect)
 
         # self.slider_rect = None
         self.mouse_down = False
@@ -51,7 +51,7 @@ class Slider(UiComponent):
             # self.volume = self.calc_volume_from_pos(event.pos().x())
             self.pos_pct = self.calc_pos_pct(event.pos().x())
             self.mouse_down = True
-            self.screen_update()
+            self.window.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         # print('mouse release')
@@ -62,7 +62,7 @@ class Slider(UiComponent):
         # print('mouse move')
         if self.mouse_down:
             self.pos_pct = self.calc_pos_pct(event.pos().x())
-            self.screen_update()
+            self.window.update()
 
     def calc_pos_pct(self, x):
         pos = (x - self.get_rect().left()) / self.get_rect().width()

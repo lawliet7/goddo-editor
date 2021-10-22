@@ -1,11 +1,13 @@
 import os
 
-from PyQt5.QtCore import QRect, QEvent, QTimer, Qt, pyqtSlot
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent
+from PyQt5.QtCore import QRect, QEvent, Qt, pyqtSlot
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent, QPen, QFont, \
+    QFontMetrics
 
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.save_state import State
+from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
 from goddo_player.ui.play_button import PlayButton
 from goddo_player.ui.slider import Slider
 from goddo_player.ui.ui_component import UiComponent
@@ -31,6 +33,17 @@ class VideoPreview(UiComponent):
 
         self.frame = None
         self.is_playing = False
+
+        self.font = QFont()
+        self.font.setFamily("cursive")
+        self.font.setPointSize(9)
+        metrics = QFontMetrics(self.font)
+        self.width_of_2_chars = metrics.width("00")
+        self.width_of_colon = metrics.width(":")
+        self.char_height = metrics.capHeight()
+        self.width_of_time_label = metrics.width('00:00:00.000')
+        self.total_time_str = '00:00:00.000'
+        self.cur_time_str = '00:00:00.000'
 
     def __get_volume_control_rect(self):
         height = 50
@@ -80,6 +93,21 @@ class VideoPreview(UiComponent):
         if self.is_mouse_over:
             super().paint(painter)
 
+            painter.setFont(self.font)
+            top = self.time_bar_slider.get_rect().bottom()
+            rect = self.play_button.get_rect()
+            mid_point = (self.get_rect().bottom() - top) / 2
+            x = rect.right()+10
+            y = mid_point + top - 5
+            y2 = mid_point + self.char_height+5 + top
+            painter.drawText(x, y, f'{self.cur_time_str} /')
+            orig_pen = painter.pen()
+            lighter_pen = QPen(painter.pen())
+            lighter_pen.setColor(lighter_pen.color().darker(150))
+            painter.setPen(lighter_pen)
+            painter.drawText(x + self.width_of_2_chars, y2, self.total_time_str)
+            painter.setPen(orig_pen)
+
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # print(f'drag enter {event.mimeData().text()}')
         filename = event.mimeData().text()
@@ -93,14 +121,16 @@ class VideoPreview(UiComponent):
 
         no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
         self.video_player.switch_source(no_prefix_file_path)
+        self.total_time_str = build_time_str(*frames_to_time_components(self.video_player.total_frames, self.video_player.fps))
         self.__emit_play_event()
 
         self.window.setTitle(file_name)
         self.window.requestActivate()
 
-    @pyqtSlot(object)
-    def update_next_frame(self, frame):
+    @pyqtSlot(object, int)
+    def update_next_frame(self, frame, frame_no):
         self.frame = frame
+        self.cur_time_str = build_time_str(*frames_to_time_components(frame_no, self.video_player.fps))
         self.window.update()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -109,7 +139,6 @@ class VideoPreview(UiComponent):
                 self.__emit_pause_event()
             else:
                 self.__emit_play_event()
-
         else:
             super().keyPressEvent(event)
 

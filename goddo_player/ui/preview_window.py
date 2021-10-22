@@ -26,14 +26,14 @@ class PreviewWindow(QOpenGLWindow):
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.drawText(0, 0, ' ')
-        painter.end()
 
     def paintGL(self):
         painter = QPainter()
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
+        if not self.preview.is_playing:
+            painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
 
         painter.setPen(QColor("white"))
         self.preview.paint(painter)

@@ -28,7 +28,7 @@ def ms_to_time_components(ms, fps):
 
 
 def build_time_str(hours=0, mins=0, secs=0, frames=0):
-    return "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames)
+    return "{}:{:02d}:{:02d}.{:03d}".format(hours, mins, secs, frames)
 
 
 def format_time(hour, min, sec, ms):

@@ -31,19 +31,24 @@ class VideoPreview(UiComponent):
 
         state.save(self)
 
-        self.frame = None
         self.is_playing = False
 
-        self.font = QFont()
-        self.font.setFamily("cursive")
-        self.font.setPointSize(9)
+        self.total_time_str = '00:00:00.000'
+        self.cur_time_str = '00:00:00.000'
+
+        self.font = self.__get_time_label_font()
         metrics = QFontMetrics(self.font)
         self.width_of_2_chars = metrics.width("00")
         self.width_of_colon = metrics.width(":")
         self.char_height = metrics.capHeight()
-        self.width_of_time_label = metrics.width('00:00:00.000')
-        self.total_time_str = '00:00:00.000'
-        self.cur_time_str = '00:00:00.000'
+        self.width_of_time_label = metrics.width(self.total_time_str)
+
+    @staticmethod
+    def __get_time_label_font() -> QFont:
+        font = QFont()
+        font.setFamily("cursive")
+        font.setPointSize(9)
+        return font
 
     def __get_volume_control_rect(self):
         height = 50
@@ -87,8 +92,8 @@ class VideoPreview(UiComponent):
                 self.__emit_play_event()
 
     def paint(self, painter: QPainter):
-        if self.frame is not None:
-            painter.drawPixmap(self.get_rect(), numpy_to_pixmap(self.frame))
+        if self.video_player.cur_frame is not None:
+            painter.drawPixmap(self.get_rect(), numpy_to_pixmap(self.video_player.cur_frame))
 
         if self.is_mouse_over:
             super().paint(painter)
@@ -129,8 +134,10 @@ class VideoPreview(UiComponent):
 
     @pyqtSlot(object, int)
     def update_next_frame(self, frame, frame_no):
-        self.frame = frame
+        print(f'update next frame {frame_no}')
         self.cur_time_str = build_time_str(*frames_to_time_components(frame_no, self.video_player.fps))
+        self.time_bar_slider.pos_pct = frame_no / self.video_player.total_frames
+
         self.window.update()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:

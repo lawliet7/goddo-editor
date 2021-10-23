@@ -14,6 +14,8 @@ class VideoPlayer(QObject):
         self.cap = None
         self.fps = -1
         self.total_frames = 0
+        self.cur_frame = None
+        self.cur_frame_no = 0
 
         self.timer = QTimer()
         self.timer.setTimerType(Qt.PreciseTimer)
@@ -98,5 +100,8 @@ class VideoPlayer(QObject):
         print(f'source switched to {file_path}')
 
     def __emit_next_frame(self):
-        self.next_frame_slot.emit(self.get_next_frame(), self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        self.cur_frame = self.get_next_frame()
+        self.cur_frame_no = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+
+        self.next_frame_slot.emit(self.cur_frame, self.cur_frame_no)
 

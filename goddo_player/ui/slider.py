@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QPoint, QEvent, pyqtSignal
+from PyQt5.QtCore import QPoint, pyqtSignal
 from PyQt5.QtGui import QMouseEvent, QColor, QBrush, QPen
 
 from goddo_player.ui.ui_component import UiComponent
@@ -42,21 +42,16 @@ class Slider(UiComponent):
         painter.drawEllipse(QPoint(x_pos, self.get_rect().center().y() + 1), radius, radius)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        # print(f'slider mouse press {event.pos()} rect {self.get_rect()} self {self}')
-        # if self.icon_rect.contains(event.pos()):
-        #     # self.mute = not self.mute
-        #     self.screen_update()
         if self.get_rect().contains(event.pos()):
-            # print(f'mouse press {event.pos()}')
-            # self.volume = self.calc_volume_from_pos(event.pos().x())
-            self.pos_pct = self.calc_pos_pct(event.pos().x())
             self.mouse_down = True
+            self.pos_pct = self.calc_pos_pct(event.pos().x())
             self.window.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        # print('mouse release')
         if self.mouse_down:
             self.mouse_down = False
+            self.pos_pct = self.pos_pct
+            self.window.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         # print('mouse move')

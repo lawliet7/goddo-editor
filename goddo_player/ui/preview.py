@@ -20,6 +20,8 @@ class VideoPreview(UiComponent):
 
         self.volume_control = VolumeControl(self, self.__get_volume_control_rect)
         self.time_bar_slider = Slider(self, self.__get_time_bar_rect, 0)
+        self.time_bar_slider.value_update_slot.connect(self.on_timeline_value_changed)
+
         self.play_button = PlayButton(self, self.__get_play_btn_rect)
 
         state = State(os.path.join('..', '..', 'state', 'a.json'), '')
@@ -49,6 +51,18 @@ class VideoPreview(UiComponent):
         font.setFamily("cursive")
         font.setPointSize(9)
         return font
+
+    @pyqtSlot(float)
+    def on_timeline_value_changed(self, value):
+        # if self.sender() == self.video_player:
+        # print(f'time value changed to {value}')
+        # print(f'sender = {self.sender()}')
+        print(f'is mouse down {self.time_bar_slider.mouse_down}')
+        # self.video_player.
+        self.__emit_pause_event()
+        self.video_player.get_next_frame(int(round(value * self.video_player.total_frames)))
+        if not self.time_bar_slider.mouse_down:
+            self.__emit_play_event()
 
     def __get_volume_control_rect(self):
         height = 50
@@ -134,9 +148,11 @@ class VideoPreview(UiComponent):
 
     @pyqtSlot(object, int)
     def update_next_frame(self, frame, frame_no):
-        print(f'update next frame {frame_no}')
         self.cur_time_str = build_time_str(*frames_to_time_components(frame_no, self.video_player.fps))
+
+        self.time_bar_slider.blockSignals(True)
         self.time_bar_slider.pos_pct = frame_no / self.video_player.total_frames
+        self.time_bar_slider.blockSignals(False)
 
         self.window.update()
 

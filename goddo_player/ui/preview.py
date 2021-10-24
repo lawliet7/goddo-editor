@@ -2,7 +2,7 @@ import os
 
 from PyQt5.QtCore import QRect, QEvent, Qt, pyqtSlot
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent, QPen, QFont, \
-    QFontMetrics
+    QFontMetrics, QColor
 
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
@@ -12,6 +12,32 @@ from goddo_player.ui.play_button import PlayButton
 from goddo_player.ui.slider import Slider
 from goddo_player.ui.ui_component import UiComponent
 from goddo_player.ui.volume_controls import VolumeControl
+
+
+class FrameInOut:
+    def __init__(self):
+        self.__in_frame = None
+        self.__out_frame = None
+
+    @property
+    def in_frame(self):
+        return self.__in_frame
+
+    @in_frame.setter
+    def in_frame(self, value):
+        self.__in_frame = value
+        if self.__out_frame and self.__out_frame < self.__in_frame:
+            self.__out_frame = None
+
+    @property
+    def out_frame(self):
+        return self.__out_frame
+
+    @out_frame.setter
+    def out_frame(self, value):
+        self.__out_frame = value
+        if self.__in_frame and self.__in_frame > self.__out_frame:
+            self.__in_frame = None
 
 
 class VideoPreview(UiComponent):
@@ -45,6 +71,8 @@ class VideoPreview(UiComponent):
         self.char_height = metrics.capHeight()
         self.width_of_time_label = metrics.width(self.total_time_str)
 
+        self.frame_select_range = FrameInOut()
+
     @staticmethod
     def __get_time_label_font() -> QFont:
         font = QFont()
@@ -54,11 +82,6 @@ class VideoPreview(UiComponent):
 
     @pyqtSlot(float)
     def on_timeline_value_changed(self, value):
-        # if self.sender() == self.video_player:
-        # print(f'time value changed to {value}')
-        # print(f'sender = {self.sender()}')
-        print(f'is mouse down {self.time_bar_slider.mouse_down}')
-        # self.video_player.
         self.__emit_pause_event()
         self.video_player.get_next_frame(int(round(value * self.video_player.total_frames)))
         if not self.time_bar_slider.mouse_down:
@@ -113,41 +136,53 @@ class VideoPreview(UiComponent):
             super().paint(painter)
 
             painter.setFont(self.font)
+
+            orig_pen = painter.pen()
             top = self.time_bar_slider.get_rect().bottom()
             rect = self.play_button.get_rect()
             mid_point = (self.get_rect().bottom() - top) / 2
-            x = rect.right()+10
+            x = rect.right() + 10
             y = mid_point + top - 5
-            y2 = mid_point + self.char_height+5 + top
             painter.drawText(x, y, f'{self.cur_time_str} /')
-            orig_pen = painter.pen()
-            lighter_pen = QPen(painter.pen())
-            lighter_pen.setColor(lighter_pen.color().darker(150))
-            painter.setPen(lighter_pen)
-            painter.drawText(x + self.width_of_2_chars, y2, self.total_time_str)
+            painter.setPen(self.__get_darker_pen(orig_pen))
+            painter.drawText(x + self.width_of_2_chars, y + 10 + self.char_height, self.total_time_str)
             painter.setPen(orig_pen)
 
+            if self.frame_select_range.in_frame or self.frame_select_range.out_frame:
+                x1 = self.frame_select_range.in_frame / self.video_player.total_frames * (
+                    self.get_rect().width()) + self.get_rect().left() if self.frame_select_range.in_frame else self.get_rect().left()
+                x2 = self.frame_select_range.out_frame / self.video_player.total_frames * (
+                    self.get_rect().width()) + self.get_rect().left() if self.frame_select_range.out_frame else self.get_rect().right()
+
+                rect = QRect(x1, self.time_bar_slider.get_rect().top(), x2 - x1, self.time_bar_slider.get_rect().height())
+                painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
+
+    @staticmethod
+    def __get_darker_pen(pen):
+        darker_pen = QPen(pen)
+        darker_pen.setColor(darker_pen.color().darker())
+        return darker_pen
+
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        # print(f'drag enter {event.mimeData().text()}')
         filename = event.mimeData().text()
         if filename.endswith('.mp4') or filename.endswith('.wmv'):
             event.accept()
 
     def onDropEvent(self, event: QDropEvent) -> None:
-        # print(f'file dropped: {event.mimeData().text()}')
         file_path = event.mimeData().text()
         file_name = file_path[file_path.rindex('/')+1:]
 
         no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
         self.video_player.switch_source(no_prefix_file_path)
-        self.total_time_str = build_time_str(*frames_to_time_components(self.video_player.total_frames, self.video_player.fps))
+        time_components = frames_to_time_components(self.video_player.total_frames, self.video_player.fps)
+        self.total_time_str = build_time_str(*time_components)
         self.__emit_play_event()
 
         self.window.setTitle(file_name)
         self.window.requestActivate()
 
     @pyqtSlot(object, int)
-    def update_next_frame(self, frame, frame_no):
+    def update_next_frame(self, _, frame_no):
         self.cur_time_str = build_time_str(*frames_to_time_components(frame_no, self.video_player.fps))
 
         self.time_bar_slider.blockSignals(True)
@@ -162,6 +197,10 @@ class VideoPreview(UiComponent):
                 self.__emit_pause_event()
             else:
                 self.__emit_play_event()
+        elif event.key() == Qt.Key_I:
+            self.frame_select_range.in_frame = self.video_player.cur_frame_no
+        elif event.key() == Qt.Key_O:
+            self.frame_select_range.out_frame = self.video_player.cur_frame_no
         else:
             super().keyPressEvent(event)
 

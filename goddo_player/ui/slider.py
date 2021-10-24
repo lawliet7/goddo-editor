@@ -10,7 +10,6 @@ class Slider(UiComponent):
     def __init__(self, parent, get_rect, initial_value=1):
         super().__init__(parent, get_rect)
 
-        # self.slider_rect = None
         self.mouse_down = False
         self._pos_pct = initial_value
 

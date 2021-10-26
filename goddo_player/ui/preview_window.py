@@ -1,8 +1,7 @@
 import sys
 
-import cv2
 from PyQt5.QtCore import QRect, Qt, QEvent, QObject
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QFont
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -32,7 +31,7 @@ class PreviewWindow(QOpenGLWindow):
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        if not self.preview.is_playing:
+        if not self.preview.video_player.video_path:
             painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
 
         painter.setPen(QColor("white"))
@@ -63,15 +62,4 @@ class PreviewWindow(QOpenGLWindow):
 
         return super().event(event)
 
-
-def main():
-    app = QApplication(sys.argv)
-    ex = PreviewWindow()
-    ex.show()
-    # ex.showMaximized()
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
 

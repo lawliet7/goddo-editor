@@ -149,10 +149,14 @@ class VideoPreview(UiComponent):
             painter.setPen(orig_pen)
 
             if self.frame_select_range.in_frame or self.frame_select_range.out_frame:
-                x1 = self.frame_select_range.in_frame / self.video_player.total_frames * (
-                    self.get_rect().width()) + self.get_rect().left() if self.frame_select_range.in_frame else self.get_rect().left()
-                x2 = self.frame_select_range.out_frame / self.video_player.total_frames * (
-                    self.get_rect().width()) + self.get_rect().left() if self.frame_select_range.out_frame else self.get_rect().right()
+                left = self.get_rect().left()
+                right = self.get_rect().right()
+                width = right - left
+
+                x1 = self.frame_select_range.in_frame / self.video_player.total_frames * width + left \
+                    if self.frame_select_range.in_frame else left
+                x2 = self.frame_select_range.out_frame / self.video_player.total_frames * width + left \
+                    if self.frame_select_range.out_frame else right
 
                 rect = QRect(x1, self.time_bar_slider.get_rect().top(), x2 - x1, self.time_bar_slider.get_rect().height())
                 painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
@@ -201,6 +205,17 @@ class VideoPreview(UiComponent):
             self.frame_select_range.in_frame = self.video_player.cur_frame_no
         elif event.key() == Qt.Key_O:
             self.frame_select_range.out_frame = self.video_player.cur_frame_no
+        elif event.key() == Qt.Key_Left:
+            self.__emit_pause_event()
+            self.time_bar_slider.blockSignals(True)
+            self.time_bar_slider.pos_pct = (self.video_player.cur_frame_no - 1) / self.video_player.total_frames
+            self.video_player.get_next_frame()
+            self.time_bar_slider.blockSignals(False)
+        elif event.key() == Qt.Key_Right:
+            self.__emit_pause_event()
+            self.time_bar_slider.blockSignals(True)
+            self.time_bar_slider.pos_pct = (self.video_player.cur_frame_no + 1) / self.video_player.total_frames
+            self.time_bar_slider.blockSignals(False)
         else:
             super().keyPressEvent(event)
 

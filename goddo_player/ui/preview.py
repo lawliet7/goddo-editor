@@ -59,6 +59,7 @@ class VideoPreview(UiComponent):
         # state.save(self)
 
         self.is_playing = False
+        self.should_play_on_mouse_release = False
 
         self.total_time_str = '00:00:00.000'
         self.cur_time_str = '00:00:00.000'
@@ -86,10 +87,21 @@ class VideoPreview(UiComponent):
 
     @pyqtSlot(float)
     def on_timeline_value_changed(self, value):
-        self.__emit_pause_event()
-        self.video_player.get_next_frame(int(round(value * self.video_player.total_frames)))
-        if not self.time_bar_slider.mouse_down:
+        target_frame_no = int(round(value * self.video_player.total_frames))
+
+        if self.is_playing:
+            print('is playing')
+            self.__emit_pause_event()
+            self.state.jump_frame_slot.emit('source', target_frame_no)
+            print(f'mouse down {self.time_bar_slider.mouse_down}')
+            self.should_play_on_mouse_release = True
+        else:
+            self.state.jump_frame_slot.emit('source', target_frame_no)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self.should_play_on_mouse_release:
             self.__emit_play_event()
+            self.should_play_on_mouse_release = False
 
     def __get_volume_control_rect(self):
         height = 50

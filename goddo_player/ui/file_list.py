@@ -4,15 +4,16 @@ import sys
 import cv2
 import imutils
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent
 from PyQt5.QtWidgets import (QListWidget, QWidget, QMessageBox,
                              QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea, QStyle,
-                             QPushButton)
+                             QPushButton, QErrorMessage)
 
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
 from goddo_player.ui.flow import FlowLayout
+from goddo_player.ui.message_box_utils import show_error_box
 from goddo_player.ui.state_store import State
 
 
@@ -21,13 +22,14 @@ class MyItemWidget(QWidget):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
+        self.file_path = file_path
 
         cap = cv2.VideoCapture(file_path)
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
         _, frame = cap.read()
-        frame = imutils.resize(frame, height=100)
-        print(f'frame size={frame.shape}')
-        pixmap = numpy_to_pixmap(frame)
+        self.frame = imutils.resize(frame, height=100)
+        print(f'frame size={self.frame.shape}')
+        pixmap = numpy_to_pixmap(self.frame)
 
         lbl = QLabel()
         lbl.setFixedHeight(100)
@@ -125,6 +127,7 @@ class FileListWidget(QListWidget):
             print('accepted')
         # event.accept()
 
+    # parent class prevents accepting
     def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
         pass
     #     self.dragEnterEvent(event)
@@ -132,6 +135,9 @@ class FileListWidget(QListWidget):
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         for url in event.mimeData().urls():
             print(url.path())
+            if not url.path().isascii():
+                show_error_box(self, "sorry unicode file names are not support!")
+                break
             # State().update_preview_file_slot.emit('source', url)
             self.state.new_file_slot.emit(url.path())
 
@@ -196,8 +202,19 @@ class FileList(QWidget):
         self.setLayout(vbox)
 
     def double_clicked(self, item):
-        QMessageBox.information(self, "Info", item.text())
+        # QMessageBox.information(self, "Info", item.text())
+        item_widget = self.listWidget.itemWidget(item)
+        self.state.update_preview_file_slot.emit('source', QUrl(item_widget.file_path))
 
+        print(item_widget)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key_Escape:
+            QApplication.exit(0)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            self.state.save_slot.emit()
+        else:
+            super().keyPressEvent(event)
 
 def main():
     app = QApplication(sys.argv)

@@ -14,7 +14,7 @@ class VideoPlayer(QObject):
     def __init__(self):
         super().__init__()
 
-        self.state = State(os.path.join('..', '..', 'state', 'a.json'))
+        self.state = State()
         self.position = -1
         self.cap = None
         self.fps = -1

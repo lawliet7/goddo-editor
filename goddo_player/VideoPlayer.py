@@ -1,5 +1,9 @@
+import os
+
 import cv2
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot, Qt
+
+from goddo_player.ui.state_store import State
 
 
 class VideoPlayer(QObject):
@@ -7,10 +11,11 @@ class VideoPlayer(QObject):
     play_slot = pyqtSignal()
     pause_slot = pyqtSignal()
 
-    def __init__(self, state):
+    def __init__(self):
         super().__init__()
 
-        self.state = state
+        self.state = State(os.path.join('..', '..', 'state', 'a.json'))
+        self.position = -1
         self.cap = None
         self.fps = -1
         self.total_frames = 0
@@ -20,8 +25,10 @@ class VideoPlayer(QObject):
         self.timer = QTimer()
         self.timer.setTimerType(Qt.PreciseTimer)
 
-        if self.state.video_file:
-            self.__init_cap(self.state.video_file)
+        # if self.state.video_file:
+        #     self.__init_cap(self.state.video_file)
+
+        # self.state.update_preview_file_slot.connect(self.switch_source)
 
         self.play_slot.connect(self.play_handler)
         self.pause_slot.connect(self.pause_handler)
@@ -49,7 +56,8 @@ class VideoPlayer(QObject):
 
     @property
     def video_path(self):
-        return self.state.video_file
+        # return self.state.video_file
+        return self.state.preview_windows[0]["video_file"]
 
     def get_current_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else -1
@@ -72,7 +80,7 @@ class VideoPlayer(QObject):
 
             if self.cap.grab():
                 flag, frame = self.cap.retrieve()
-                self.state.source['position'] = self.get_current_frame_no()
+                self.position = self.get_current_frame_no()
                 if flag:
                     return frame
         else:
@@ -86,7 +94,8 @@ class VideoPlayer(QObject):
         else:
             return 0, 0
 
-    def switch_source(self, file_path):
+    def switch_source(self, x, file_path):
+        print('------switching source')
         if self.cap:
             self.cap.release()
 

@@ -23,11 +23,8 @@ class State:
 
         abs_path_str = str(pathlib.Path(self.video_file).resolve())
 
-        if self.video_file:
-            cap = cv2.VideoCapture(self.video_file)
-            fps = cap.get(cv2.CAP_PROP_FPS)
-        else:
-            fps = 0
+        cap = cv2.VideoCapture(self.video_file)
+        fps = cap.get(cv2.CAP_PROP_FPS)
 
         if is_existing_file:
             id = self.video_table.upsert({'video_path': abs_path_str, 'alias': None, 'fps': fps},
@@ -53,9 +50,9 @@ class State:
                            'volume': 1, 'is_muted': False}
             self.timeline = Timeline('default', [])
 
-        # print(self.videos)
-        # print(self.source)
-        # print(self.timeline)
+        print(self.videos)
+        print(self.source)
+        print(self.timeline)
         # self.db_conn = sqlite3.connect(self.save_file)
         # self.cursor = self.db_conn.cursor()
         #
@@ -70,9 +67,9 @@ class State:
         #     print(row)
 
     def save(self, main_window):
-        # print(self.videos)
-        # print(self.source)
-        # print(self.timeline)
+        print(self.videos)
+        print(self.source)
+        print(self.timeline)
         # video_id = self.video_table.upsert({'video_path': str(abs_path), 'alias': None}, Query().video_path == str(abs_path))[0]
         self.preview_window_table.upsert({'tab': 'source', 'source': self.source }, Query().tab.one_of(['source', 'timeline']))
         # print(self.timeline['clips'][0].__dict__)

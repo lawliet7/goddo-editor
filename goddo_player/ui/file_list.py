@@ -11,7 +11,9 @@ from PyQt5.QtWidgets import (QListWidget, QWidget, QMessageBox,
                              QPushButton)
 
 from goddo_player.draw_utils import numpy_to_pixmap
+from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
 from goddo_player.ui.flow import FlowLayout
+from goddo_player.ui.state_store import State
 
 
 class MyItemWidget(QWidget):
@@ -22,7 +24,7 @@ class MyItemWidget(QWidget):
 
         cap = cv2.VideoCapture(file_path)
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
-        _, frame = cap.retrieve()
+        _, frame = cap.read()
         frame = imutils.resize(frame, height=100)
         print(f'frame size={frame.shape}')
         pixmap = numpy_to_pixmap(frame)
@@ -41,11 +43,11 @@ class MyItemWidget(QWidget):
 
         flow = FlowLayout(margin=1)
         # vbox.addWidget(groupBox)
-        for i in range(50):
-            btn = QPushButton(f"you suck {i}")
-            btn.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
-            btn.clicked.connect(self.delete_tag)
-            flow.addWidget(btn)
+        # for i in range(50):
+        #     btn = QPushButton(f"you suck {i}")
+        #     btn.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
+        #     btn.clicked.connect(self.delete_tag)
+        #     flow.addWidget(btn)
         widget.setLayout(flow)
         self.flow_layout = flow
 
@@ -101,21 +103,52 @@ class FileListWidget(QListWidget):
         super().__init__(parent)
         # self.setDragEnabled(True)
         self.setAcceptDrops(True)
+        self.accepted_video_formats = ['mp4', 'wmv', 'mkv']
+
+        self.state = State()
+
+    def __should_accept_drop(self, url: 'QUrl'):
+        _, ext = os.path.splitext(url.fileName())
+        if ext[1:].lower() in self.accepted_video_formats:
+            return True
+        else:
+            return False
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         print('drag enter')
-        event.acceptProposedAction()
+        mime_data = event.mimeData()
+        if mime_data.hasUrls():
+            for url in mime_data.urls():
+                if not self.__should_accept_drop(url):
+                    return
+            event.accept()
+            print('accepted')
+        # event.accept()
 
     def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
-        print('drag move')
-        event.acceptProposedAction()
+        pass
+    #     self.dragEnterEvent(event)
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        print('drop')
+        for url in event.mimeData().urls():
+            print(url.path())
+            # State().update_preview_file_slot.emit('source', url)
+            self.state.new_file_slot.emit(url.path())
+
+            # time_components = frames_to_time_components(self.video_player.total_frames, self.video_player.fps)
+            # self.total_time_str = build_time_str(*time_components)
+            # self.__emit_play_event()
+
+            # self.window.setTitle('04.mp4')
+            # self.window.requestActivate()
+
+        # file_path = event.mimeData().text()
+        # file_name = file_path[file_path.rindex('/') + 1:]
+        # no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
+        # print(f'drop {event.mimeData().urls()}, {file_path}')
 
 
 class FileList(QWidget):
-
     def __init__(self):
         super().__init__()
         title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
@@ -125,7 +158,11 @@ class FileList(QWidget):
 
         self.initUI()
 
-    def addVideo(self, file_path):
+        self.state = State()
+        self.state.new_file_slot.connect(self.add_video)
+
+    def add_video(self, file_path):
+        print(f'adding video {file_path}')
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
@@ -142,13 +179,13 @@ class FileList(QWidget):
         self.listWidget = FileListWidget()
 
 
-
-        list_data = [r'C:\Users\William\Downloads\Welcome2Life.CAN.Ep05.mp4',
-                     r'C:\Users\William\Downloads\Ayumi.mp4',
-                     r'C:\Users\William\Downloads\xvsr049.HD.wmv',
-                     # r'C:\Users\William\Downloads\[FOW-002] Kunoichi - Broken Princess (720P).mp4_10526_12568.mp4',
-                     r'C:\Users\William\Downloads\Alice.CAN.Ep05.mp4',
-                     r'C:\Users\William\Downloads\YourHonor.CAN.Ep07.mp4']
+        list_data = []
+        # list_data = [r'C:\Users\William\Downloads\Welcome2Life.CAN.Ep05.mp4',
+        #              r'C:\Users\William\Downloads\Ayumi.mp4',
+        #              r'C:\Users\William\Downloads\xvsr049.HD.wmv',
+        #              # r'C:\Users\William\Downloads\[FOW-002] Kunoichi - Broken Princess (720P).mp4_10526_12568.mp4',
+        #              r'C:\Users\William\Downloads\Alice.CAN.Ep05.mp4',
+        #              r'C:\Users\William\Downloads\YourHonor.CAN.Ep07.mp4']
 
         for item in list_data:
             self.addVideo(item)
@@ -160,6 +197,7 @@ class FileList(QWidget):
 
     def double_clicked(self, item):
         QMessageBox.information(self, "Info", item.text())
+
 
 def main():
     app = QApplication(sys.argv)

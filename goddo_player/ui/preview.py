@@ -1,15 +1,16 @@
 import os
 
+import imutils
 from PyQt5.QtCore import QRect, QEvent, Qt, pyqtSlot
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent, QPen, QFont, \
     QFontMetrics, QColor
 
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
-from goddo_player.save_state import State
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
 from goddo_player.ui.play_button import PlayButton
 from goddo_player.ui.slider import Slider
+from goddo_player.ui.state_store import State
 from goddo_player.ui.ui_component import UiComponent
 from goddo_player.ui.volume_controls import VolumeControl
 
@@ -50,14 +51,14 @@ class VideoPreview(UiComponent):
 
         self.play_button = PlayButton(self, self.__get_play_btn_rect)
 
-        state = State(os.path.join('..', '..', 'state', 'a.json'), '')
-        self.video_player = VideoPlayer(state)
+        self.state = State()
+        self.video_player = VideoPlayer()
         self.video_player.next_frame_slot.connect(self.update_next_frame)
 
         self.installEventFilter(self)
         self.is_mouse_over = False
 
-        state.save(self)
+        # state.save(self)
 
         self.is_playing = False
 
@@ -72,6 +73,8 @@ class VideoPreview(UiComponent):
         self.width_of_time_label = metrics.width(self.total_time_str)
 
         self.frame_select_range = FrameInOut()
+
+        self.state.update_preview_file_slot.connect(self.switch_video)
 
     @staticmethod
     def __get_time_label_font() -> QFont:
@@ -130,7 +133,23 @@ class VideoPreview(UiComponent):
 
     def paint(self, painter: QPainter):
         if self.video_player.cur_frame is not None:
-            painter.drawPixmap(self.get_rect(), numpy_to_pixmap(self.video_player.cur_frame))
+            aspect1 = self.get_rect().width() / self.get_rect().height()
+            aspect2 = self.video_player.cur_frame.shape[1] / self.video_player.cur_frame.shape[0]
+            if abs(aspect1 / aspect2 - 1) > 0.1:
+                if self.get_rect().width() > self.get_rect().height():
+                    resized_frame = imutils.resize(self.video_player.cur_frame, height=self.get_rect().height())
+                    pixmap = numpy_to_pixmap(resized_frame)
+                    left = int((self.get_rect().right() - pixmap.width() + self.get_rect().left()) / 2)
+                    rect = QRect(left, self.get_rect().top(), pixmap.width(), pixmap.height())
+                    painter.drawPixmap(rect, numpy_to_pixmap(self.video_player.cur_frame))
+                else:
+                    resized_frame = imutils.resize(self.video_player.cur_frame, width=self.get_rect().width())
+                    pixmap = numpy_to_pixmap(resized_frame)
+                    top = int((self.get_rect().bottom() - pixmap.height() + self.get_rect().top()) / 2)
+                    rect = QRect(self.get_rect().left(), top, pixmap.width(), pixmap.height())
+                    painter.drawPixmap(rect, numpy_to_pixmap(self.video_player.cur_frame))
+            else:
+                painter.drawPixmap(self.get_rect(), numpy_to_pixmap(self.video_player.cur_frame))
 
         if self.is_mouse_over:
             super().paint(painter)
@@ -173,16 +192,16 @@ class VideoPreview(UiComponent):
             event.accept()
 
     def onDropEvent(self, event: QDropEvent) -> None:
-        file_path = event.mimeData().text()
-        file_name = file_path[file_path.rindex('/')+1:]
+        self.switch_video('', event.mimeData().urls()[0])
 
-        no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
-        self.video_player.switch_source(no_prefix_file_path)
+    def switch_video(self, window_name, url: 'QUrl'):
+        print(f'url type {type(url)}, url {url}')
+        self.video_player.switch_source(window_name, url.path())
         time_components = frames_to_time_components(self.video_player.total_frames, self.video_player.fps)
         self.total_time_str = build_time_str(*time_components)
-        self.__emit_play_event()
+        self.__emit_pause_event()
 
-        self.window.setTitle(file_name)
+        self.window.setTitle(url.fileName())
         self.window.requestActivate()
 
     @pyqtSlot(object, int)

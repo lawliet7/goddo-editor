@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout
 
-from goddo_player.sliders2 import VolumeControl
+from goddo_player.volume import VolumeControl
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -105,11 +105,11 @@ class MainWindow(QOpenGLWindow):
         if event.key() == Qt.Key_Space:
             self.is_playing = not self.is_playing
         elif event.key() == Qt.Key_I:
-            self.state.source['in_frame'] = self.video_player.get_current_frame_no()
+            self.state.source['in_frame'] = self.video_player.get_current_frame()
             if self.state.source['out_frame'] and self.state.source['in_frame'] > self.state.source['out_frame']:
                 self.state.source['out_frame'] = None
         elif event.key() == Qt.Key_O:
-            self.state.source['out_frame'] = self.video_player.get_current_frame_no()
+            self.state.source['out_frame'] = self.video_player.get_current_frame()
             if self.state.source['in_frame'] and self.state.source['out_frame'] < self.state.source['in_frame']:
                 self.state.source['in_frame'] = None
         elif event.key() == Qt.Key_Left:
@@ -117,7 +117,7 @@ class MainWindow(QOpenGLWindow):
                 self.is_playing = not self.is_playing
 
             self.main_signals.blockSignals(True)
-            to_frame = max(0, self.video_player.get_current_frame_no() - 2)
+            to_frame = max(0, self.video_player.get_current_frame()-2)
             self.adhoc_signals.update_frame.emit(to_frame)
             print(f"updating to {to_frame}")
             self.main_signals.blockSignals(False)
@@ -126,7 +126,7 @@ class MainWindow(QOpenGLWindow):
                 self.is_playing = not self.is_playing
 
             self.main_signals.blockSignals(True)
-            to_frame = min(self.video_player.total_frames, self.video_player.get_current_frame_no() + 1)
+            to_frame = min(self.video_player.total_frames, self.video_player.get_current_frame()+1)
             self.adhoc_signals.update_frame.emit(to_frame)
             print(f"updating to {to_frame}")
             self.main_signals.blockSignals(False)
@@ -215,7 +215,7 @@ class MainWindow(QOpenGLWindow):
             pass
         elif not self.video_player.is_video_done() or (self.video_player.is_video_done() and frame_no > -1):
             new_time = get_perf_counter_as_millis()
-            cur_frame = self.video_player.get_current_frame_no()
+            cur_frame = self.video_player.get_current_frame()
             target_frame = None
             if frame_no < 0:
                 logging.debug("in frame < 0, {} - {} = {}".format(new_time, self.current_time,
@@ -223,7 +223,7 @@ class MainWindow(QOpenGLWindow):
                 time_diff = new_time - self.current_time
                 frame_diff = convert_to_int(time_diff/self.fps_as_ms)
                 logging.debug('diffs {} {}'.format(time_diff, frame_diff))
-                frame_diff = 1  # this might be slightly slower sometimes but at least it's in sync
+                frame_diff = 5  # this might be slightly slower sometimes but at least it's in sync
                 if frame_diff > 0:
                     target_frame = self.video_player.skip_until_frame(frame_diff)
                 self.audio_player.emit_play_audio_signal(frame_diff, not self.is_playing)
@@ -267,7 +267,7 @@ class MainWindow(QOpenGLWindow):
             painter.drawRect(QRect(QPoint(left, self.slider_rect.top()), QPoint(right, self.slider_rect.bottom())))
 
     def draw_seek_bar(self, painter: QPainter):
-        pct_done = self.video_player.get_current_frame_no() / self.video_player.total_frames
+        pct_done = self.video_player.get_current_frame() / self.video_player.total_frames
         draw_slider(self.slider_rect, painter, self.theme, pct_done)
 
     def draw_timestamp(self, painter):
@@ -278,7 +278,7 @@ class MainWindow(QOpenGLWindow):
         font.setFamily("Helvetica [Cronyx]")
         painter.setFont(font)
 
-        cur_frames = self.video_player.get_current_frame_no()
+        cur_frames = self.video_player.get_current_frame()
         painter.drawText(QPoint(5, y_of_elapsed_time), format_time(*frames_to_time_components(cur_frames, self.fps)))
 
         total_frames = self.video_player.total_frames

@@ -1,15 +1,20 @@
 import sys
+import time
 
 from PyQt5.QtCore import QRect, Qt, QEvent, QObject
 from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
+from goddo_player.ui.state_store import State
 
 
 class PreviewWindow(QOpenGLWindow):
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
+
+        self.state = State()
+        self.state.new_preview_slot.emit(name)
 
         self.setMinimumWidth(640)
         self.setMinimumHeight(360)
@@ -31,8 +36,12 @@ class PreviewWindow(QOpenGLWindow):
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        if not self.preview.video_player.video_path:
-            painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
+        # todo: clear screen if no file loaded or aspect ratio is not same as window
+        # aspect1 = self.preview.get_rect().width() / self.preview.get_rect().height()
+        # aspect2 = self.preview.video_player.cur_frame.shape[1] / self.preview.video_player.cur_frame.shape[0]
+        # if not self.preview.video_player.video_path or abs(aspect1 / aspect2 - 1) <= 0.1:
+        #     print(f'clear {time.time()}')
+        painter.fillRect(QRect(0, 0, self.size().width(), self.size().height()), QColor("black"))
 
         painter.setPen(QColor("white"))
         self.preview.paint(painter)

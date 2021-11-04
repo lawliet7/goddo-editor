@@ -18,7 +18,6 @@ class TimelineWidget(QWidget):
         self.setAutoFillBackground(True)
 
     def sizeHint(self) -> QtCore.QSize:
-        print(f'in size hint {self.get_height()}')
         return QSize(TimelineWidget.INITIAL_WIDTH, self.get_height())
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
@@ -49,6 +48,9 @@ class TimelineWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.setWindowTitle('当真ゆきが風俗嬢')
+        self.setGeometry(502, 457, 1075, 393)
+
         self.scrollArea = QScrollArea()
         self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -56,8 +58,8 @@ class TimelineWindow(QMainWindow):
         self.inner_widget = TimelineWidget(lambda: self.geometry().height(), self.scrollArea)
         self.inner_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.scrollArea.setWidget(self.inner_widget)
-        # self.scrollArea.setMinimumWidth(640)
-        # self.scrollArea.setMinimumHeight(360)
+        self.scrollArea.setMinimumWidth(640)
+        self.scrollArea.setMinimumHeight(360)
         self.setCentralWidget(self.scrollArea)
 
         print(f'{self.scrollArea.width()} x {self.scrollArea.height()}')

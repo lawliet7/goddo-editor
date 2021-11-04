@@ -8,8 +8,6 @@ from goddo_player.ui.state_store import State
 
 class VideoPlayer(QObject):
     next_frame_slot = pyqtSignal(object, int)
-    play_slot = pyqtSignal()
-    pause_slot = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -30,8 +28,15 @@ class VideoPlayer(QObject):
 
         # self.state.update_preview_file_slot.connect(self.switch_source)
 
-        self.play_slot.connect(self.play_handler)
-        self.pause_slot.connect(self.pause_handler)
+        self.state.play_slot.connect(self.play_handler)
+        self.state.pause_slot.connect(self.pause_handler)
+        self.state.jump_frame_slot.connect(self.__jump_frame_handler)
+
+    def __jump_frame_handler(self, name, frame_no):
+        frame = self.get_next_frame(specific_frame=frame_no)
+        self.cur_frame = frame
+        self.cur_frame_no = frame_no
+        self.next_frame_slot.emit(frame, frame_no)
 
     @property
     def is_playing(self):
@@ -40,7 +45,7 @@ class VideoPlayer(QObject):
     @pyqtSlot()
     def play_handler(self):
         if not self.timer.isActive():
-            self.timer.start(int(1000 / self.fps)+1)
+            self.__start_timer()
 
     @pyqtSlot()
     def pause_handler(self):
@@ -48,6 +53,7 @@ class VideoPlayer(QObject):
         if self.timer.isActive():
             print('stopping timer')
             self.timer.stop()
+            self.state.post_pause_slot.emit('source', self.cur_frame_no)
 
     def __init_cap(self, video_file):
         self.cap = cv2.VideoCapture(video_file)
@@ -103,10 +109,17 @@ class VideoPlayer(QObject):
 
         if self.timer.isActive():
             self.timer.stop()
+            self.timer.deleteLater()
+            self.timer = QTimer()
+            self.timer.setTimerType(Qt.PreciseTimer)
         self.timer.timeout.connect(self.__emit_next_frame)
-        self.timer.start(int(1000 / self.fps)+1)
+        self.__start_timer()
 
-        print(f'source switched to {file_path}')
+        print(f'source switched to {file_path} fps {self.fps}')
+
+    def __start_timer(self):
+        print(f'timer {int(1000 / self.fps)+1}')
+        self.timer.start(int(1000 / self.fps)+1)
 
     def __emit_next_frame(self):
         self.cur_frame = self.get_next_frame()

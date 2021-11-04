@@ -45,11 +45,6 @@ class MyItemWidget(QWidget):
 
         flow = FlowLayout(margin=1)
         # vbox.addWidget(groupBox)
-        # for i in range(50):
-        #     btn = QPushButton(f"you suck {i}")
-        #     btn.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
-        #     btn.clicked.connect(self.delete_tag)
-        #     flow.addWidget(btn)
         widget.setLayout(flow)
         self.flow_layout = flow
 
@@ -110,6 +105,7 @@ class FileListWidget(QListWidget):
         self.state = State()
 
     def __should_accept_drop(self, url: 'QUrl'):
+        # url.url()
         _, ext = os.path.splitext(url.fileName())
         if ext[1:].lower() in self.accepted_video_formats:
             return True
@@ -141,18 +137,6 @@ class FileListWidget(QListWidget):
             # State().update_preview_file_slot.emit('source', url)
             self.state.new_file_slot.emit(url.path())
 
-            # time_components = frames_to_time_components(self.video_player.total_frames, self.video_player.fps)
-            # self.total_time_str = build_time_str(*time_components)
-            # self.__emit_play_event()
-
-            # self.window.setTitle('04.mp4')
-            # self.window.requestActivate()
-
-        # file_path = event.mimeData().text()
-        # file_name = file_path[file_path.rindex('/') + 1:]
-        # no_prefix_file_path = file_path[8:] if file_path.startswith('file:///') else file_path
-        # print(f'drop {event.mimeData().urls()}, {file_path}')
-
 
 class FileList(QWidget):
     def __init__(self):
@@ -160,9 +144,13 @@ class FileList(QWidget):
         title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
 
         self.setGeometry(0, title_bar_height, 500, 1000)
-        self.setWindowTitle("強姦方法")
+        self.setWindowTitle('中毒痴女教師')
 
-        self.initUI()
+        vbox = QVBoxLayout(self)
+        self.listWidget = FileListWidget()
+        self.listWidget.itemDoubleClicked.connect(self.double_clicked)
+        vbox.addWidget(self.listWidget)
+        self.setLayout(vbox)
 
         self.state = State()
         self.state.new_file_slot.connect(self.add_video)
@@ -179,32 +167,11 @@ class FileList(QWidget):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-    def initUI(self):
-        vbox = QVBoxLayout(self)
-
-        self.listWidget = FileListWidget()
-
-
-        list_data = []
-        # list_data = [r'C:\Users\William\Downloads\Welcome2Life.CAN.Ep05.mp4',
-        #              r'C:\Users\William\Downloads\Ayumi.mp4',
-        #              r'C:\Users\William\Downloads\xvsr049.HD.wmv',
-        #              # r'C:\Users\William\Downloads\[FOW-002] Kunoichi - Broken Princess (720P).mp4_10526_12568.mp4',
-        #              r'C:\Users\William\Downloads\Alice.CAN.Ep05.mp4',
-        #              r'C:\Users\William\Downloads\YourHonor.CAN.Ep07.mp4']
-
-        for item in list_data:
-            self.addVideo(item)
-
-        self.listWidget.itemDoubleClicked.connect(self.double_clicked)
-
-        vbox.addWidget(self.listWidget)
-        self.setLayout(vbox)
-
     def double_clicked(self, item):
         # QMessageBox.information(self, "Info", item.text())
         item_widget = self.listWidget.itemWidget(item)
         self.state.update_preview_file_slot.emit('source', QUrl(item_widget.file_path))
+        self.state.play_slot.emit('source')
 
         print(item_widget)
 

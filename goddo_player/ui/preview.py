@@ -1,5 +1,3 @@
-import os
-
 import imutils
 from PyQt5.QtCore import QRect, QEvent, Qt, pyqtSlot
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent, QPen, QFont, \
@@ -75,6 +73,9 @@ class VideoPreview(UiComponent):
         self.frame_select_range = FrameInOut()
 
         self.state.update_preview_file_slot.connect(self.switch_video)
+
+        self.state.play_slot.connect(self.__handle_play_event)
+        self.state.pause_slot.connect(self.__handle_pause_event)
 
     @staticmethod
     def __get_time_label_font() -> QFont:
@@ -177,7 +178,8 @@ class VideoPreview(UiComponent):
                 x2 = self.frame_select_range.out_frame / self.video_player.total_frames * width + left \
                     if self.frame_select_range.out_frame else right
 
-                rect = QRect(x1, self.time_bar_slider.get_rect().top(), x2 - x1, self.time_bar_slider.get_rect().height())
+                rect = QRect(x1, self.time_bar_slider.get_rect().top(),
+                             x2 - x1, self.time_bar_slider.get_rect().height())
                 painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
 
     @staticmethod
@@ -201,7 +203,11 @@ class VideoPreview(UiComponent):
         self.total_time_str = build_time_str(*time_components)
         self.__emit_pause_event()
 
-        self.window.setTitle(url.fileName())
+        if self.window.title().find(' - ') > 0:
+            idx = self.window.title().find(' - ')
+            self.window.setTitle(self.window.title()[:idx+3]+url.fileName())
+        else:
+            self.window.setTitle(self.window.title() + ' - ' + url.fileName())
         self.window.requestActivate()
 
     @pyqtSlot(object, int)
@@ -222,8 +228,10 @@ class VideoPreview(UiComponent):
                 self.__emit_play_event()
         elif event.key() == Qt.Key_I:
             self.frame_select_range.in_frame = self.video_player.cur_frame_no
+            self.window.update()
         elif event.key() == Qt.Key_O:
             self.frame_select_range.out_frame = self.video_player.cur_frame_no
+            self.window.update()
         elif event.key() == Qt.Key_Left:
             self.__emit_pause_event()
             self.time_bar_slider.blockSignals(True)
@@ -238,14 +246,24 @@ class VideoPreview(UiComponent):
         else:
             super().keyPressEvent(event)
 
-    def __emit_play_event(self):
+    def __handle_play_event(self):
         if self.video_player.cap:
             self.is_playing = True
             self.play_button.play_slot.emit()
-            self.video_player.play_slot.emit()
 
-    def __emit_pause_event(self):
+    def __handle_pause_event(self):
         if self.video_player.cap:
             self.is_playing = False
             self.play_button.pause_slot.emit()
-            self.video_player.pause_slot.emit()
+
+    def __emit_play_event(self):
+        if self.video_player.cap:
+            # self.is_playing = True
+            # self.play_button.pause_slot.emit()
+            self.state.play_slot.emit('source')
+
+    def __emit_pause_event(self):
+        if self.video_player.cap:
+            # self.is_playing = False
+            # self.play_button.play_slot.emit()
+            self.state.pause_slot.emit('source')

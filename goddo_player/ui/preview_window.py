@@ -2,7 +2,7 @@ import sys
 import time
 
 from PyQt5.QtCore import QRect, Qt, QEvent, QObject
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QMoveEvent
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.preview import VideoPreview
@@ -12,6 +12,9 @@ from goddo_player.ui.state_store import State
 class PreviewWindow(QOpenGLWindow):
     def __init__(self, name):
         super().__init__()
+
+        self.setTitle("強姦方法")
+        self.setGeometry(501, 31, 640, 360)
 
         self.state = State()
         self.state.new_preview_slot.emit(name)

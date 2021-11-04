@@ -17,8 +17,8 @@ def main():
     timeline_window = TimelineWindow()
 
     State().load_slot.emit(os.path.join('..', '..', 'saves', 'a.json'))
-    # preview_window.show()
-    # file_list.show()
+    preview_window.show()
+    file_list.show()
     timeline_window.show()
 
     sys.exit(app.exec_())

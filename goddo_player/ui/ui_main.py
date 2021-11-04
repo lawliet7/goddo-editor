@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication
 from goddo_player.ui.file_list import FileList
 from goddo_player.ui.preview_window import PreviewWindow
 from goddo_player.ui.state_store import State
+from goddo_player.ui.timeline_window import TimelineWindow
 
 
 def main():
@@ -13,10 +14,12 @@ def main():
 
     preview_window = PreviewWindow('source')
     file_list = FileList()
+    timeline_window = TimelineWindow()
 
     State().load_slot.emit(os.path.join('..', '..', 'saves', 'a.json'))
-    preview_window.show()
-    file_list.show()
+    # preview_window.show()
+    # file_list.show()
+    timeline_window.show()
 
     sys.exit(app.exec_())
 

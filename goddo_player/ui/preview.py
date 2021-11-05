@@ -14,29 +14,34 @@ from goddo_player.ui.volume_controls import VolumeControl
 
 
 class FrameInOut:
-    def __init__(self):
-        self.__in_frame = None
-        self.__out_frame = None
+    def __init__(self, in_frame=None, out_frame=None):
+        self.__in_frame = in_frame
+        self.__out_frame = out_frame
+
+        if in_frame and out_frame and in_frame > out_frame:
+            raise Exception(f'in frame({in_frame} > out frame({out_frame})')
+
+    def to_dict(self):
+        return {
+            'in_frame': self.__in_frame,
+            'out_frame': self.__out_frame,
+        }
 
     @property
     def in_frame(self):
         return self.__in_frame
 
-    @in_frame.setter
-    def in_frame(self, value):
-        self.__in_frame = value
-        if self.__out_frame and self.__out_frame < self.__in_frame:
-            self.__out_frame = None
-
     @property
     def out_frame(self):
         return self.__out_frame
 
-    @out_frame.setter
-    def out_frame(self, value):
-        self.__out_frame = value
-        if self.__in_frame and self.__in_frame > self.__out_frame:
-            self.__in_frame = None
+    def update_in_frame(self, in_frame):
+        out_frame = None if self.__out_frame and self.__out_frame < in_frame else self.__out_frame
+        return FrameInOut(in_frame, out_frame)
+
+    def update_out_frame(self, out_frame):
+        in_frame = None if self.__in_frame and self.__in_frame > out_frame else self.__in_frame
+        return FrameInOut(in_frame, out_frame)
 
 
 class VideoPreview(UiComponent):
@@ -71,7 +76,7 @@ class VideoPreview(UiComponent):
         self.char_height = metrics.capHeight()
         self.width_of_time_label = metrics.width(self.total_time_str)
 
-        self.frame_select_range = FrameInOut()
+        # self.frame_select_range = FrameInOut()
 
         self.state.update_preview_file_slot.connect(self.switch_video)
 
@@ -180,15 +185,16 @@ class VideoPreview(UiComponent):
             painter.drawText(x + self.width_of_2_chars, y + 10 + self.char_height, self.total_time_str)
             painter.setPen(orig_pen)
 
-            if self.frame_select_range.in_frame or self.frame_select_range.out_frame:
+            in_out: FrameInOut = self.state.preview_windows['source']['frame_in_out']
+            if in_out.in_frame or in_out.out_frame:
                 left = self.get_rect().left()
                 right = self.get_rect().right()
                 width = right - left
 
-                x1 = self.frame_select_range.in_frame / self.video_player.total_frames * width + left \
-                    if self.frame_select_range.in_frame else left
-                x2 = self.frame_select_range.out_frame / self.video_player.total_frames * width + left \
-                    if self.frame_select_range.out_frame else right
+                x1 = in_out.in_frame / self.video_player.total_frames * width + left \
+                    if in_out.in_frame else left
+                x2 = in_out.out_frame / self.video_player.total_frames * width + left \
+                    if in_out.out_frame else right
 
                 rect = QRect(x1, self.time_bar_slider.get_rect().top(),
                              x2 - x1, self.time_bar_slider.get_rect().height())
@@ -239,10 +245,12 @@ class VideoPreview(UiComponent):
             else:
                 self.__emit_play_event()
         elif event.key() == Qt.Key_I:
-            self.frame_select_range.in_frame = self.video_player.cur_frame_no
+            # self.frame_select_range.in_frame = self.video_player.cur_frame_no
+            self.state.preview_in_frame_slot.emit('source', self.video_player.cur_frame_no)
             self.window.update()
         elif event.key() == Qt.Key_O:
-            self.frame_select_range.out_frame = self.video_player.cur_frame_no
+            # self.frame_select_range.out_frame = self.video_player.cur_frame_no
+            self.state.preview_out_frame_slot.emit('source', self.video_player.cur_frame_no)
             self.window.update()
         elif event.key() == Qt.Key_Left:
             self.__emit_pause_event()

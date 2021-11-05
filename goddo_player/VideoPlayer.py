@@ -118,7 +118,6 @@ class VideoPlayer(QObject):
         print(f'source switched to {file_path} fps {self.fps}')
 
     def __start_timer(self):
-        print(f'timer {int(1000 / self.fps)+1}')
         self.timer.start(int(1000 / self.fps)+1)
 
     def __emit_next_frame(self):

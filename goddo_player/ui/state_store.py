@@ -19,6 +19,8 @@ class State(QObject):
     pause_slot = pyqtSignal(str)
     post_pause_slot = pyqtSignal(str, int)
     jump_frame_slot = pyqtSignal(str, int)
+    preview_in_frame_slot = pyqtSignal(str, int)
+    preview_out_frame_slot = pyqtSignal(str, int)
 
     def __init__(self):
         super().__init__()
@@ -40,6 +42,34 @@ class State(QObject):
         self.load_slot.connect(self.__load_file)
         self.save_slot.connect(self.__save_file)
         self.post_pause_slot.connect(self.__post_pause_handler)
+        self.preview_in_frame_slot.connect(self.__preview_in_frame_handler)
+        self.preview_out_frame_slot.connect(self.__preview_out_frame_handler)
+
+    def __preview_in_frame_handler(self, name: str, frame_no: int):
+        new_dict1 = {
+            **self.preview_windows[name],
+            'frame_in_out': self.preview_windows[name]['frame_in_out'].update_in_frame(frame_no),
+        }
+
+        new_dict = {
+            **self.preview_windows,
+            name: new_dict1,
+        }
+        self.preview_windows = new_dict
+        print(self.preview_windows)
+
+    def __preview_out_frame_handler(self, name: str, frame_no: int):
+        new_dict1 = {
+            **self.preview_windows[name],
+            'frame_in_out': self.preview_windows[name]['frame_in_out'].update_out_frame(frame_no),
+        }
+
+        new_dict = {
+            **self.preview_windows,
+            name: new_dict1,
+        }
+        self.preview_windows = new_dict
+        print(self.preview_windows)
 
     def __post_pause_handler(self, name: str, frame_no: int):
         new_dict1 = {
@@ -66,25 +96,31 @@ class State(QObject):
         all_files = self.table_files.all()
         print(all_files)
         for file in all_files:
-            print(f'emitting file {file["file_path"]}')
             self.new_file_slot.emit(file["file_path"])
 
         all_preview_windows = self.table_preview_windows.all()
         for preview_window in all_preview_windows:
-            print(f'preview {preview_window}')
             self.new_preview_slot.emit(preview_window['name'])
-            self.update_preview_file_slot.emit(preview_window['name'], QUrl(preview_window['video_file']))
-            self.jump_frame_slot.emit(preview_window['name'], preview_window['frame_no'])
+            if preview_window['video_file']:
+                self.update_preview_file_slot.emit(preview_window['name'], QUrl(preview_window['video_file']))
+                if preview_window['frame_in_out']['in_frame']:
+                    self.preview_in_frame_slot.emit('source', preview_window['frame_in_out']['in_frame'])
+                if preview_window['frame_in_out']['out_frame']:
+                    self.preview_out_frame_slot.emit('source', preview_window['frame_in_out']['out_frame'])
+                self.jump_frame_slot.emit(preview_window['name'], preview_window['frame_no'])
 
         if 'source' not in self.preview_windows:
             self.new_preview_slot.emit('source')
 
     @pyqtSlot(str, QUrl)
     def __on_update_preview_file(self, name, file):
+        from goddo_player.ui.preview import FrameInOut
+
         new_dict1 = {
             **self.preview_windows[name],
             'video_file': file,
             'frame_no': 0,
+            'frame_in_out': FrameInOut()
         }
 
         new_dict = {
@@ -97,8 +133,21 @@ class State(QObject):
     @pyqtSlot(str)
     def __on_new_preview(self, name):
         if name not in self.preview_windows.keys():
+            from goddo_player.ui.preview import FrameInOut
+
             print(f'new preview window {name}')
-            self.preview_windows = copy_and_add_to_dict(self.preview_windows, name, {"video_file": None, "frame_no": 0})
+            new_dict1 = {
+                'video_file': None,
+                'frame_no': 0,
+                'frame_in_out': FrameInOut()
+            }
+
+            new_dict = {
+                **self.preview_windows,
+                name: new_dict1,
+            }
+            self.preview_windows = new_dict
+            print(self.preview_windows)
         else:
             raise Exception(f"duplicate preview window {name}")
 
@@ -110,6 +159,8 @@ class State(QObject):
 
     @pyqtSlot()
     def __save_file(self):
+        from goddo_player.ui.preview import FrameInOut
+
         print('save it')
         # todo msg box to select save file
 
@@ -124,6 +175,13 @@ class State(QObject):
         self.table_preview_windows.truncate()
         self.table_preview_windows.insert({
             'name': 'source',
-            'video_file': self.preview_windows['source']['video_file'].url(),
+            'video_file': self.__file_path_to_url(self.preview_windows['source']['video_file']),
             'frame_no': self.preview_windows['source']['frame_no'],
+            'frame_in_out': self.preview_windows['source']['frame_in_out'].to_dict(),
         })
+
+    def __file_path_to_url(self, url_file_path: QUrl) -> str:
+        if url_file_path:
+            return url_file_path.url()
+        else:
+            return None

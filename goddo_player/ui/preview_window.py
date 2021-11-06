@@ -1,11 +1,8 @@
-import sys
-import time
-
-from PyQt5.QtCore import QRect, Qt, QEvent, QObject
-from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QMoveEvent
+from PyQt5.QtCore import QRect, Qt, QEvent, QObject, QMimeData
+from PyQt5.QtGui import QPainter, QColor, QOpenGLWindow, QKeyEvent, QMouseEvent, QDrag
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.ui.preview import VideoPreview
+from goddo_player.ui.preview import VideoPreview, FrameInOut
 from goddo_player.ui.state_store import State
 
 
@@ -73,5 +70,15 @@ class PreviewWindow(QOpenGLWindow):
             self.preview.event(event)
 
         return super().event(event)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        frame_in_out: FrameInOut = self.state.preview_windows["source"]['frame_in_out']
+        mime_data.setText(f'{frame_in_out.in_frame or ""}|{frame_in_out.out_frame or ""}')
+        drag.setMimeData(mime_data)
+        drag.exec()
+
 
 

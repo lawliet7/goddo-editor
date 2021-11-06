@@ -6,42 +6,12 @@ from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouse
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
+from goddo_player.ui.frame_in_out import FrameInOut
 from goddo_player.ui.play_button import PlayButton
 from goddo_player.ui.slider import Slider
 from goddo_player.ui.state_store import State
 from goddo_player.ui.ui_component import UiComponent
 from goddo_player.ui.volume_controls import VolumeControl
-
-
-class FrameInOut:
-    def __init__(self, in_frame=None, out_frame=None):
-        self.__in_frame = in_frame
-        self.__out_frame = out_frame
-
-        if in_frame and out_frame and in_frame > out_frame:
-            raise Exception(f'in frame({in_frame} > out frame({out_frame})')
-
-    def to_dict(self):
-        return {
-            'in_frame': self.__in_frame,
-            'out_frame': self.__out_frame,
-        }
-
-    @property
-    def in_frame(self):
-        return self.__in_frame
-
-    @property
-    def out_frame(self):
-        return self.__out_frame
-
-    def update_in_frame(self, in_frame):
-        out_frame = None if self.__out_frame and self.__out_frame < in_frame else self.__out_frame
-        return FrameInOut(in_frame, out_frame)
-
-    def update_out_frame(self, out_frame):
-        in_frame = None if self.__in_frame and self.__in_frame > out_frame else self.__in_frame
-        return FrameInOut(in_frame, out_frame)
 
 
 class VideoPreview(UiComponent):
@@ -212,7 +182,8 @@ class VideoPreview(UiComponent):
             event.accept()
 
     def onDropEvent(self, event: QDropEvent) -> None:
-        self.switch_video('', event.mimeData().urls()[0])
+        # self.switch_video('', event.mimeData().urls()[0])
+        self.state.update_preview_file_slot.emit('source', event.mimeData().urls()[0])
 
     def switch_video(self, window_name, url: 'QUrl'):
         print(f'url type {type(url)}, url {url}')

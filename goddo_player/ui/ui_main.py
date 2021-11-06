@@ -23,6 +23,15 @@ def main():
 
     sys.exit(app.exec_())
 
+    # x = '123|'
+    # y = x.split('|')
+    # print(y)
+    #
+    # import re
+    # z = re.fullmatch('^[0-9]*\\|[0-9]*$', x)
+    # print(z)
+
+
 
 if __name__ == '__main__':
     main()

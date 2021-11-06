@@ -1,10 +1,9 @@
-import os
-
+import cv2
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, pyqtSlot
-from tinydb import TinyDB, Query
+from tinydb import TinyDB
 from tinydb.table import Table
 
-from goddo_player.ui.func_collection_utils import copy_and_add_to_dict
+from goddo_player.ui.frame_in_out import FrameInOut
 from goddo_player.ui.singleton_meta import singleton
 
 
@@ -94,7 +93,6 @@ class State(QObject):
         self.files = []
 
         all_files = self.table_files.all()
-        print(all_files)
         for file in all_files:
             self.new_file_slot.emit(file["file_path"])
 
@@ -114,11 +112,18 @@ class State(QObject):
 
     @pyqtSlot(str, QUrl)
     def __on_update_preview_file(self, name, file):
-        from goddo_player.ui.preview import FrameInOut
+        cap = cv2.VideoCapture(file.path())
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
 
         new_dict1 = {
             **self.preview_windows[name],
             'video_file': file,
+            'video_details': {
+                'fps': fps,
+                'total_frames': total_frames,
+            },
             'frame_no': 0,
             'frame_in_out': FrameInOut()
         }
@@ -133,8 +138,6 @@ class State(QObject):
     @pyqtSlot(str)
     def __on_new_preview(self, name):
         if name not in self.preview_windows.keys():
-            from goddo_player.ui.preview import FrameInOut
-
             print(f'new preview window {name}')
             new_dict1 = {
                 'video_file': None,
@@ -159,7 +162,6 @@ class State(QObject):
 
     @pyqtSlot()
     def __save_file(self):
-        from goddo_player.ui.preview import FrameInOut
 
         print('save it')
         # todo msg box to select save file
@@ -177,7 +179,7 @@ class State(QObject):
             'name': 'source',
             'video_file': self.__file_path_to_url(self.preview_windows['source']['video_file']),
             'frame_no': self.preview_windows['source']['frame_no'],
-            'frame_in_out': self.preview_windows['source']['frame_in_out'].to_dict(),
+            'frame_in_out': self.preview_windows['source']['frame_in_out'].asdict(),
         })
 
     def __file_path_to_url(self, url_file_path: QUrl) -> str:

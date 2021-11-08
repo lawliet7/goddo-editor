@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 
-@dataclass(frozen=True, init=True)
+@dataclass(frozen=True)
 class FrameInOut:
     in_frame: int = field(default=None)
     out_frame: int = field(default=None)

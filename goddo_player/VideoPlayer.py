@@ -37,6 +37,7 @@ class VideoPlayer(QObject):
         self.cur_frame = frame
         self.cur_frame_no = frame_no
         self.next_frame_slot.emit(frame, frame_no)
+        self.state.post_pause_slot.emit(name, frame_no)
 
     @property
     def is_playing(self):

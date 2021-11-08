@@ -11,7 +11,8 @@ from goddo_player.ui.state_store import State
 
 class TimelineWidget(QWidget):
     INITIAL_WIDTH = 1000
-    WIDTH_OF_ONE_MIN = 60
+    WIDTH_OF_ONE_MIN = 120
+    LENGTH_OF_TICK = 20
 
     def __init__(self, get_height, scroll_area):
         super().__init__()
@@ -23,8 +24,6 @@ class TimelineWidget(QWidget):
         palette.setColor(self.backgroundRole(), QColor(12, 29, 45))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
-
-        self.clips = []
 
     def sizeHint(self) -> QtCore.QSize:
         return QSize(TimelineWidget.INITIAL_WIDTH, self.get_height())
@@ -44,18 +43,33 @@ class TimelineWidget(QWidget):
 
             for j in range(6):
                 tick_x = int(x - self.WIDTH_OF_ONE_MIN/6*(j+1))
-                tick_length = 10 if j == 2 else 5
+                tick_length = self.LENGTH_OF_TICK if j == 2 else int(self.LENGTH_OF_TICK / 2)
                 painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
 
         painter.drawLine(0, height_of_line, self.width(), height_of_line)
 
-        for c in self.clips:
+        x = 0
+        for c in self.state.timeline['clips']:
             f: FrameInOut = c['frame_in_out']
-            x = f.out_frame - f.in_frame
             fps = self.state.preview_windows['source']['video_details']['fps']
-            n_mins = x / fps / 60
+            total_frames = self.state.preview_windows['source']['video_details']['total_frames']
+            if f.out_frame and f.in_frame:
+                n_frames = f.out_frame - f.in_frame
+            elif f.in_frame:
+                n_frames = total_frames - f.in_frame
+            elif f.out_frame:
+                n_frames = f.out_frame
+            else:
+                raise Exception("both in and out frame is blank")
+            n_mins = n_frames / fps / 60
             width = n_mins * self.WIDTH_OF_ONE_MIN
-            painter.fillRect(QRect(0, height_of_line+50, width, 100), Qt.darkRed)
+            rect = QRect(x, height_of_line+50, width, 100)
+            painter.fillRect(rect, Qt.darkRed)
+            pen = painter.pen()
+            painter.setPen(Qt.red)
+            painter.drawRect(rect)
+            painter.setPen(pen)
+            x += width + 1
 
         painter.end()
 
@@ -103,14 +117,14 @@ class TimelineWindow(QMainWindow):
     #     event.accept()
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        # data = pickle.loads(event.mimeData().data("custom"))
         print('drop')
-        in_frame, out_frame = [int(x) for x in event.mimeData().text().split('|')]
+        in_frame, out_frame = [int(x) if x != '' else None for x in event.mimeData().text().split('|')]
         print(f'drop {in_frame} {out_frame}')
-        self.inner_widget.clips.append({
+        self.state.add_timeline_clip_slot.emit({
             "source": self.state.preview_windows['source']['video_file'],
             "frame_in_out": FrameInOut(in_frame, out_frame),
         })
         self.activateWindow()
         self.update()
+        print(f'preview {self.state.preview_windows}')
 

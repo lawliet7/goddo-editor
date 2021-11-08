@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import cv2
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, pyqtSlot
 from tinydb import TinyDB
@@ -20,6 +22,7 @@ class State(QObject):
     jump_frame_slot = pyqtSignal(str, int)
     preview_in_frame_slot = pyqtSignal(str, int)
     preview_out_frame_slot = pyqtSignal(str, int)
+    add_timeline_clip_slot = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
@@ -30,10 +33,14 @@ class State(QObject):
         self.db = None
         self.table_preview_windows: Table = None
         self.table_files: Table = None
+        self.table_timelines: Table = None
         # video_table = self.db.table('videos')
 
         self.preview_windows = {}
         self.files = []
+        self.timeline = {
+            "clips": []
+        }
 
         self.update_preview_file_slot.connect(self.__on_update_preview_file)
         self.new_preview_slot.connect(self.__on_new_preview)
@@ -43,6 +50,14 @@ class State(QObject):
         self.post_pause_slot.connect(self.__post_pause_handler)
         self.preview_in_frame_slot.connect(self.__preview_in_frame_handler)
         self.preview_out_frame_slot.connect(self.__preview_out_frame_handler)
+        self.add_timeline_clip_slot.connect(self.__add_timeline_clip_handler)
+
+    def __add_timeline_clip_handler(self, clip):
+        self.timeline = {
+            **self.timeline,
+            'clips': self.timeline['clips'] + [clip],
+        }
+        print(self.timeline)
 
     def __preview_in_frame_handler(self, name: str, frame_no: int):
         new_dict1 = {
@@ -87,6 +102,7 @@ class State(QObject):
         self.db = TinyDB(save_file)
         self.table_preview_windows: Table = self.db.table('preview_windows')
         self.table_files: Table = self.db.table('files')
+        self.table_timelines: Table = self.db.table('timelines')
         self.save_file = save_file
 
         self.preview_windows = {}
@@ -109,6 +125,15 @@ class State(QObject):
 
         if 'source' not in self.preview_windows:
             self.new_preview_slot.emit('source')
+
+        all_timelines = self.table_timelines.all()
+        for timeline in all_timelines:
+            for clip in timeline['clips']:
+                db_frame_in_out = clip['frame_in_out']
+                self.add_timeline_clip_slot.emit({
+                    "source": QUrl(clip['source']),
+                    "frame_in_out": FrameInOut(db_frame_in_out['in_frame'], db_frame_in_out['out_frame']),
+                })
 
     @pyqtSlot(str, QUrl)
     def __on_update_preview_file(self, name, file):
@@ -179,8 +204,20 @@ class State(QObject):
             'name': 'source',
             'video_file': self.__file_path_to_url(self.preview_windows['source']['video_file']),
             'frame_no': self.preview_windows['source']['frame_no'],
-            'frame_in_out': self.preview_windows['source']['frame_in_out'].asdict(),
+            'frame_in_out': asdict(self.preview_windows['source']['frame_in_out']),
         })
+
+        self.table_timelines.truncate()
+        self.table_timelines.insert({
+            'name': 'default',
+            'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
+        })
+
+    def __timeline_clip_to_db_dict(self, timeline_clip: dict):
+        return {
+            "source": timeline_clip['source'].path(),
+            "frame_in_out": asdict(timeline_clip['frame_in_out'])
+        }
 
     def __file_path_to_url(self, url_file_path: QUrl) -> str:
         if url_file_path:

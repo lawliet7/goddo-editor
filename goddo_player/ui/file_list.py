@@ -153,10 +153,11 @@ class FileList(QWidget):
         self.setLayout(vbox)
 
         self.state = State()
-        self.state.new_file_slot.connect(self.add_video)
+        self.state.new_file_added_slot.connect(self.add_video)
 
     def add_video(self, file_path):
         print(f'adding video {file_path}')
+
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
@@ -182,6 +183,7 @@ class FileList(QWidget):
             self.state.save_slot.emit()
         else:
             super().keyPressEvent(event)
+
 
 def main():
     app = QApplication(sys.argv)

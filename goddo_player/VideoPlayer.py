@@ -113,6 +113,7 @@ class VideoPlayer(QObject):
             self.timer.deleteLater()
             self.timer = QTimer()
             self.timer.setTimerType(Qt.PreciseTimer)
+        self.__emit_next_frame()
         self.timer.timeout.connect(self.__emit_next_frame)
         self.__start_timer()
 

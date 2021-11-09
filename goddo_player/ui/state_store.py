@@ -14,6 +14,7 @@ class State(QObject):
     update_preview_file_slot = pyqtSignal(str, QUrl)
     new_preview_slot = pyqtSignal(str)
     new_file_slot = pyqtSignal(str)
+    new_file_added_slot = pyqtSignal(str)
     load_slot = pyqtSignal(str)
     save_slot = pyqtSignal()
     play_slot = pyqtSignal(str)
@@ -182,8 +183,18 @@ class State(QObject):
     @pyqtSlot(str)
     def __on_new_file(self, file):
         print('on new file')
-        if file not in self.files:
-            self.files = self.files + [file]
+
+        if len([x for x in self.files if x['file_path'] == file]) == 0:
+            print(f'not duplicate {file}')
+            cap = cv2.VideoCapture(file)
+            data = {
+                'file_path': file,
+                'fps': cap.get(cv2.CAP_PROP_FPS),
+                'total_frames': int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
+            }
+            cap.release()
+            self.files = self.files + [data]
+            self.new_file_added_slot.emit(file)
 
     @pyqtSlot()
     def __save_file(self):
@@ -195,7 +206,7 @@ class State(QObject):
 
         for i, file in enumerate(self.files):
             self.table_files.insert({
-                'file_path': file,
+                'file_path': file['file_path'],
                 'order': i+1,
             })
 

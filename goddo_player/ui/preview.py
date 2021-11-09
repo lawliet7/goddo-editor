@@ -191,6 +191,7 @@ class VideoPreview(UiComponent):
         time_components = frames_to_time_components(self.video_player.total_frames, self.video_player.fps)
         self.total_time_str = build_time_str(*time_components)
         self.__emit_pause_event()
+        self.state.new_file_slot.emit(url.path())
 
         if self.window.title().find(' - ') > 0:
             idx = self.window.title().find(' - ')

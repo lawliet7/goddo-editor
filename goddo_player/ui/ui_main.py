@@ -1,6 +1,7 @@
 import os
 import sys
 
+from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.ui.file_list import FileList
@@ -35,3 +36,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # import platform
+    # print(platform.system())
+    # url = QUrl('/C:/Users/William/Downloads/Ayumi.mp4')
+    # print(url.url())

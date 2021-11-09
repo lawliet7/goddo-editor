@@ -1,4 +1,6 @@
+import platform
 import re
+import time
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
@@ -68,6 +70,10 @@ class TimelineWidget(QWidget):
             pen = painter.pen()
             painter.setPen(Qt.red)
             painter.drawRect(rect)
+
+            painter.setPen(Qt.white)
+            filename = c["source"].fileName()
+            painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{f.in_frame} - {f.out_frame}')
             painter.setPen(pen)
             x += width + 1
 
@@ -100,26 +106,60 @@ class TimelineWindow(QMainWindow):
 
     def resizeEvent(self, resize_event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(resize_event)
-        self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()), resize_event.size().height())
+        self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()),
+                                 resize_event.size().height())
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
+            self.__process()
         else:
             super().keyPressEvent(event)
+
+    def __process(self):
+        import subprocess
+        import os
+
+        tmp_dir = os.path.join('..', '..', 'output', 'tmp')
+        for f in os.listdir(tmp_dir):
+            os.remove(os.path.join(tmp_dir, f))
+
+        for i, clip in enumerate(self.state.timeline['clips']):
+            file = [x for x in self.state.files if x['file_path'] == clip['source'].path()][0]
+            # print(self.state.files)
+            print(file)
+            print(clip)
+            print(clip['source'].toLocalFile())
+            frame_in_out: FrameInOut = clip['frame_in_out']
+            start_time = frame_in_out.in_frame * file['fps'] / 1000
+            end_time = frame_in_out.out_frame * file['fps'] / 1000
+            file_path = file['file_path'][1:] if platform.system() == 'Windows' else file['file_path']
+            output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
+            cmd = f"ffmpeg -ss {start_time} -i {file_path} -to {end_time - start_time} -cbr 15" \
+                  f" {output_path}"
+            print(f'executing cmd: {cmd}')
+            subprocess.call(cmd, shell=True)
+
+        concat_file_path = os.path.join(tmp_dir, 'concat.txt')
+        tmp_vid_files = [f"file '{os.path.join(tmp_dir, f)}'\n" for f in os.listdir(tmp_dir)]
+        with open(concat_file_path, mode='w', encoding='utf-8') as f:
+            f.writelines(tmp_vid_files)
+
+        output_file_path = os.path.join(tmp_dir, '..',  f'output_{time.time()}.mp4')
+        cmd = f"ffmpeg -f concat -safe 0 -i {concat_file_path} -c copy {output_file_path}"
+        print(f'executing cmd: {cmd}')
+        subprocess.call(cmd, shell=True)
+
+        print('output generated!!')
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         print(f'drag enter {event.mimeData().text()}')
         if re.fullmatch('^[0-9]*\\|[0-9]*$', event.mimeData().text()):
             event.accept()
 
-    # def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
-    #     event.accept()
-
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        print('drop')
         in_frame, out_frame = [int(x) if x != '' else None for x in event.mimeData().text().split('|')]
-        print(f'drop {in_frame} {out_frame}')
         self.state.add_timeline_clip_slot.emit({
             "source": self.state.preview_windows['source']['video_file'],
             "frame_in_out": FrameInOut(in_frame, out_frame),
@@ -127,4 +167,3 @@ class TimelineWindow(QMainWindow):
         self.activateWindow()
         self.update()
         print(f'preview {self.state.preview_windows}')
-

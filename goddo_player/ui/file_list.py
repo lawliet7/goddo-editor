@@ -114,6 +114,7 @@ class FileListWidget(QListWidget):
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         print('drag enter')
+        print(event.mimeData().urls())
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             for url in mime_data.urls():

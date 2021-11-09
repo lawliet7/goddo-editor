@@ -122,6 +122,8 @@ class TimelineWindow(QMainWindow):
         import os
 
         tmp_dir = os.path.join('..', '..', 'output', 'tmp')
+        from pathlib import Path
+        Path(tmp_dir).mkdir(parents=True, exist_ok=True)
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
 

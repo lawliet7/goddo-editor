@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Callable
 
 from PyQt5.QtCore import QObject, QEvent, QRect
-from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent, QWindow, QPaintDeviceWindow
+from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent, QWindow, QPaintDeviceWindow, QWheelEvent
 
 
 def get_window(obj: QObject) -> QPaintDeviceWindow:
@@ -48,6 +48,8 @@ class UiComponent(QObject):
             self.mouseEnterEvent(event)
         elif event.type() == QEvent.Leave:
             self.mouseLeaveEvent(event)
+        elif event.type() == QEvent.Wheel:
+            self.mouseWheelEvent(event)
         elif event.type() == QEvent.DragEnter:
             self.dragEnterEvent(event)
         elif event.type() == QEvent.Drop:
@@ -62,6 +64,9 @@ class UiComponent(QObject):
         pass
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        pass
+
+    def mouseWheelEvent(self, event: QWheelEvent) -> None:
         pass
 
     def keyPressEvent(self, event: QKeyEvent) -> None:

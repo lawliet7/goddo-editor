@@ -1,5 +1,3 @@
-import os
-
 import cv2
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot, Qt
 
@@ -15,7 +13,6 @@ class VideoPlayer(QObject):
         self.state = State()
         self.position = -1
         self.cap = None
-        self.fps = -1
         self.total_frames = 0
         self.cur_frame = None
         self.cur_frame_no = 0
@@ -31,6 +28,7 @@ class VideoPlayer(QObject):
         self.state.play_slot.connect(self.play_handler)
         self.state.pause_slot.connect(self.pause_handler)
         self.state.jump_frame_slot.connect(self.__jump_frame_handler)
+        self.state.change_speed_slot.connect(self.__change_speed)
 
     def __jump_frame_handler(self, name, frame_no):
         frame = self.get_next_frame(specific_frame=frame_no)
@@ -64,7 +62,7 @@ class VideoPlayer(QObject):
     @property
     def video_path(self):
         # return self.state.video_file
-        return self.state.preview_windows[0]["video_file"]
+        return self.state.preview_windows['source']["file_path"]
 
     def get_current_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else -1
@@ -120,10 +118,32 @@ class VideoPlayer(QObject):
         print(f'source switched to {file_path} fps {self.fps}')
 
     def __start_timer(self):
+        # file_path = self.state.preview_windows['source']["video_file"].path()
+        # file = [x for x in self.state.files if x['file_path'] == file_path][0]
+        # self.playback_speed = int(1000 / file['fps'])+1
+        # print(f'playback speed = {self.playback_speed}')
         self.timer.start(int(1000 / self.fps)+1)
 
+    def __change_speed(self, name, speed):
+        interval = self.timer.interval()
+        print(f'interval {interval}')
+
+        if self.timer.interval() != speed:
+            self.timer.stop()
+            self.timer.deleteLater()
+            self.timer = QTimer()
+            self.timer.setTimerType(Qt.PreciseTimer)
+            self.timer.timeout.connect(self.__emit_next_frame)
+            self.timer.start(speed)
+
+        if self.is_playing:
+            self.state.play_slot.emit('source')
+
     def __emit_next_frame(self):
-        self.cur_frame = self.get_next_frame()
+        
+        frame = self.get_next_frame()
+        # self.cur_frame = next((el for el in [frame3, frame2, frame1] if el is not None), None)
+        self.cur_frame = frame
         self.cur_frame_no = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
 
         self.next_frame_slot.emit(self.cur_frame, self.cur_frame_no)

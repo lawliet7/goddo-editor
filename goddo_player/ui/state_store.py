@@ -24,6 +24,7 @@ class State(QObject):
     preview_in_frame_slot = pyqtSignal(str, int)
     preview_out_frame_slot = pyqtSignal(str, int)
     add_timeline_clip_slot = pyqtSignal(dict)
+    change_speed_slot = pyqtSignal(str, int)
 
     def __init__(self):
         super().__init__()
@@ -52,6 +53,7 @@ class State(QObject):
         self.preview_in_frame_slot.connect(self.__preview_in_frame_handler)
         self.preview_out_frame_slot.connect(self.__preview_out_frame_handler)
         self.add_timeline_clip_slot.connect(self.__add_timeline_clip_handler)
+        self.change_speed_slot.connect(self.__change_speed_handler)
 
     def __add_timeline_clip_handler(self, clip):
         self.timeline = {
@@ -151,7 +153,23 @@ class State(QObject):
                 'total_frames': total_frames,
             },
             'frame_no': 0,
-            'frame_in_out': FrameInOut()
+            'frame_in_out': FrameInOut(),
+            'speed': 0,
+        }
+
+        new_dict = {
+            **self.preview_windows,
+            name: new_dict1,
+        }
+        self.preview_windows = new_dict
+        print(self.preview_windows)
+
+        self.change_speed_slot.emit('source', int(1000 / fps) + 1)
+
+    def __change_speed_handler(self, name, speed):
+        new_dict1 = {
+            **self.preview_windows[name],
+            'speed': speed,
         }
 
         new_dict = {

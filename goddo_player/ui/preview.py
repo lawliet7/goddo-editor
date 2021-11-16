@@ -1,7 +1,7 @@
 import imutils
 from PyQt5.QtCore import QRect, QEvent, Qt, pyqtSlot
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QMouseEvent, QPen, QFont, \
-    QFontMetrics, QColor
+    QFontMetrics, QColor, QWheelEvent
 
 from goddo_player.VideoPlayer import VideoPlayer
 from goddo_player.draw_utils import numpy_to_pixmap
@@ -101,6 +101,8 @@ class VideoPreview(UiComponent):
             return False
         elif event.type() == QEvent.Drop:
             return False
+        elif event.type() == QEvent.Wheel:
+            return False
 
         return super().eventFilter(obj, event)
 
@@ -118,6 +120,13 @@ class VideoPreview(UiComponent):
                 self.__emit_pause_event()
             else:
                 self.__emit_play_event()
+
+    def mouseWheelEvent(self, event: QWheelEvent) -> None:
+        # print(f'wheel angle_delta={event.angleDelta()}')
+        if event.angleDelta().y() > 0:
+            print('mouse wheel up')
+        else:
+            print('mouse wheel down')
 
     def paint(self, painter: QPainter):
         if self.video_player.cur_frame is not None:
@@ -153,6 +162,10 @@ class VideoPreview(UiComponent):
             painter.drawText(x, y, f'{self.cur_time_str} /')
             painter.setPen(self.__get_darker_pen(orig_pen))
             painter.drawText(x + self.width_of_2_chars, y + 10 + self.char_height, self.total_time_str)
+
+            speed = self.state.preview_windows['source']['speed']
+            painter.drawText(x + self.width_of_time_label + 20, y, f'spd: \n{speed:02d}')
+
             painter.setPen(orig_pen)
 
             in_out: FrameInOut = self.state.preview_windows['source']['frame_in_out']
@@ -224,6 +237,15 @@ class VideoPreview(UiComponent):
             # self.frame_select_range.out_frame = self.video_player.cur_frame_no
             self.state.preview_out_frame_slot.emit('source', self.video_player.cur_frame_no)
             self.window.update()
+        elif event.key() == Qt.Key_M:
+            # self.frame_select_range.out_frame = self.video_player.cur_frame_no
+            fps = self.state.preview_windows['source']['video_details']['fps']
+            speed = self.state.preview_windows['source']['speed']
+            if speed > 1:
+                self.state.change_speed_slot.emit('source', 1)
+            else:
+                self.state.change_speed_slot.emit('source', int(1000 / fps) + 1)
+
         elif event.key() == Qt.Key_Left:
             self.__emit_pause_event()
             self.time_bar_slider.blockSignals(True)

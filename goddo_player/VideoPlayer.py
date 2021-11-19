@@ -128,21 +128,27 @@ class VideoPlayer(QObject):
         interval = self.timer.interval()
         print(f'interval {interval}')
 
-        if self.timer.interval() != speed:
+        speed2 = max(speed, 1)
+
+        if self.timer.interval() != speed2:
             self.timer.stop()
             self.timer.deleteLater()
             self.timer = QTimer()
             self.timer.setTimerType(Qt.PreciseTimer)
             self.timer.timeout.connect(self.__emit_next_frame)
-            self.timer.start(speed)
+            self.timer.start(speed2)
 
         if self.is_playing:
             self.state.play_slot.emit('source')
 
     def __emit_next_frame(self):
-        
-        frame = self.get_next_frame()
-        # self.cur_frame = next((el for el in [frame3, frame2, frame1] if el is not None), None)
+        speed = self.state.preview_windows['source']['speed']
+        if speed < 0:
+            for _ in range(speed * -1):
+                frame = self.get_next_frame()
+        else:
+            frame = self.get_next_frame()
+
         self.cur_frame = frame
         self.cur_frame_no = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
 

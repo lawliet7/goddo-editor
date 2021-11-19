@@ -239,15 +239,24 @@ class VideoPreview(UiComponent):
             # self.frame_select_range.out_frame = self.video_player.cur_frame_no
             self.state.preview_out_frame_slot.emit('source', self.video_player.cur_frame_no)
             self.window.update()
-        elif event.key() == Qt.Key_M:
-            # self.frame_select_range.out_frame = self.video_player.cur_frame_no
-            fps = self.state.preview_windows['source']['video_details']['fps']
+        elif event.key() == Qt.Key_Comma:
             speed = self.state.preview_windows['source']['speed']
             if speed > 1:
                 self.state.change_speed_slot.emit('source', 1)
-            else:
+            elif speed == 1:
+                self.state.change_speed_slot.emit('source', -1)
+            elif speed > -10:
+                self.state.change_speed_slot.emit('source', speed - 1)
+        elif event.key() == Qt.Key_Period:
+            # self.frame_select_range.out_frame = self.video_player.cur_frame_no
+            fps = self.state.preview_windows['source']['video_details']['fps']
+            speed = self.state.preview_windows['source']['speed']
+            if speed == 1:
                 self.state.change_speed_slot.emit('source', int(1000 / fps) + 1)
-
+            elif speed == -1:
+                self.state.change_speed_slot.emit('source', 1)
+            elif speed < -1:
+                self.state.change_speed_slot.emit('source', speed + 1)
         elif event.key() == Qt.Key_Left:
             self.__emit_pause_event()
             self.time_bar_slider.blockSignals(True)

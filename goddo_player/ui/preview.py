@@ -163,12 +163,14 @@ class VideoPreview(UiComponent):
             painter.setPen(self.__get_darker_pen(orig_pen))
             painter.drawText(x + self.width_of_2_chars, y + 10 + self.char_height, self.total_time_str)
 
-            speed = self.state.preview_windows['source']['speed']
+            source_preview_window = self.state.preview_windows['source']
+
+            speed = source_preview_window['speed'] if 'speed' in source_preview_window else 0
             painter.drawText(x + self.width_of_time_label + 20, y, f'spd: \n{speed:02d}')
 
             painter.setPen(orig_pen)
 
-            in_out: FrameInOut = self.state.preview_windows['source']['frame_in_out']
+            in_out: FrameInOut = source_preview_window['frame_in_out']
             if in_out.in_frame or in_out.out_frame:
                 left = self.get_rect().left()
                 right = self.get_rect().right()

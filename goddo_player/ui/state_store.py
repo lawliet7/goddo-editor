@@ -154,7 +154,7 @@ class State(QObject):
             },
             'frame_no': 0,
             'frame_in_out': FrameInOut(),
-            'speed': 0,
+            'speed': 0,  # >1, 1, -1, -2, ...
         }
 
         new_dict = {

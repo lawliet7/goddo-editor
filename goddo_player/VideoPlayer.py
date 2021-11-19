@@ -143,9 +143,10 @@ class VideoPlayer(QObject):
 
     def __emit_next_frame(self):
         speed = self.state.preview_windows['source']['speed']
+        frame_no = self.get_current_frame_no()
+        print(f'frame no {frame_no}')
         if speed < 0:
-            for _ in range(speed * -1):
-                frame = self.get_next_frame()
+            frame = self.skip_until_frame(speed * -1)
         else:
             frame = self.get_next_frame()
 

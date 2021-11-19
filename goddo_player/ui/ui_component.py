@@ -1,8 +1,7 @@
-from abc import abstractmethod
 from typing import Callable
 
 from PyQt5.QtCore import QObject, QEvent, QRect
-from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent, QWindow, QPaintDeviceWindow, QWheelEvent
+from PyQt5.QtGui import QPainter, QMouseEvent, QKeyEvent, QDragEnterEvent, QPaintDeviceWindow, QWheelEvent
 
 
 def get_window(obj: QObject) -> QPaintDeviceWindow:
@@ -83,4 +82,3 @@ class UiComponent(QObject):
 
     def onDropEvent(self, event: QDragEnterEvent) -> None:
         pass
-

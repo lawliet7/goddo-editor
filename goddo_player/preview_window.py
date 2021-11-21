@@ -9,12 +9,11 @@ from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.draw_utils import numpy_to_pixmap
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.state_store import StateStoreSignals
 
 
 class PreviewWindow(QWidget):
-    supported_video_ext = ['.mp4', '.wmv', '.mkv']
-
     def __init__(self):
         super().__init__()
         self.base_title = '天使女捜査官'
@@ -24,7 +23,8 @@ class PreviewWindow(QWidget):
 
         self.cap = None
 
-        self.resize(640, 360)
+        self.setMinimumSize(640, 360)
+        self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
         self.timer = QTimer(self)
@@ -44,7 +44,7 @@ class PreviewWindow(QWidget):
         if len(urls) == 1:
             filename = urls[0].fileName()
             name, ext = os.path.splitext(filename)
-            if ext in self.supported_video_ext:
+            if ext in PlayerConfigs.supported_video_exts:
                 event.accept()
 
     def dropEvent(self, event: QDropEvent) -> None:

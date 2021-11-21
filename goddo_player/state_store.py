@@ -1,9 +1,11 @@
+from typing import List
+
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
 
 from goddo_player.singleton_meta import singleton
 
 
-class PreviewWindowState:
+class PreviewWindowState(dict):
     def __init__(self):
         super().__init__()
         self.video_url: QUrl = None
@@ -11,10 +13,32 @@ class PreviewWindowState:
         self.total_frames = 0
 
 
+class FileListStateItem(dict):
+    def __init__(self):
+        super().__init__()
+        self.name: QUrl = None
+
+
+class FileListState(dict):
+    def __init__(self):
+        super().__init__()
+        self.file_list: List[FileListStateItem] = []
+
+    def create_file_item(self, url: 'QUrl'):
+        item = FileListStateItem()
+        item.name = url
+        return item
+
+    def add_file_item(self, item: FileListStateItem):
+        self.file_list.append(item)
+
+
 @singleton
 class StateStoreSignals(QObject):
     update_preview_file_slot = pyqtSignal(QUrl)
     update_preview_file_details_slot = pyqtSignal(float, int)
+    add_file_slot = pyqtSignal(QUrl)
+    save_slot = pyqtSignal(QUrl)
 
 
 class StateStore(QObject):
@@ -22,7 +46,32 @@ class StateStore(QObject):
         super().__init__()
 
         self.preview_window = PreviewWindowState()
+        self.file_list = FileListState()
 
+        signals = StateStoreSignals()
+        signals.save_slot.connect(self.__save_file)
+
+    def __save_file(self):
+
+        print('save it')
+        # todo msg box to select save file
+
+        # self.table_files.truncate()
+        #
+        # for i, file in enumerate(self.files):
+        #     self.table_files.insert({
+        #         'file_path': file['file_path'],
+        #         'order': i+1,
+        #     })
+
+        self.table_preview_windows.truncate()
+        self.table_preview_windows.insert(self.preview_window)
+
+        # self.table_timelines.truncate()
+        # self.table_timelines.insert({
+        #     'name': 'default',
+        #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
+        # })
 
 # from dataclasses import asdict
 #

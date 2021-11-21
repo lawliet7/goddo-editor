@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QApplication
 
+from goddo_player.file_list import FileListWidget, FileList
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.state_store import StateStore, StateStoreSignals
 
@@ -17,12 +18,17 @@ class MonarchSystem(QObject):
 
         self.app = app
         self.state = StateStore()
+
         self.preview_window = PreviewWindow()
         self.preview_window.show()
 
-        signals = StateStoreSignals()
+        self.file_list = FileList()
+        self.file_list.show()
+
+        signals: StateStoreSignals = StateStoreSignals()
         signals.update_preview_file_slot.connect(self.__on_update_preview_file)
         signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
+        signals.add_file_slot.connect(self.__on_add_file)
 
     def __on_update_preview_file(self, url: 'QUrl'):
         logging.info('update preview file')
@@ -32,6 +38,11 @@ class MonarchSystem(QObject):
     def __on_update_preview_file_details(self, fps: float, total_frames: int):
         self.state.preview_window.fps = fps
         self.state.preview_window.total_frames = total_frames
+
+    def __on_add_file(self, url: 'QUrl'):
+        item = self.state.file_list.create_file_item(url)
+        self.state.file_list.add_file_item(item)
+        self.file_list.add_video(item.name)
 
 
 def convert_to_log_level(log_level_str: str):

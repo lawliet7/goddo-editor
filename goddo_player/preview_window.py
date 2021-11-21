@@ -17,12 +17,12 @@ class PreviewWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.base_title = '女捜査官'
+        self.base_title = '天使女捜査官'
         self.setWindowTitle(self.base_title)
 
+        self.signals = StateStoreSignals()
+
         self.cap = None
-        self.fps = 0
-        self.total_frames = 0
 
         self.setBaseSize(640, 360)
         self.setAcceptDrops(True)
@@ -50,13 +50,10 @@ class PreviewWindow(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
-        signals = StateStoreSignals()
-        signals.update_preview_file_slot.emit(event.mimeData().urls()[0])
+        self.signals.update_preview_file_slot.emit(event.mimeData().urls()[0])
 
     def switch_video(self, url: 'QUrl'):
         self.cap = cv2.VideoCapture(url.path())
-        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         self.timer.stop()
         self.timer.deleteLater()
@@ -65,6 +62,13 @@ class PreviewWindow(QWidget):
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(lambda: self.update())
         self.timer.start()
+
+        name, _ = os.path.splitext(url.fileName())
+        self.setWindowTitle(self.base_title + ' - ' + name)
+
+        fps = self.cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.signals.update_preview_file_details_slot.emit(fps, total_frames)
 
     def paintEvent(self, paint_event: QtGui.QPaintEvent) -> None:
         painter = QPainter()

@@ -7,11 +7,14 @@ class PreviewWindowState:
     def __init__(self):
         super().__init__()
         self.video_url: QUrl = None
+        self.fps = 0
+        self.total_frames = 0
 
 
 @singleton
 class StateStoreSignals(QObject):
     update_preview_file_slot = pyqtSignal(QUrl)
+    update_preview_file_details_slot = pyqtSignal(float, int)
 
 
 class StateStore(QObject):

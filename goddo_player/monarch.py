@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import sys
@@ -21,10 +22,16 @@ class MonarchSystem(QObject):
 
         signals = StateStoreSignals()
         signals.update_preview_file_slot.connect(self.__on_update_preview_file)
+        signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
 
     def __on_update_preview_file(self, url: 'QUrl'):
         logging.info('update preview file')
-        self.preview_window.switch_video(url)
+        self.state.preview_window.video_url = url
+        self.preview_window.switch_video(self.state.preview_window.video_url)
+
+    def __on_update_preview_file_details(self, fps: float, total_frames: int):
+        self.state.preview_window.fps = fps
+        self.state.preview_window.total_frames = total_frames
 
 
 def convert_to_log_level(log_level_str: str):
@@ -35,8 +42,13 @@ def convert_to_log_level(log_level_str: str):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Goddo Serenade's video editor")
+    parser.add_argument('--log-level', help='FATAL,ERROR,WARN,INFO,DEBUG, default is INFO')
 
-    log_level = convert_to_log_level(os.getenv('LOG_LEVEL')) or logging.INFO
+    args = parser.parse_args()
+    print(args)
+
+    log_level = convert_to_log_level(args.log_level) or logging.INFO
     logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
 
     app = QApplication(sys.argv)

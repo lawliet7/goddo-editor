@@ -24,7 +24,7 @@ class PreviewWindow(QWidget):
 
         self.cap = None
 
-        self.setBaseSize(640, 360)
+        self.resize(640, 360)
         self.setAcceptDrops(True)
 
         self.timer = QTimer(self)

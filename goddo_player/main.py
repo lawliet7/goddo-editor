@@ -50,7 +50,7 @@ class MainWindow(QOpenGLWindow):
     def __init__(self, state: State, initial_offset=None):
         super().__init__()
 
-        self.base_width = 1024
+        self.base_width = 640
         self.state = state
 
         self.video_player = VideoPlayer(state)
@@ -344,7 +344,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Goddo Serenade's video editor")
     parser.add_argument('video', help='video file')
     parser.add_argument('--offset', type=int, help='offset frame to start from')
-    parser.add_argument('--save', help='save file')
+    parser.add_argument('--save', help='save file, defaults to ../saves/a.json')
 
     args = parser.parse_args()
     print(args)
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon('icon.jpg'))
 
-    state = State(args.save, args.video)
+    state = State(args.save or os.path.join('..', 'saves', 'a.json'), args.video)
 
     if args.offset:
         window = MainWindow(state, args.offset)

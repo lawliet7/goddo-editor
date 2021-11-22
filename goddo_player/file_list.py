@@ -1,41 +1,33 @@
 import logging
 import os
-import sys
 
 import cv2
 import imutils
+import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent
-from PyQt5.QtWidgets import (QListWidget, QWidget, QMessageBox,
-                             QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea, QStyle,
-                             QPushButton, QErrorMessage)
+from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
+from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
+from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
+                             QScrollArea, QStyle)
 
 from goddo_player.draw_utils import numpy_to_pixmap
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.state_store import StateStoreSignals
-from goddo_player.time_frame_utils import frames_to_time_components, build_time_str
 from goddo_player.flow import FlowLayout
 from goddo_player.message_box_utils import show_error_box
+from goddo_player.player_configs import PlayerConfigs
+from goddo_player.state_store import StateStoreSignals
 
 
-class MyItemWidget(QWidget):
-    def __init__(self, url: QUrl, list_widget):
+class ClipItemWidget(QWidget):
+    def __init__(self, url: QUrl, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
         self.url = url
 
-        cap = cv2.VideoCapture(self.url.path())
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
-        _, frame = cap.read()
-        self.frame = imutils.resize(frame, height=100)
-        print(f'frame size={self.frame.shape}')
-        pixmap = numpy_to_pixmap(self.frame)
-
         lbl = QLabel()
-        lbl.setFixedHeight(100)
-        lbl.setPixmap(pixmap)
+        lbl.setObjectName('screenshot')
+        lbl.setFixedHeight(default_pixmap.height())
+        lbl.setPixmap(default_pixmap)
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(lbl)
@@ -98,7 +90,6 @@ class FileScrollArea(QScrollArea):
 class FileListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setWindowTitle('美少女捜査官')
 
@@ -106,7 +97,6 @@ class FileListWidget(QListWidget):
 
     @staticmethod
     def __should_accept_drop(url: 'QUrl'):
-        # url.url()
         _, ext = os.path.splitext(url.fileName())
         if ext.lower() in PlayerConfigs.supported_video_exts:
             return True
@@ -114,21 +104,17 @@ class FileListWidget(QListWidget):
             return False
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        print('drag enter')
-        print(event.mimeData().urls())
+        logging.info(f'drag enter: {event.mimeData().urls()}')
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             for url in mime_data.urls():
                 if not self.__should_accept_drop(url):
                     return
             event.accept()
-            print('accepted')
-        # event.accept()
 
     # parent class prevents accepting
     def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
         pass
-    #     self.dragEnterEvent(event)
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         for url in event.mimeData().urls():
@@ -136,18 +122,39 @@ class FileListWidget(QListWidget):
             if not url.path().isascii():
                 show_error_box(self, "sorry unicode file names are not support!")
                 break
-            # State().update_preview_file_slot.emit('source', url)
-            # todo
-            # self.signals.new_file_slot.emit(url.path())
+
             self.signals.add_file_slot.emit(url)
 
 
+class SceenshotThread(QRunnable):
+    def __init__(self, url: QUrl, signal, item: QListWidgetItem):
+        super().__init__()
+        self.url = url
+        self.signal = signal
+        self.item = item
+
+    @pyqtSlot()
+    def run(self):
+        logging.info("started thread to get screenshot")
+
+        cap = cv2.VideoCapture(self.url.path())
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
+        _, frame = cap.read()
+        frame = imutils.resize(frame, height=100)
+        pixmap = numpy_to_pixmap(frame)
+
+        logging.info(f'emitting pixmap back to file list')
+        self.signal.emit(pixmap, self.item)
+
+
 class FileList(QWidget):
+    update_screenshot_slot = pyqtSignal(QPixmap, QListWidgetItem)
+
     def __init__(self):
         super().__init__()
         title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
 
-        self.setGeometry(0, title_bar_height, 500, 1000)
+        self.setGeometry(500, title_bar_height, 500, 1000)
         self.setWindowTitle('中毒痴女教師')
 
         vbox = QVBoxLayout(self)
@@ -156,8 +163,20 @@ class FileList(QWidget):
         vbox.addWidget(self.listWidget)
         self.setLayout(vbox)
 
+        self.black_pixmap = numpy_to_pixmap(np.zeros((108, 192, 1)))
+        self.thread_pool = QThreadPool()
+        self.thread_pool.setMaxThreadCount(10)
+
         # self.state = State()
         # self.state.new_file_added_slot.connect(self.add_video)
+
+        self.update_screenshot_slot.connect(self.update_screenshot_on_item)
+
+    def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
+        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
+        child = item_widget.findChild(QLabel, 'screenshot')
+        logging.info(f'found child {child}')
+        child.setPixmap(pixmap)
 
     def add_video(self, url: 'QUrl'):
         logging.info(f'adding video {url}')
@@ -166,11 +185,14 @@ class FileList(QWidget):
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = MyItemWidget(url, self.listWidget)
+        row = ClipItemWidget(url, self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
+
+        th = SceenshotThread(url, self.update_screenshot_slot, item)
+        self.thread_pool.start(th)
 
     def double_clicked(self, item):
         # QMessageBox.information(self, "Info", item.text())
@@ -187,15 +209,3 @@ class FileList(QWidget):
             self.state.save_slot.emit()
         else:
             super().keyPressEvent(event)
-
-
-def main():
-    app = QApplication(sys.argv)
-    ex = FileList()
-    ex.show()
-
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()

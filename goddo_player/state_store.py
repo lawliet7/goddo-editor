@@ -1,41 +1,61 @@
+import logging
+import os
+import pathlib
+import shutil
+from dataclasses import dataclass, field
 from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
+from tinydb import TinyDB
+from tinydb.table import Table
 
 from goddo_player.singleton_meta import singleton
 
 
-class PreviewWindowState(dict):
+class PreviewWindowState:
     def __init__(self):
         super().__init__()
         self.video_url: QUrl = None
         self.fps = 0
         self.total_frames = 0
 
+    def as_dict(self):
+        return {
+            "video_url": self.video_url.path() if self.video_url is not None else None,
+            "fps": self.fps,
+            "total_frames": self.total_frames,
+        }
 
-class FileListStateItem(dict):
-    def __init__(self):
-        super().__init__()
-        self.name: QUrl = None
+@dataclass
+class FileListStateItem:
+    name: QUrl
 
+    def as_dict(self):
+        return {
+            "name": self.name.path()
+        }
 
-class FileListState(dict):
-    def __init__(self):
-        super().__init__()
-        self.file_list: List[FileListStateItem] = []
+@dataclass
+class FileListState:
+    # def __init__(self):
+    #     super().__init__()
+    #     self.files: List[FileListStateItem] = []
+    files: List[FileListStateItem] = field(default_factory=list)
 
     def create_file_item(self, url: 'QUrl'):
-        item = FileListStateItem()
-        item.name = url
+        item = FileListStateItem(url)
+        # item.name = url
         return item
 
     def add_file_item(self, item: FileListStateItem):
-        self.file_list.append(item)
+        print(f'before adding {self.files}')
+        self.files.append(item)
+        print(f'after adding {self.files}')
 
 
 @singleton
 class StateStoreSignals(QObject):
-    update_preview_file_slot = pyqtSignal(QUrl)
+    switch_preview_video_slot = pyqtSignal(QUrl)
     update_preview_file_details_slot = pyqtSignal(float, int)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
@@ -48,30 +68,70 @@ class StateStore(QObject):
         self.preview_window = PreviewWindowState()
         self.file_list = FileListState()
 
-        signals = StateStoreSignals()
-        signals.save_slot.connect(self.__save_file)
+    def save_file(self, url: QUrl):
 
-    def __save_file(self):
-
-        print('save it')
+        logging.info(f'saving {url}')
         # todo msg box to select save file
 
-        # self.table_files.truncate()
-        #
-        # for i, file in enumerate(self.files):
-        #     self.table_files.insert({
-        #         'file_path': file['file_path'],
-        #         'order': i+1,
-        #     })
+        save_file_name = url.path()[1:]
+        tmp_save_file_name = save_file_name + "_tmp"
+        is_existing_file = pathlib.Path(save_file_name).resolve().exists()
+        if is_existing_file:
+            shutil.copy(save_file_name, tmp_save_file_name)
 
-        self.table_preview_windows.truncate()
-        self.table_preview_windows.insert(self.preview_window)
+        logging.info(f'preview {self.preview_window}')
+        logging.info(f'files {self.file_list}')
+
+        db = TinyDB(save_file_name)
+        table_preview_windows: Table = db.table('preview_windows')
+        table_files: Table = db.table('files')
+        table_timelines: Table = db.table('timelines')
+
+        table_files.truncate()
+        for i, file in enumerate(self.file_list.files):
+            table_files.insert(file.as_dict())
+
+        table_preview_windows.truncate()
+        table_preview_windows.insert(self.preview_window.as_dict())
 
         # self.table_timelines.truncate()
         # self.table_timelines.insert({
         #     'name': 'default',
         #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
         # })
+
+        db.close()
+        os.remove(tmp_save_file_name)
+
+    def save_file(self, url: QUrl):
+
+        logging.info(f'loading {url}')
+        # todo msg box to select save file
+
+        load_file_name = url.path()[1:]
+
+        logging.info(f'preview {self.preview_window}')
+        logging.info(f'files {self.file_list}')
+
+        db = TinyDB(load_file_name)
+        table_preview_windows: Table = db.table('preview_windows')
+        table_files: Table = db.table('files')
+        table_timelines: Table = db.table('timelines')
+
+        table_files.truncate()
+        for i, file in enumerate(self.file_list.files):
+            table_files.insert(file.as_dict())
+
+        table_preview_windows.truncate()
+        table_preview_windows.insert(self.preview_window.as_dict())
+
+        # self.table_timelines.truncate()
+        # self.table_timelines.insert({
+        #     'name': 'default',
+        #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
+        # })
+
+        db.close()
 
 # from dataclasses import asdict
 #

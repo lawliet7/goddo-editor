@@ -4,7 +4,7 @@ import os
 import sys
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.file_list import FileListWidget, FileList
@@ -26,9 +26,10 @@ class MonarchSystem(QObject):
         self.file_list.show()
 
         signals: StateStoreSignals = StateStoreSignals()
-        signals.update_preview_file_slot.connect(self.__on_update_preview_file)
+        signals.switch_preview_video_slot.connect(self.__on_update_preview_file)
         signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
         signals.add_file_slot.connect(self.__on_add_file)
+        signals.save_slot.connect(self.__on_save_file)
 
     def __on_update_preview_file(self, url: 'QUrl'):
         logging.info('update preview file')
@@ -42,7 +43,14 @@ class MonarchSystem(QObject):
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)
         self.state.file_list.add_file_item(item)
+        print(self.state.file_list)
         self.file_list.add_video(item.name)
+
+    def __on_save_file(self, url: QUrl):
+        self.state.save_file(url)
+
+    def __on_load_file(self, url: QUrl):
+        self.state.save_file(url)
 
 
 def convert_to_log_level(log_level_str: str):
@@ -60,7 +68,7 @@ def main():
     print(args)
 
     log_level = convert_to_log_level(args.log_level) or logging.INFO
-    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(message)s', level=log_level)
+    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(module)s.%(funcName)s - %(message)s', level=log_level)
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon('icon.jpg'))

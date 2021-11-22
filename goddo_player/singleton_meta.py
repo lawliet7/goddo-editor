@@ -1,3 +1,5 @@
+import functools
+
 # class Singleton(type):
 #     _instances = {}
 #
@@ -11,6 +13,7 @@
 def singleton(class_):
     instances = {}
 
+    @functools.wraps(class_)
     def instance(*args, **kwargs):
         if class_ not in instances:
             instances[class_] = class_(*args, **kwargs)

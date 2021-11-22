@@ -140,7 +140,7 @@ class SceenshotThread(QRunnable):
         cap = cv2.VideoCapture(self.url.path())
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
         _, frame = cap.read()
-        frame = imutils.resize(frame, height=100)
+        frame = imutils.resize(frame, height=108)
         pixmap = numpy_to_pixmap(frame)
 
         logging.info(f'emitting pixmap back to file list')
@@ -156,6 +156,7 @@ class FileList(QWidget):
 
         self.setGeometry(500, title_bar_height, 500, 1000)
         self.setWindowTitle('中毒痴女教師')
+        self.state_signals: StateStoreSignals = StateStoreSignals()
 
         vbox = QVBoxLayout(self)
         self.listWidget = FileListWidget()
@@ -166,9 +167,6 @@ class FileList(QWidget):
         self.black_pixmap = numpy_to_pixmap(np.zeros((108, 192, 1)))
         self.thread_pool = QThreadPool()
         self.thread_pool.setMaxThreadCount(10)
-
-        # self.state = State()
-        # self.state.new_file_added_slot.connect(self.add_video)
 
         self.update_screenshot_slot.connect(self.update_screenshot_on_item)
 
@@ -195,12 +193,9 @@ class FileList(QWidget):
         self.thread_pool.start(th)
 
     def double_clicked(self, item):
-        # QMessageBox.information(self, "Info", item.text())
-        item_widget = self.listWidget.itemWidget(item)
-        self.state.update_preview_file_slot.emit('source', QUrl(item_widget.file_path))
-        self.state.play_slot.emit('source')
-
-        print(item_widget)
+        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
+        logging.info(f'playing {item_widget.url}')
+        self.state_signals.update_preview_file_slot.emit(item_widget.url)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:

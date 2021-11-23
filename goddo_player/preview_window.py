@@ -4,9 +4,9 @@ import threading
 
 import cv2
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import QRect, Qt, QTimer
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
+from PyQt5.QtWidgets import QWidget, QApplication
 
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
@@ -50,7 +50,7 @@ class PreviewWindow(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
-        self.signals.switch_preview_video_slot.emit(event.mimeData().urls()[0])
+        self.signals.switch_preview_video_slot.emit(event.mimeData().urls()[0], True)
 
     def switch_video(self, url: 'QUrl'):
         self.cap = cv2.VideoCapture(url.path())
@@ -61,7 +61,7 @@ class PreviewWindow(QWidget):
         self.timer.setInterval(1)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(lambda: self.update())
-        self.timer.start()
+        # self.timer.start()
 
         name, _ = os.path.splitext(url.fileName())
         self.setWindowTitle(self.base_title + ' - ' + name)
@@ -89,6 +89,23 @@ class PreviewWindow(QWidget):
         painter.setPen(pen)
         painter.setBrush(brush)
         painter.end()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key_Escape:
+            QApplication.exit(0)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
+            self.state_signals.save_slot.emit(url)
+        elif event.key() == Qt.Key_Space:
+            self.toggle_play_pause()
+        else:
+            super().keyPressEvent(event)
+
+    def toggle_play_pause(self):
+        if self.timer.isActive():
+            self.timer.stop()
+        else:
+            self.timer.start()
 
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))

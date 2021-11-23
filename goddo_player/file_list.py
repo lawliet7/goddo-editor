@@ -195,7 +195,7 @@ class FileList(QWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         logging.info(f'playing {item_widget.url}')
-        self.state_signals.switch_preview_video_slot.emit(item_widget.url)
+        self.state_signals.switch_preview_video_slot.emit(item_widget.url, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
@@ -203,6 +203,5 @@ class FileList(QWidget):
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
             url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
             self.state_signals.save_slot.emit(url)
-            pass
         else:
             super().keyPressEvent(event)

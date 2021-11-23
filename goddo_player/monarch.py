@@ -32,10 +32,12 @@ class MonarchSystem(QObject):
         signals.save_slot.connect(self.__on_save_file)
         signals.load_slot.connect(self.__on_load_file)
 
-    def __on_update_preview_file(self, url: 'QUrl'):
+    def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
         logging.info('update preview file')
         self.state.preview_window.video_url = url
         self.preview_window.switch_video(self.state.preview_window.video_url)
+        if should_play:
+            self.preview_window.toggle_play_pause()
 
     def __on_update_preview_file_details(self, fps: float, total_frames: int):
         self.state.preview_window.fps = fps
@@ -55,7 +57,7 @@ class MonarchSystem(QObject):
             StateStoreSignals().add_file_slot.emit(QUrl.fromLocalFile(file_dict['name']))
 
         def handle_prev_wind_fn(prev_wind_dict):
-            StateStoreSignals().switch_preview_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']))
+            StateStoreSignals().switch_preview_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
 
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn)
 

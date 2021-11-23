@@ -68,7 +68,7 @@ class FileListState:
 
 @singleton
 class StateStoreSignals(QObject):
-    switch_preview_video_slot = pyqtSignal(QUrl)
+    switch_preview_video_slot = pyqtSignal(QUrl, bool)
     update_preview_file_details_slot = pyqtSignal(float, int)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)

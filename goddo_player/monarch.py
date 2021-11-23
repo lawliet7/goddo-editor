@@ -30,6 +30,7 @@ class MonarchSystem(QObject):
         signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
         signals.add_file_slot.connect(self.__on_add_file)
         signals.save_slot.connect(self.__on_save_file)
+        signals.load_slot.connect(self.__on_load_file)
 
     def __on_update_preview_file(self, url: 'QUrl'):
         logging.info('update preview file')
@@ -50,7 +51,13 @@ class MonarchSystem(QObject):
         self.state.save_file(url)
 
     def __on_load_file(self, url: QUrl):
-        self.state.save_file(url)
+        def handle_file_fn(file_dict):
+            StateStoreSignals().add_file_slot.emit(QUrl.fromLocalFile(file_dict['name']))
+
+        def handle_prev_wind_fn(prev_wind_dict):
+            StateStoreSignals().switch_preview_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']))
+
+        self.state.load_file(url, handle_file_fn, handle_prev_wind_fn)
 
 
 def convert_to_log_level(log_level_str: str):
@@ -74,6 +81,9 @@ def main():
     app.setWindowIcon(QIcon('icon.jpg'))
 
     monarch = MonarchSystem(app)
+
+    url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
+    StateStoreSignals().load_slot.emit(url)
 
     sys.exit(app.exec())
 

@@ -12,12 +12,11 @@ from tinydb.table import Table
 from goddo_player.singleton_meta import singleton
 
 
+@dataclass
 class PreviewWindowState:
-    def __init__(self):
-        super().__init__()
-        self.video_url: QUrl = None
-        self.fps = 0
-        self.total_frames = 0
+    video_url: QUrl = None
+    fps = 0
+    total_frames = 0
 
     def as_dict(self):
         return {
@@ -25,6 +24,15 @@ class PreviewWindowState:
             "fps": self.fps,
             "total_frames": self.total_frames,
         }
+
+    @staticmethod
+    def from_dict(json_dict):
+        prev_wind_state = PreviewWindowState()
+        prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
+        prev_wind_state.fps = json_dict['fps']
+        prev_wind_state.total_frames = json_dict['total_frames']
+        return prev_wind_state
+
 
 @dataclass
 class FileListStateItem:
@@ -34,6 +42,11 @@ class FileListStateItem:
         return {
             "name": self.name.path()
         }
+
+    @staticmethod
+    def from_dict(json_dict):
+        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name']))
+
 
 @dataclass
 class FileListState:
@@ -59,6 +72,7 @@ class StateStoreSignals(QObject):
     update_preview_file_details_slot = pyqtSignal(float, int)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
+    load_slot = pyqtSignal(QUrl)
 
 
 class StateStore(QObject):
@@ -103,27 +117,24 @@ class StateStore(QObject):
         db.close()
         os.remove(tmp_save_file_name)
 
-    def save_file(self, url: QUrl):
+    def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn):
 
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
         load_file_name = url.path()[1:]
 
-        logging.info(f'preview {self.preview_window}')
-        logging.info(f'files {self.file_list}')
-
         db = TinyDB(load_file_name)
         table_preview_windows: Table = db.table('preview_windows')
         table_files: Table = db.table('files')
         table_timelines: Table = db.table('timelines')
 
-        table_files.truncate()
-        for i, file in enumerate(self.file_list.files):
-            table_files.insert(file.as_dict())
+        all_files = table_files.all()
+        for file_dict in all_files:
+            handle_file_fn(file_dict)
 
-        table_preview_windows.truncate()
-        table_preview_windows.insert(self.preview_window.as_dict())
+        for prev_wind_dict in table_preview_windows.all():
+            handle_prev_wind_fn(prev_wind_dict)
 
         # self.table_timelines.truncate()
         # self.table_timelines.insert({
@@ -132,6 +143,11 @@ class StateStore(QObject):
         # })
 
         db.close()
+
+        logging.info(f'finished loading {url.path()}')
+        logging.info(f'preview {self.preview_window}')
+        logging.info(f'files {self.file_list}')
+
 
 # from dataclasses import asdict
 #

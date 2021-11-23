@@ -134,7 +134,8 @@ class StateStore(QObject):
             handle_file_fn(file_dict)
 
         for prev_wind_dict in table_preview_windows.all():
-            handle_prev_wind_fn(prev_wind_dict)
+            if prev_wind_dict['video_url']:
+                handle_prev_wind_fn(prev_wind_dict)
 
         # self.table_timelines.truncate()
         # self.table_timelines.insert({

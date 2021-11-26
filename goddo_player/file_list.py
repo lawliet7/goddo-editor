@@ -92,6 +92,7 @@ class FileListWidget(QListWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.setWindowTitle('美少女捜査官')
+        self.setMinimumWidth(500)
 
         self.signals: StateStoreSignals = StateStoreSignals()
 

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pathlib
 import sys
 
 from PyQt5.QtGui import QIcon
@@ -38,6 +39,7 @@ class MonarchSystem(QObject):
         self.preview_window.switch_video(self.state.preview_window.video_url)
         if should_play:
             self.preview_window.toggle_play_pause()
+        self.preview_window.activateWindow()
 
     def __on_update_preview_file_details(self, fps: float, total_frames: int):
         self.state.preview_window.fps = fps
@@ -84,8 +86,10 @@ def main():
 
     monarch = MonarchSystem(app)
 
-    url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
-    StateStoreSignals().load_slot.emit(url)
+    local_save_path = os.path.abspath(os.path.join('..', 'saves', 'a.json'))
+    if pathlib.Path(local_save_path).resolve().exists():
+        url = QUrl.fromLocalFile(local_save_path)
+        StateStoreSignals().load_slot.emit(url)
 
     sys.exit(app.exec())
 

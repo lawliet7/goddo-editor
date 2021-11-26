@@ -75,6 +75,7 @@ class StateStoreSignals(QObject):
     load_slot = pyqtSignal(QUrl)
 
 
+@singleton
 class StateStore(QObject):
     def __init__(self):
         super().__init__()
@@ -96,26 +97,28 @@ class StateStore(QObject):
         logging.info(f'preview {self.preview_window}')
         logging.info(f'files {self.file_list}')
 
-        db = TinyDB(save_file_name)
-        table_preview_windows: Table = db.table('preview_windows')
-        table_files: Table = db.table('files')
-        table_timelines: Table = db.table('timelines')
+        with TinyDB(save_file_name) as db:
+            table_preview_windows: Table = db.table('preview_windows')
+            table_files: Table = db.table('files')
+            table_timelines: Table = db.table('timelines')
 
-        table_files.truncate()
-        for i, file in enumerate(self.file_list.files):
-            table_files.insert(file.as_dict())
+            table_files.truncate()
+            for i, file in enumerate(self.file_list.files):
+                table_files.insert(file.as_dict())
 
-        table_preview_windows.truncate()
-        table_preview_windows.insert(self.preview_window.as_dict())
+            table_preview_windows.truncate()
+            table_preview_windows.insert(self.preview_window.as_dict())
 
-        # self.table_timelines.truncate()
-        # self.table_timelines.insert({
-        #     'name': 'default',
-        #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
-        # })
+            # self.table_timelines.truncate()
+            # self.table_timelines.insert({
+            #     'name': 'default',
+            #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
+            # })
 
-        db.close()
-        os.remove(tmp_save_file_name)
+        # db.close()
+
+        if is_existing_file:
+            os.remove(tmp_save_file_name)
 
     def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn):
 

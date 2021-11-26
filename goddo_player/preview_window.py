@@ -6,11 +6,11 @@ import cv2
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QSlider
 
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
-from goddo_player.state_store import StateStoreSignals
+from goddo_player.state_store import StateStoreSignals, StateStore
 
 
 class PreviewWindow(QWidget):
@@ -19,6 +19,63 @@ class PreviewWindow(QWidget):
         self.base_title = '天使女捜査官'
         self.setWindowTitle(self.base_title)
 
+        self.signals = StateStoreSignals()
+
+        self.cap = None
+
+        # self.setMinimumSize(640, 360)
+        # self.resize(self.minimumSize())
+        self.setAcceptDrops(True)
+
+        self.timer = QTimer(self)
+
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setFocusPolicy(Qt.NoFocus)
+        self.slider.setRange(0, 100)
+        self.slider.valueChanged.connect(self.on_value_changed)
+
+        self.preview_widget = PreviewWidget(self.slider)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.preview_widget)
+        vbox.addWidget(self.slider)
+
+        vbox.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(vbox)
+
+    def on_value_changed(self, value):
+        print(f'value changed to {value}')
+
+    def switch_video(self, url: 'QUrl'):
+        self.preview_widget.switch_video(url)
+
+        name, _ = os.path.splitext(url.fileName())
+        self.setWindowTitle(self.base_title + ' - ' + name)
+
+    def toggle_play_pause(self):
+        self.preview_widget.toggle_play_pause()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key_Escape:
+            QApplication.exit(0)
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
+            self.state_signals.save_slot.emit(url)
+        elif event.key() == Qt.Key_Space:
+            self.toggle_play_pause()
+        # elif event.key() == Qt.Key_K:
+        #     self.slider.setValue(10)
+        else:
+            super().keyPressEvent(event)
+
+
+class PreviewWidget(QWidget):
+    def __init__(self, slider: QSlider):
+        super().__init__()
+
+        self.slider = slider
+
+        self.state = StateStore()
         self.signals = StateStoreSignals()
 
         self.cap = None
@@ -63,9 +120,6 @@ class PreviewWindow(QWidget):
         self.timer.timeout.connect(lambda: self.update())
         # self.timer.start()
 
-        name, _ = os.path.splitext(url.fileName())
-        self.setWindowTitle(self.base_title + ' - ' + name)
-
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.signals.update_preview_file_details_slot.emit(fps, total_frames)
@@ -83,23 +137,18 @@ class PreviewWindow(QWidget):
             scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
             pixmap = numpy_to_pixmap(scaled_frame)
             painter.drawPixmap(0, 0, pixmap)
+
+            cur_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            total_frames = self.state.preview_window.total_frames
+            pos = int(round(cur_frame / total_frames * 100))
+            self.slider.setValue(pos)
+
         else:
             painter.fillRect(QRect(0, 0, self.geometry().width(), self.geometry().height()), Qt.black)
 
         painter.setPen(pen)
         painter.setBrush(brush)
         painter.end()
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Escape:
-            QApplication.exit(0)
-        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
-            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
-            self.state_signals.save_slot.emit(url)
-        elif event.key() == Qt.Key_Space:
-            self.toggle_play_pause()
-        else:
-            super().keyPressEvent(event)
 
     def toggle_play_pause(self):
         if self.timer.isActive():

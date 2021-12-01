@@ -59,6 +59,11 @@ class PreviewWindow(QWidget):
         pos = int(round(cur_frame_no / total_frames * 100))
         self.slider.setValue(pos)
 
+        fps = self.state.preview_window.fps
+        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
+        total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
+        self.label.setText(f'{cur_time_str}/{total_time_str}')
+
     def on_value_changed(self, value):
         print(f'value changed to {value}')
 

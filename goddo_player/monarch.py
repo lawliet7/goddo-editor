@@ -48,7 +48,6 @@ class MonarchSystem(QObject):
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)
         self.state.file_list.add_file_item(item)
-        print(self.state.file_list)
         self.file_list.add_video(item.name)
 
     def __on_save_file(self, url: QUrl):

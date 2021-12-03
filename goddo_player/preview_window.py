@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QSlider, QLabel
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.state_store import StateStoreSignals, StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
+from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, num_frames_to_num_millis
 
 
 class PreviewWindow(QWidget):
@@ -29,11 +29,9 @@ class PreviewWindow(QWidget):
         # self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
-        self.timer = QTimer(self)
-
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setFocusPolicy(Qt.NoFocus)
-        self.slider.setRange(0, 100)
+        self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
 
         # p = self.palette()
@@ -56,13 +54,14 @@ class PreviewWindow(QWidget):
 
     def __on_update_pos(self, cur_frame_no: int, frame):
         total_frames = self.state.preview_window.total_frames
-        pos = int(round(cur_frame_no / total_frames * 100))
+        pos = int(round(cur_frame_no / total_frames / (100 / self.slider.maximum()) * 100))
         self.slider.setValue(pos)
 
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        self.label.setText(f'{cur_time_str}/{total_time_str}')
+        speed = 'max' if self.preview_widget.timer.interval() == 1 else 'normal'
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
 
     def on_value_changed(self, value):
         print(f'value changed to {value}')
@@ -84,8 +83,8 @@ class PreviewWindow(QWidget):
             self.state_signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
             self.toggle_play_pause()
-        # elif event.key() == Qt.Key_K:
-        #     self.slider.setValue(10)
+        elif event.key() == Qt.Key_S:
+            self.preview_widget.switch_speed()
         else:
             super().keyPressEvent(event)
 
@@ -132,19 +131,29 @@ class PreviewWidget(QWidget):
     def switch_video(self, url: 'QUrl'):
         self.cap = cv2.VideoCapture(url.path())
 
+        fps = self.cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.signals.update_preview_file_details_slot.emit(fps, total_frames)
+
         self.timer.stop()
         self.timer.deleteLater()
         self.timer = QTimer(self)
-        self.timer.setInterval(1)
+        self.timer.setInterval(num_frames_to_num_millis(fps))
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(lambda: self.update())
         # self.timer.start()
 
-        fps = self.cap.get(cv2.CAP_PROP_FPS)
-        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.signals.update_preview_file_details_slot.emit(fps, total_frames)
-        cur_time_str = build_time_str(*frames_to_time_components(0, fps))
+    def switch_speed(self):
+        speed = 1 if self.timer.interval() != 1 else num_frames_to_num_millis(self.state.preview_window.fps)
+        logging.info(f'switching speed from {self.timer.interval()} to {speed}')
 
+        self.timer.stop()
+        self.timer.deleteLater()
+        self.timer = QTimer(self)
+        self.timer.setInterval(speed)
+        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+        self.timer.timeout.connect(lambda: self.update())
+        self.timer.start()
 
     def paintEvent(self, paint_event: QtGui.QPaintEvent) -> None:
         painter = QPainter()
@@ -162,7 +171,6 @@ class PreviewWidget(QWidget):
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             self.on_update_cb(cur_frame_no, scaled_frame)
-
 
         else:
             painter.fillRect(QRect(0, 0, self.geometry().width(), self.geometry().height()), Qt.black)

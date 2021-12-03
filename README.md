@@ -1,10 +1,10 @@
 # goddo-editor
 Goddo Serenade's Video Editor  (** WIP **)
 
-Supported Video Formats:
+<h5>Supported Video Formats:</h5>
 *.avi, *.mp4, *.wmv, *.webm, *.mov, *.flv, *.mkv
 
-Environment - Use Conda
+<h5>Environment - Use Conda</h5>
 - python 3.8
 - conda install pyqt
 - conda install -c conda-forge opencv
@@ -29,12 +29,19 @@ Environment Variables:
 
 * if you have icon put it in main package as icon.png
 
-Run like this:
-
+<h5>Run like this:</h5>
 python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 
-shortcuts:
-- spacebar to pause/play
-- i to mark in
-- o to mark out
-- left/right to move 1 frame
+<h4>shortcuts:</h4>
+- spacebar: to pause/play
+- i:  to mark in
+- o: to mark out
+- left/right: to move 1 frame
+- s: to switch between normal and max speed
+
+<h3>Credits:</h3>
+<b>ClickSlider</b> class modified based on answer from this post:
+https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011
+
+<b>FlowLayout</b> class based on answer from this post:
+https://stackoverflow.com/q/46681266

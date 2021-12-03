@@ -6,8 +6,9 @@ import cv2
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QSlider, QLabel
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
+from goddo_player.click_slider import ClickSlider
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.state_store import StateStoreSignals, StateStore
@@ -29,7 +30,7 @@ class PreviewWindow(QWidget):
         # self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
-        self.slider = QSlider(Qt.Horizontal)
+        self.slider = ClickSlider(Qt.Horizontal)
         self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
@@ -55,7 +56,9 @@ class PreviewWindow(QWidget):
     def __on_update_pos(self, cur_frame_no: int, frame):
         total_frames = self.state.preview_window.total_frames
         pos = int(round(cur_frame_no / total_frames / (100 / self.slider.maximum()) * 100))
+        self.slider.blockSignals(True)
         self.slider.setValue(pos)
+        self.slider.blockSignals(False)
 
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
@@ -64,7 +67,12 @@ class PreviewWindow(QWidget):
         self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
 
     def on_value_changed(self, value):
-        print(f'value changed to {value}')
+        frame_no = (100 / self.slider.maximum()) * (value / 100) * self.state.preview_window.total_frames
+        logging.info(f'value changed to {value}, frame to {frame_no}, '
+                     f'total_frames={self.state.preview_window.total_frames}')
+        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no-1)
+        if not self.preview_widget.timer.isActive():
+            self.update()
 
     def switch_video(self, url: 'QUrl'):
         self.preview_widget.switch_video(url)
@@ -165,6 +173,7 @@ class PreviewWidget(QWidget):
         brush = painter.brush()
 
         if self.cap:
+            print(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
             pixmap = numpy_to_pixmap(scaled_frame)
             painter.drawPixmap(0, 0, pixmap)
@@ -179,11 +188,16 @@ class PreviewWidget(QWidget):
         painter.setBrush(brush)
         painter.end()
 
-    def toggle_play_pause(self):
-        if self.timer.isActive():
+    def toggle_play_pause(self, force_play=False, force_pause=False):
+        if force_play:
+            self.timer.start()
+        elif force_pause:
             self.timer.stop()
         else:
-            self.timer.start()
+            if self.timer.isActive():
+                self.timer.stop()
+            else:
+                self.timer.start()
 
     def update_frame(self, frame_no=-1):
         logging.debug("[{}] updating frame".format(threading.get_ident()))

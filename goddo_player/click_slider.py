@@ -30,3 +30,9 @@ class ClickSlider(QSlider):
         p = pr.x() if self.orientation() == Qt.Horizontal else pr.y()
         return QStyle.sliderValueFromPosition(self.minimum(), self.maximum(), p - slider_min,
                                               slider_max - slider_min, opt.upsideDown)
+
+    def slider_value_to_pct(self, value):
+        return 100 / self.maximum() * value / 100
+
+    def pct_to_slider_value(self, pct):
+        return int(round(pct / (100 / self.maximum()) * 100))

@@ -55,7 +55,7 @@ class PreviewWindow(QWidget):
 
     def __on_update_pos(self, cur_frame_no: int, frame):
         total_frames = self.state.preview_window.total_frames
-        pos = int(round(cur_frame_no / total_frames / (100 / self.slider.maximum()) * 100))
+        pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
@@ -67,7 +67,7 @@ class PreviewWindow(QWidget):
         self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
 
     def on_value_changed(self, value):
-        frame_no = (100 / self.slider.maximum()) * (value / 100) * self.state.preview_window.total_frames
+        frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.info(f'value changed to {value}, frame to {frame_no}, '
                      f'total_frames={self.state.preview_window.total_frames}')
         self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no-1)
@@ -173,7 +173,6 @@ class PreviewWidget(QWidget):
         brush = painter.brush()
 
         if self.cap:
-            print(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
             pixmap = numpy_to_pixmap(scaled_frame)
             painter.drawPixmap(0, 0, pixmap)

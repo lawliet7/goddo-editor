@@ -1,3 +1,4 @@
+from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSlider, QStyleOptionSlider, QStyle
 
@@ -6,6 +7,15 @@ class ClickSlider(QSlider):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.opt = QStyleOptionSlider()
+        self.initStyleOption(self.opt)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+
+        # needs to be reinitialized when resized to calculate position properly
+        self.initStyleOption(self.opt)
+
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
         if event.button() == Qt.LeftButton:
@@ -13,10 +23,14 @@ class ClickSlider(QSlider):
             self.setValue(val)
 
     def pixel_pos_to_range_value(self, pos):
-        opt = QStyleOptionSlider()
-        self.initStyleOption(opt)
-        gr = self.style().subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderGroove, self)
-        sr = self.style().subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
+
+        gr = self.style().subControlRect(QStyle.CC_Slider, self.opt, QStyle.SC_SliderGroove, self)
+        sr = self.style().subControlRect(QStyle.CC_Slider, self.opt, QStyle.SC_SliderHandle, self)
+
+        print(f'gr = {gr} x={gr.x()} y={gr.y()}')
+        print(f'sr = {sr} x={sr.x()} y={sr.y()}')
+
+        print(f'geometry={self.geometry()}')
 
         if self.orientation() == Qt.Horizontal:
             slider_length = sr.width()
@@ -29,7 +43,7 @@ class ClickSlider(QSlider):
         pr = pos - sr.center() + sr.topLeft()
         p = pr.x() if self.orientation() == Qt.Horizontal else pr.y()
         return QStyle.sliderValueFromPosition(self.minimum(), self.maximum(), p - slider_min,
-                                              slider_max - slider_min, opt.upsideDown)
+                                              slider_max - slider_min, self.opt.upsideDown)
 
     def slider_value_to_pct(self, value):
         return 100 / self.maximum() * value / 100

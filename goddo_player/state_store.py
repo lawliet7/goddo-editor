@@ -9,6 +9,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
+from goddo_player.frame_in_out import FrameInOut
 from goddo_player.singleton_meta import singleton
 
 
@@ -17,6 +18,7 @@ class PreviewWindowState:
     video_url: QUrl = None
     fps = 0
     total_frames = 0
+    frame_in_out = FrameInOut()
 
     def as_dict(self):
         return {
@@ -80,7 +82,7 @@ class StateStore(QObject):
     def __init__(self):
         super().__init__()
 
-        self.preview_window = PreviewWindowState()
+        self.preview_window: PreviewWindowState = PreviewWindowState()
         self.file_list = FileListState()
 
     def save_file(self, url: QUrl):

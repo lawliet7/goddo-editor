@@ -5,11 +5,12 @@ import threading
 import cv2
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QPaintEvent, QColor
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.draw_utils import numpy_to_pixmap
+from goddo_player.frame_in_out import FrameInOut
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.state_store import StateStoreSignals, StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, num_frames_to_num_millis
@@ -30,7 +31,7 @@ class PreviewWindow(QWidget):
         # self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
-        self.slider = ClickSlider(Qt.Horizontal)
+        self.slider = FrameInOutSlider(Qt.Horizontal)
         self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
@@ -95,6 +96,18 @@ class PreviewWindow(QWidget):
             self.toggle_play_pause()
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
+        elif event.key() == Qt.Key_I:
+            print('pressed I')
+            frame_in_out = self.state.preview_window.frame_in_out
+            pos = self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.state.preview_window.frame_in_out = frame_in_out.update_in_frame(pos)
+            self.slider.update()
+        elif event.key() == Qt.Key_O:
+            print('pressed O')
+            frame_in_out = self.state.preview_window.frame_in_out
+            pos = self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.state.preview_window.frame_in_out = frame_in_out.update_out_frame(pos)
+            self.slider.update()
         else:
             super().keyPressEvent(event)
 
@@ -239,3 +252,41 @@ class PreviewWidget(QWidget):
         #         logging.debug("skipped advancing frame")
 
         self.update()
+
+
+class FrameInOutSlider(ClickSlider):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.state = StateStore()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+
+        painter = QPainter()
+        painter.begin(self)
+
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        pen = painter.pen()
+        brush = painter.brush()
+
+        frame_in_out = self.state.preview_window.frame_in_out
+        total_frames = self.state.preview_window.total_frames
+        if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
+            left = int(round(frame_in_out.in_frame / total_frames * self.width()))
+            right = int(round(frame_in_out.out_frame / total_frames * self.width()))
+            rect = QRect(left, 0, right - left, self.height())
+            logging.debug(f'in out {frame_in_out}, total frames {total_frames}, rect={rect}')
+            painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
+        elif frame_in_out.in_frame is not None:
+            left = int(round(frame_in_out.in_frame / total_frames * self.width()))
+            rect = QRect(left, 0, self.width(), self.height())
+            painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
+        elif frame_in_out.out_frame is not None:
+            right = int(round(frame_in_out.out_frame / total_frames * self.width()))
+            rect = QRect(0, 0, right, self.height())
+            painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
+
+        painter.setPen(pen)
+        painter.setBrush(brush)
+        painter.end()

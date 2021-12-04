@@ -32,6 +32,8 @@ class MonarchSystem(QObject):
         signals.add_file_slot.connect(self.__on_add_file)
         signals.save_slot.connect(self.__on_save_file)
         signals.load_slot.connect(self.__on_load_file)
+        signals.preview_video_in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
+        signals.preview_video_out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
 
     def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
         logging.info('update preview file')
@@ -59,8 +61,21 @@ class MonarchSystem(QObject):
 
         def handle_prev_wind_fn(prev_wind_dict):
             StateStoreSignals().switch_preview_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
+            logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
+            if prev_wind_dict['frame_in_out']['in_frame'] is not None:
+                StateStoreSignals().preview_video_in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
+            if prev_wind_dict['frame_in_out']['out_frame'] is not None:
+                StateStoreSignals().preview_video_out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
 
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn)
+
+    def __on_preview_video_in_frame_slot(self, pos: int):
+        logging.info(f'update in frame to {pos}')
+        self.state.preview_window.frame_in_out = self.state.preview_window.frame_in_out.update_in_frame(pos)
+
+    def __on_preview_video_out_frame_slot(self, pos: int):
+        logging.info(f'update out frame to {pos}')
+        self.state.preview_window.frame_in_out = self.state.preview_window.frame_in_out.update_out_frame(pos)
 
 
 def convert_to_log_level(log_level_str: str):

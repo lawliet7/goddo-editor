@@ -2,7 +2,7 @@ import logging
 import os
 import pathlib
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
@@ -25,6 +25,7 @@ class PreviewWindowState:
             "video_url": self.video_url.path() if self.video_url is not None else None,
             "fps": self.fps,
             "total_frames": self.total_frames,
+            "frame_in_out": asdict(self.frame_in_out)
         }
 
     @staticmethod
@@ -71,6 +72,9 @@ class FileListState:
 @singleton
 class StateStoreSignals(QObject):
     switch_preview_video_slot = pyqtSignal(QUrl, bool)
+    preview_video_in_frame_slot = pyqtSignal(int)
+    preview_video_out_frame_slot = pyqtSignal(int)
+    preview_video_slider_update_slot = pyqtSignal()
     update_preview_file_details_slot = pyqtSignal(float, int)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)

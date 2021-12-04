@@ -91,23 +91,25 @@ class PreviewWindow(QWidget):
             QApplication.exit(0)
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
             url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
-            self.state_signals.save_slot.emit(url)
+            self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
             self.toggle_play_pause()
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
         elif event.key() == Qt.Key_I:
             print('pressed I')
-            frame_in_out = self.state.preview_window.frame_in_out
-            pos = self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.state.preview_window.frame_in_out = frame_in_out.update_in_frame(pos)
-            self.slider.update()
+            # frame_in_out = self.state.preview_window.frame_in_out
+            pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            self.signals.preview_video_in_frame_slot.emit(pos)
+            # self.state.preview_window.frame_in_out = frame_in_out.update_in_frame(pos)
+            self.signals.preview_video_slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
             print('pressed O')
-            frame_in_out = self.state.preview_window.frame_in_out
-            pos = self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.state.preview_window.frame_in_out = frame_in_out.update_out_frame(pos)
-            self.slider.update()
+            # frame_in_out = self.state.preview_window.frame_in_out
+            pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            self.signals.preview_video_out_frame_slot.emit(pos)
+            # self.state.preview_window.frame_in_out = frame_in_out.update_out_frame(pos)
+            self.signals.preview_video_slider_update_slot.emit()
         else:
             super().keyPressEvent(event)
 
@@ -257,7 +259,11 @@ class PreviewWidget(QWidget):
 class FrameInOutSlider(ClickSlider):
     def __init__(self, parent=None):
         super().__init__(parent)
+
         self.state = StateStore()
+        self.signals = StateStoreSignals()
+
+        self.signals.preview_video_slider_update_slot.connect(lambda: self.update())
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)

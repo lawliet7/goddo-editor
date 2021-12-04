@@ -34,6 +34,7 @@ class PreviewWindow(QWidget):
         self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
+        self.slider.setFixedHeight(20)
 
         # p = self.palette()
         # p.setColor(self.backgroundRole(), Qt.black)
@@ -42,6 +43,7 @@ class PreviewWindow(QWidget):
 
         self.label = QLabel()
         self.label.setText("you suck")
+        self.label.setFixedHeight(15)
 
         self.preview_widget = PreviewWidget(self.__on_update_pos)
         vbox = QVBoxLayout()

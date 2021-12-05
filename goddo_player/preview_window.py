@@ -97,18 +97,18 @@ class PreviewWindow(QWidget):
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
         elif event.key() == Qt.Key_I:
-            print('pressed I')
-            # frame_in_out = self.state.preview_window.frame_in_out
             pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
             self.signals.preview_video_in_frame_slot.emit(pos)
-            # self.state.preview_window.frame_in_out = frame_in_out.update_in_frame(pos)
+            self.signals.preview_video_slider_update_slot.emit()
+        elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_I:
+            self.signals.preview_video_in_frame_slot.emit(None)
             self.signals.preview_video_slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
-            print('pressed O')
-            # frame_in_out = self.state.preview_window.frame_in_out
             pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
             self.signals.preview_video_out_frame_slot.emit(pos)
-            # self.state.preview_window.frame_in_out = frame_in_out.update_out_frame(pos)
+            self.signals.preview_video_slider_update_slot.emit()
+        elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_O:
+            self.signals.preview_video_out_frame_slot.emit(None)
             self.signals.preview_video_slider_update_slot.emit()
         else:
             super().keyPressEvent(event)

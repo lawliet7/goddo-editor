@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication
 from goddo_player.file_list import FileListWidget, FileList
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.state_store import StateStore, StateStoreSignals
+from goddo_player.ui.timeline_window2 import TimelineWidget2, TimelineWindow2
 
 
 class MonarchSystem(QObject):
@@ -20,11 +21,14 @@ class MonarchSystem(QObject):
         self.app = app
         self.state = StateStore()
 
+        self.file_list = FileList()
+        self.file_list.show()
+
         self.preview_window = PreviewWindow()
         self.preview_window.show()
 
-        self.file_list = FileList()
-        self.file_list.show()
+        self.timeline_window = TimelineWindow2()
+        self.timeline_window.show()
 
         signals: StateStoreSignals = StateStoreSignals()
         signals.switch_preview_video_slot.connect(self.__on_update_preview_file)

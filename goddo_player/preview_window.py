@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.draw_utils import numpy_to_pixmap
-from goddo_player.frame_in_out import FrameInOut
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.state_store import StateStoreSignals, StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, num_frames_to_num_millis
@@ -21,6 +20,7 @@ class PreviewWindow(QWidget):
         super().__init__()
         self.base_title = '天使女捜査官'
         self.setWindowTitle(self.base_title)
+        self.move(600, 50)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()

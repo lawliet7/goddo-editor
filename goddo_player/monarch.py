@@ -24,11 +24,16 @@ class MonarchSystem(QObject):
         self.file_list = FileList()
         self.file_list.show()
 
+        left = self.file_list.geometry().left() + 50
+        top = self.file_list.geometry().top() + 20
+
         self.preview_window = PreviewWindow()
         self.preview_window.show()
+        self.preview_window.move(left, top)
 
         self.timeline_window = TimelineWindow2()
         self.timeline_window.show()
+        self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
         signals: StateStoreSignals = StateStoreSignals()
         signals.switch_preview_video_slot.connect(self.__on_update_preview_file)

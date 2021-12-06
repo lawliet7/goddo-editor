@@ -92,7 +92,7 @@ class TimelineWindow2(QMainWindow):
 
         # self.setWindowTitle('当真ゆきが風俗嬢')
         self.setWindowTitle('美少女捜査官')
-        self.setGeometry(600, 550, 1075, 393)
+        self.resize(1075, 393)
 
         self.state = StateStore()
 

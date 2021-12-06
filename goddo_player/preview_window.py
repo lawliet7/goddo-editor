@@ -20,7 +20,6 @@ class PreviewWindow(QWidget):
         super().__init__()
         self.base_title = '天使女捜査官'
         self.setWindowTitle(self.base_title)
-        self.move(600, 50)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()

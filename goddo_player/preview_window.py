@@ -86,6 +86,14 @@ class PreviewWindow(QWidget):
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)
 
+    def update_next_frame(self):
+        self.update()
+
+    def update_prev_frame(self):
+        two_frame_back = self.preview_widget.get_cur_frame_no() - 2
+        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, two_frame_back)
+        self.update()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
@@ -97,19 +105,21 @@ class PreviewWindow(QWidget):
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
         elif event.key() == Qt.Key_I:
-            pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            self.signals.preview_video_in_frame_slot.emit(pos)
+            self.signals.preview_video_in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_video_slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_I:
             self.signals.preview_video_in_frame_slot.emit(None)
             self.signals.preview_video_slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
-            pos = int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            self.signals.preview_video_out_frame_slot.emit(pos)
+            self.signals.preview_video_out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_video_slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_O:
             self.signals.preview_video_out_frame_slot.emit(None)
             self.signals.preview_video_slider_update_slot.emit()
+        elif event.key() == Qt.Key_Right:
+            self.update_next_frame()
+        elif event.key() == Qt.Key_Left:
+            self.update_prev_frame()
         else:
             super().keyPressEvent(event)
 
@@ -129,6 +139,9 @@ class PreviewWidget(QWidget):
         self.setAcceptDrops(True)
 
         self.timer = QTimer(self)
+
+    def get_cur_frame_no(self):
+        return int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
 
     def get_next_frame(self, specific_frame=None):
         if specific_frame:

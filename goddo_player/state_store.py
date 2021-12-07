@@ -5,7 +5,7 @@ import shutil
 from dataclasses import dataclass, field, asdict
 from typing import List
 
-from PyQt5.QtCore import QObject, pyqtSignal, QUrl
+from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
@@ -67,18 +67,6 @@ class FileListState:
         print(f'before adding {self.files}')
         self.files.append(item)
         print(f'after adding {self.files}')
-
-
-@singleton
-class StateStoreSignals(QObject):
-    switch_preview_video_slot = pyqtSignal(QUrl, bool)
-    preview_video_in_frame_slot = pyqtSignal(int)
-    preview_video_out_frame_slot = pyqtSignal(int)
-    preview_video_slider_update_slot = pyqtSignal()
-    update_preview_file_details_slot = pyqtSignal(float, int)
-    add_file_slot = pyqtSignal(QUrl)
-    save_slot = pyqtSignal(QUrl)
-    load_slot = pyqtSignal(QUrl)
 
 
 @singleton

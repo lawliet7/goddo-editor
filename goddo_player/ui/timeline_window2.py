@@ -8,7 +8,8 @@ from PyQt5.QtGui import QPainter, QColor, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.frame_in_out import FrameInOut
-from goddo_player.state_store import StateStore, StateStoreSignals
+from goddo_player.signals import StateStoreSignals
+from goddo_player.state_store import StateStore
 
 
 class TimelineWidget2(QWidget):
@@ -33,28 +34,28 @@ class TimelineWidget2(QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
-    # def sizeHint(self) -> QtCore.QSize:
-    #     return QSize(TimelineWidget2.INITIAL_WIDTH, self.get_height())
+    def sizeHint(self) -> QtCore.QSize:
+        return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # size_width = painter.fontMetrics().width('00:00')
-        #
-        # height_of_line = painter.fontMetrics().height()+5
-        # painter.setPen(QColor(173, 202, 235))
-        # for i in range(int(self.width()/self.WIDTH_OF_ONE_MIN)):
-        #     x = (i+1)*self.WIDTH_OF_ONE_MIN
-        #     painter.drawLine(x, height_of_line, x, self.get_height())
-        #     painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")
-        #
-        #     for j in range(6):
-        #         tick_x = int(x - self.WIDTH_OF_ONE_MIN/6*(j+1))
-        #         tick_length = self.LENGTH_OF_TICK if j == 2 else int(self.LENGTH_OF_TICK / 2)
-        #         painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
-        #
-        # painter.drawLine(0, height_of_line, self.width(), height_of_line)
+        size_width = painter.fontMetrics().width('00:00')
+
+        height_of_line = painter.fontMetrics().height()+5
+        painter.setPen(QColor(173, 202, 235))
+        for i in range(int(self.width()/self.WIDTH_OF_ONE_MIN)):
+            x = (i+1)*self.WIDTH_OF_ONE_MIN
+            painter.drawLine(x, height_of_line, x, 393)
+            painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")
+
+            for j in range(6):
+                tick_x = int(x - self.WIDTH_OF_ONE_MIN/6*(j+1))
+                tick_length = self.LENGTH_OF_TICK if j == 2 else int(self.LENGTH_OF_TICK / 2)
+                painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
+
+        painter.drawLine(0, height_of_line, self.width(), height_of_line)
 
         # x = 0
         # for c in self.state.timeline['clips']:

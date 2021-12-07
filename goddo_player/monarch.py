@@ -4,14 +4,15 @@ import os
 import pathlib
 import sys
 
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QObject, QUrl
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.file_list import FileListWidget, FileList
+from goddo_player.file_list import FileList
 from goddo_player.preview_window import PreviewWindow
-from goddo_player.state_store import StateStore, StateStoreSignals
-from goddo_player.ui.timeline_window2 import TimelineWidget2, TimelineWindow2
+from goddo_player.signals import StateStoreSignals, PlayCommand
+from goddo_player.state_store import StateStore
+from goddo_player.ui.timeline_window2 import TimelineWindow2
 
 
 class MonarchSystem(QObject):
@@ -35,21 +36,22 @@ class MonarchSystem(QObject):
         self.timeline_window.show()
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
-        signals: StateStoreSignals = StateStoreSignals()
-        signals.switch_preview_video_slot.connect(self.__on_update_preview_file)
-        signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
-        signals.add_file_slot.connect(self.__on_add_file)
-        signals.save_slot.connect(self.__on_save_file)
-        signals.load_slot.connect(self.__on_load_file)
-        signals.preview_video_in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
-        signals.preview_video_out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
+        self.signals: StateStoreSignals = StateStoreSignals()
+        self.signals.switch_preview_video_slot.connect(self.__on_update_preview_file)
+        self.signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
+        self.signals.add_file_slot.connect(self.__on_add_file)
+        self.signals.save_slot.connect(self.__on_save_file)
+        self.signals.load_slot.connect(self.__on_load_file)
+        self.signals.preview_video_in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
+        self.signals.preview_video_out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
+        self.signals.preview_window_play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
 
     def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
         logging.info('update preview file')
         self.state.preview_window.video_url = url
         self.preview_window.switch_video(self.state.preview_window.video_url)
         if should_play:
-            self.preview_window.toggle_play_pause()
+            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PLAY)
         self.preview_window.activateWindow()
 
     def __on_update_preview_file_details(self, fps: float, total_frames: int):
@@ -85,6 +87,9 @@ class MonarchSystem(QObject):
     def __on_preview_video_out_frame_slot(self, pos: int):
         logging.info(f'update out frame to {pos}')
         self.state.preview_window.frame_in_out = self.state.preview_window.frame_in_out.update_out_frame(pos)
+
+    def __on_preview_window_play_cmd_slot(self, play_cmd: PlayCommand):
+        self.preview_window.toggle_play_pause(play_cmd)
 
 
 def convert_to_log_level(log_level_str: str):

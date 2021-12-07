@@ -27,11 +27,6 @@ class ClickSlider(QSlider):
         gr = self.style().subControlRect(QStyle.CC_Slider, self.opt, QStyle.SC_SliderGroove, self)
         sr = self.style().subControlRect(QStyle.CC_Slider, self.opt, QStyle.SC_SliderHandle, self)
 
-        print(f'gr = {gr} x={gr.x()} y={gr.y()}')
-        print(f'sr = {sr} x={sr.x()} y={sr.y()}')
-
-        print(f'geometry={self.geometry()}')
-
         if self.orientation() == Qt.Horizontal:
             slider_length = sr.width()
             slider_min = gr.x()

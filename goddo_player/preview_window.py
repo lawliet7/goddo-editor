@@ -11,14 +11,15 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 from goddo_player.click_slider import ClickSlider
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
-from goddo_player.state_store import StateStoreSignals, StateStore
+from goddo_player.signals import StateStoreSignals, PlayCommand
+from goddo_player.state_store import StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, num_frames_to_num_millis
 
 
 class PreviewWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.base_title = '天使女捜査官'
+        self.base_title = '天使美女捜査官'
         self.setWindowTitle(self.base_title)
 
         self.state = StateStore()
@@ -82,8 +83,8 @@ class PreviewWindow(QWidget):
         name, _ = os.path.splitext(url.fileName())
         self.setWindowTitle(self.base_title + ' - ' + name)
 
-    def toggle_play_pause(self):
-        self.preview_widget.toggle_play_pause()
+    def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
+        self.preview_widget.exec_play_cmd(cmd)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
@@ -92,7 +93,7 @@ class PreviewWindow(QWidget):
             url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
             self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
-            self.toggle_play_pause()
+            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
         elif event.key() == Qt.Key_I:
@@ -203,10 +204,10 @@ class PreviewWidget(QWidget):
         painter.setBrush(brush)
         painter.end()
 
-    def toggle_play_pause(self, force_play=False, force_pause=False):
-        if force_play:
+    def exec_play_cmd(self, play_cmd: PlayCommand):
+        if play_cmd is PlayCommand.PLAY:
             self.timer.start()
-        elif force_pause:
+        elif play_cmd is PlayCommand.PAUSE:
             self.timer.stop()
         else:
             if self.timer.isActive():
@@ -263,6 +264,9 @@ class FrameInOutSlider(ClickSlider):
         self.signals = StateStoreSignals()
 
         self.signals.preview_video_slider_update_slot.connect(lambda: self.update())
+
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)

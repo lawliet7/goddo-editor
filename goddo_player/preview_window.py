@@ -141,7 +141,7 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
 
     def get_cur_frame_no(self):
-        return int(self.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 
     def get_next_frame(self, specific_frame=None):
         if specific_frame:

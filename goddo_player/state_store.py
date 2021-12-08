@@ -69,6 +69,41 @@ class FileListState:
         print(f'after adding {self.files}')
 
 
+@dataclass(frozen=True)
+class TimelineClip:
+    video_url: QUrl
+    fps: float
+    total_frames: int
+    frame_in_out: FrameInOut()
+
+    def as_dict(self):
+        return {
+            "video_url": self.video_url.path(),
+            "fps": self.fps,
+            "total_frames": self.total_frames,
+            "frame_in_out": asdict(self.frame_in_out)
+        }
+
+    @staticmethod
+    def from_dict(json_dict):
+        return TimelineClip(QUrl.fromLocalFile(json_dict['video_url']), json_dict['fps'],
+                            json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
+
+
+@dataclass
+class TimelineState:
+    clips: List[TimelineClip] = field(default_factory=list)
+
+    def as_dict(self):
+        return {
+            "clips": [x.as_dict() for x in self.clips]
+        }
+
+    @staticmethod
+    def from_dict(json_dict):
+        return TimelineState([TimelineClip.from_dict(x) for x in json_dict['clips']])
+
+
 @singleton
 class StateStore(QObject):
     def __init__(self):
@@ -76,6 +111,7 @@ class StateStore(QObject):
 
         self.preview_window: PreviewWindowState = PreviewWindowState()
         self.file_list = FileListState()
+        self.timeline = TimelineState()
 
     def save_file(self, url: QUrl):
 
@@ -103,11 +139,8 @@ class StateStore(QObject):
             table_preview_windows.truncate()
             table_preview_windows.insert(self.preview_window.as_dict())
 
-            # self.table_timelines.truncate()
-            # self.table_timelines.insert({
-            #     'name': 'default',
-            #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
-            # })
+            table_timelines.truncate()
+            table_timelines.insert(self.timeline.as_dict())
 
         # db.close()
 
@@ -134,11 +167,7 @@ class StateStore(QObject):
             if prev_wind_dict['video_url']:
                 handle_prev_wind_fn(prev_wind_dict)
 
-        # self.table_timelines.truncate()
-        # self.table_timelines.insert({
-        #     'name': 'default',
-        #     'clips': [self.__timeline_clip_to_db_dict(clip) for clip in self.timeline['clips']],
-        # })
+
 
         db.close()
 

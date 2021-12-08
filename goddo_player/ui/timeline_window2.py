@@ -11,15 +11,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSi
 
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.signals import StateStoreSignals
-from goddo_player.state_store import StateStore
-
-
-@dataclass(frozen=True)
-class TimelineClip:
-    video_url: QUrl
-    fps: float
-    total_frames: int
-    frame_in_out: FrameInOut()
+from goddo_player.state_store import StateStore, TimelineClip
 
 
 class TimelineWidget2(QWidget):
@@ -43,8 +35,6 @@ class TimelineWidget2(QWidget):
         palette.setColor(self.backgroundRole(), QColor(12, 29, 45))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
-
-        self.clips: List[TimelineClip] = []
 
     def sizeHint(self) -> QtCore.QSize:
         return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
@@ -70,7 +60,7 @@ class TimelineWidget2(QWidget):
         painter.drawLine(0, height_of_line, self.width(), height_of_line)
 
         x = 0
-        for c in self.clips:
+        for c in self.state.timeline.clips:
             in_frame = c.frame_in_out.in_frame
             out_frame = c.frame_in_out.out_frame
             if out_frame and in_frame:
@@ -181,7 +171,7 @@ class TimelineWindow2(QMainWindow):
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         pw_state = self.state.preview_window
         clip = TimelineClip(pw_state.video_url, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
-        self.inner_widget.clips.append(clip)
+        self.state.timeline.clips.append(clip)
 
         self.activateWindow()
         self.update()

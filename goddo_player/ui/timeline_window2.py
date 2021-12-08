@@ -1,15 +1,25 @@
 import platform
 import re
 import time
+from dataclasses import dataclass
+from typing import List
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QSize, QRect
+from PyQt5.QtCore import Qt, QSize, QRect, QUrl
 from PyQt5.QtGui import QPainter, QColor, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore
+
+
+@dataclass(frozen=True)
+class TimelineClip:
+    video_url: QUrl
+    fps: float
+    total_frames: int
+    frame_in_out: FrameInOut()
 
 
 class TimelineWidget2(QWidget):
@@ -34,6 +44,8 @@ class TimelineWidget2(QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
+        self.clips: List[TimelineClip] = []
+
     def sizeHint(self) -> QtCore.QSize:
         return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
 
@@ -57,32 +69,31 @@ class TimelineWidget2(QWidget):
 
         painter.drawLine(0, height_of_line, self.width(), height_of_line)
 
-        # x = 0
-        # for c in self.state.timeline['clips']:
-        #     f: FrameInOut = c['frame_in_out']
-        #     fps = self.state.preview_windows['source']['video_details']['fps']
-        #     total_frames = self.state.preview_windows['source']['video_details']['total_frames']
-        #     if f.out_frame and f.in_frame:
-        #         n_frames = f.out_frame - f.in_frame
-        #     elif f.in_frame:
-        #         n_frames = total_frames - f.in_frame
-        #     elif f.out_frame:
-        #         n_frames = f.out_frame
-        #     else:
-        #         raise Exception("both in and out frame is blank")
-        #     n_mins = n_frames / fps / 60
-        #     width = n_mins * self.WIDTH_OF_ONE_MIN
-        #     rect = QRect(x, height_of_line+50, width, 100)
-        #     painter.fillRect(rect, Qt.darkRed)
-        #     pen = painter.pen()
-        #     painter.setPen(Qt.red)
-        #     painter.drawRect(rect)
-        #
-        #     painter.setPen(Qt.white)
-        #     filename = c["source"].fileName()
-        #     painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{f.in_frame} - {f.out_frame}')
-        #     painter.setPen(pen)
-        #     x += width + 1
+        x = 0
+        for c in self.clips:
+            in_frame = c.frame_in_out.in_frame
+            out_frame = c.frame_in_out.out_frame
+            if out_frame and in_frame:
+                n_frames = out_frame - in_frame
+            elif in_frame:
+                n_frames = c.total_frames - in_frame
+            elif out_frame:
+                n_frames = out_frame
+            else:
+                raise Exception("both in and out frame is blank")
+            n_mins = n_frames / c.fps / 60
+            width = n_mins * self.WIDTH_OF_ONE_MIN
+            rect = QRect(x, height_of_line+50, width, 100)
+            painter.fillRect(rect, Qt.darkRed)
+            pen = painter.pen()
+            painter.setPen(Qt.red)
+            painter.drawRect(rect)
+
+            painter.setPen(Qt.white)
+            filename = c.video_url.fileName()
+            painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame} - {out_frame}')
+            painter.setPen(pen)
+            x += width + 1
 
         painter.end()
 
@@ -164,16 +175,13 @@ class TimelineWindow2(QMainWindow):
         print('output generated!!')
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
-        print(f'drag enter {event.mimeData().text()}')
-        if re.fullmatch('^[0-9]*\\|[0-9]*$', event.mimeData().text()):
+        if event.mimeData().text() == 'source':
             event.accept()
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        in_frame, out_frame = [int(x) if x != '' else None for x in event.mimeData().text().split('|')]
-        self.state.add_timeline_clip_slot.emit({
-            "source": self.state.preview_windows['source']['video_file'],
-            "frame_in_out": FrameInOut(in_frame, out_frame),
-        })
+        pw_state = self.state.preview_window
+        clip = TimelineClip(pw_state.video_url, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
+        self.inner_widget.clips.append(clip)
+
         self.activateWindow()
         self.update()
-        print(f'preview {self.state.preview_windows}')

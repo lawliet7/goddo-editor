@@ -4,8 +4,8 @@ import threading
 
 import cv2
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QPaintEvent, QColor
+from PyQt5.QtCore import QRect, Qt, QTimer, QUrl, QMimeData
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
@@ -122,6 +122,17 @@ class PreviewWindow(QWidget):
             self.update_prev_frame()
         else:
             super().keyPressEvent(event)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+
+        frame_in_out = self.state.preview_window.frame_in_out
+        if frame_in_out.in_frame is not None or frame_in_out.out_frame is not None:
+            drag = QDrag(self)
+            mime_data = QMimeData()
+            mime_data.setText('source')
+            drag.setMimeData(mime_data)
+            drag.exec()
 
 
 class PreviewWidget(QWidget):
@@ -277,9 +288,6 @@ class FrameInOutSlider(ClickSlider):
         self.signals = StateStoreSignals()
 
         self.signals.preview_video_slider_update_slot.connect(lambda: self.update())
-
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)

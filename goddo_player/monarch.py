@@ -9,6 +9,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.file_list import FileList
+from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.signals import StateStoreSignals, PlayCommand
 from goddo_player.state_store import StateStore
@@ -49,6 +50,7 @@ class MonarchSystem(QObject):
     def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
         logging.info('update preview file')
         self.state.preview_window.video_url = url
+        self.state.preview_window.frame_in_out = FrameInOut()
         self.preview_window.switch_video(self.state.preview_window.video_url)
         if should_play:
             self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PLAY)

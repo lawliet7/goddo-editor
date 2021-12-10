@@ -118,6 +118,20 @@ class PreviewWindow(QWidget):
             self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
             self.preview_widget.update_frame_pixmap(1)
             self.update()
+        elif event.key() == Qt.Key_BracketLeft:
+            frame_in_out = self.state.preview_window.frame_in_out
+            if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
+                self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+                frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
+                self.preview_widget.update_frame_pixmap(frame_diff)
+                self.update()
+        elif event.key() == Qt.Key_BracketRight:
+            frame_in_out = self.state.preview_window.frame_in_out
+            if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
+                self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+                frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
+                self.preview_widget.update_frame_pixmap(frame_diff)
+                self.update()
         else:
             super().keyPressEvent(event)
 

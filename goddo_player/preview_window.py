@@ -5,7 +5,8 @@ import threading
 import cv2
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QRect, Qt, QTimer, QUrl, QMimeData
-from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag
+from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
+    QResizeEvent
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
@@ -56,6 +57,11 @@ class PreviewWindow(QWidget):
 
         self.setLayout(vbox)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+
+        self.preview_widget.update_frame_pixmap(0)
+
     def __on_update_pos(self, cur_frame_no: int, frame):
         total_frames = self.state.preview_window.total_frames
         pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
@@ -86,14 +92,6 @@ class PreviewWindow(QWidget):
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)
 
-    def update_next_frame(self):
-        self.update()
-
-    def update_prev_frame(self, num_of_frames=1):
-        target_frame_no = self.preview_widget.get_cur_frame_no() - num_of_frames - 1
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
-        self.update()
-
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
@@ -118,14 +116,16 @@ class PreviewWindow(QWidget):
             self.signals.preview_video_slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
             self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.update_next_frame()
+            self.preview_widget.update_frame_pixmap(1)
+            self.update()
         else:
             super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
             self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.update_prev_frame(5)
+            self.preview_widget.update_frame_pixmap(-5)
+            self.update()
         else:
             super().keyPressEvent(event)
 
@@ -156,6 +156,8 @@ class PreviewWidget(QWidget):
         self.setAcceptDrops(True)
 
         self.timer = QTimer(self)
+
+        self.frame_pixmap = None
 
     def get_cur_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -195,7 +197,7 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.setInterval(num_frames_to_num_millis(fps))
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.timer.timeout.connect(lambda: self.update())
+        self.timer.timeout.connect(self.update_frame_pixmap)
         # self.timer.start()
 
     def switch_speed(self):
@@ -207,8 +209,28 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.setInterval(speed)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.timer.timeout.connect(lambda: self.update())
+        self.timer.timeout.connect(self.update_frame_pixmap)
         self.timer.start()
+
+    def update_frame_pixmap(self, num_of_frames_to_advance=1):
+        if self.cap:
+            if 0 < num_of_frames_to_advance <= 10:
+                scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()),
+                                          interpolation=cv2.INTER_AREA)
+                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+            elif num_of_frames_to_advance == 0 and self.frame_pixmap:
+                self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
+            else:
+                target_frame_no = self.get_cur_frame_no() + num_of_frames_to_advance - 1
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
+                scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()),
+                                          interpolation=cv2.INTER_AREA)
+                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+
+            cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            self.on_update_cb(cur_frame_no, self.frame_pixmap)
+
+        self.update()
 
     def paintEvent(self, paint_event: QtGui.QPaintEvent) -> None:
         painter = QPainter()
@@ -219,14 +241,10 @@ class PreviewWidget(QWidget):
         pen = painter.pen()
         brush = painter.brush()
 
-        if self.cap:
-            scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
-            pixmap = numpy_to_pixmap(scaled_frame)
-            painter.drawPixmap(0, 0, pixmap)
-
-            cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            self.on_update_cb(cur_frame_no, scaled_frame)
-
+        if self.frame_pixmap:
+            # scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
+            # pixmap = numpy_to_pixmap(scaled_frame)
+            painter.drawPixmap(0, 0, self.frame_pixmap)
         else:
             painter.fillRect(QRect(0, 0, self.geometry().width(), self.geometry().height()), Qt.black)
 

@@ -89,9 +89,9 @@ class PreviewWindow(QWidget):
     def update_next_frame(self):
         self.update()
 
-    def update_prev_frame(self):
-        two_frame_back = self.preview_widget.get_cur_frame_no() - 2
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, two_frame_back)
+    def update_prev_frame(self, num_of_frames=1):
+        target_frame_no = self.preview_widget.get_cur_frame_no() - num_of_frames - 1
+        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
         self.update()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -117,9 +117,15 @@ class PreviewWindow(QWidget):
             self.signals.preview_video_out_frame_slot.emit(None)
             self.signals.preview_video_slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
+            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
             self.update_next_frame()
-        elif event.key() == Qt.Key_Left:
-            self.update_prev_frame()
+        else:
+            super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key_Left:
+            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.update_prev_frame(5)
         else:
             super().keyPressEvent(event)
 

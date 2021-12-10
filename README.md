@@ -39,6 +39,21 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 - left/right: to move 1 frame
 - s: to switch between normal and max speed
 
+| window |  key | description  |
+| --- | ------------ | ------------ |
+| all | esc  | quit  |
+| preview | space  | play/pause  |
+| preview | i  | mark in  |
+| preview | o  | mark out  |
+| preview | shift + i  | unmark in  |
+| preview | shift + o  | unmark out  |
+| preview | [  |  go to in |
+| preview | ]  |  go to out |
+| preview | ->  |  advance 1 frame |
+| preview | <-  |  go back 5 frames |
+| preview | s  | switch between normal speed and max speed  |
+| file | ctrl + s  | save  |
+
 <h3>Credits:</h3>
 <b>ClickSlider</b> class modified based on answer from this post:
 https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011

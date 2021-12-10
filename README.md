@@ -33,11 +33,6 @@ Environment Variables:
 python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 
 <h4>shortcuts:</h4>
-- spacebar: to pause/play
-- i:  to mark in
-- o: to mark out
-- left/right: to move 1 frame
-- s: to switch between normal and max speed
 
 | window |  key | description  |
 | --- | ------------ | ------------ |

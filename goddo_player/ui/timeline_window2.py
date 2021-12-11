@@ -1,3 +1,4 @@
+import logging
 import platform
 import re
 import time
@@ -6,7 +7,7 @@ from typing import List
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect, QUrl
-from PyQt5.QtGui import QPainter, QColor, QKeyEvent
+from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.frame_in_out import FrameInOut
@@ -36,6 +37,9 @@ class TimelineWidget2(QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
+        self.clip_rects = []
+        self.selected_clip_index = -1
+
     def sizeHint(self) -> QtCore.QSize:
         return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
 
@@ -60,7 +64,7 @@ class TimelineWidget2(QWidget):
         painter.drawLine(0, height_of_line, self.width(), height_of_line)
 
         x = 0
-        for c in self.state.timeline.clips:
+        for i, c in enumerate(self.state.timeline.clips):
             in_frame = c.frame_in_out.in_frame
             out_frame = c.frame_in_out.out_frame
             if out_frame and in_frame:
@@ -76,14 +80,45 @@ class TimelineWidget2(QWidget):
             rect = QRect(x, height_of_line+50, width, 100)
             painter.fillRect(rect, Qt.darkRed)
             pen = painter.pen()
-            painter.setPen(Qt.red)
+            if i == self.selected_clip_index:
+                painter.setPen(Qt.green)
+            else:
+                painter.setPen(Qt.red)
             painter.drawRect(rect)
+            # self.clip_rects.append((c, rect))
 
             painter.setPen(Qt.white)
             filename = c.video_url.fileName()
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame} - {out_frame}')
             painter.setPen(pen)
             x += width + 1
+
+        painter.end()
+
+    def add_rect_for_new_clip(self, clip: TimelineClip):
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        height_of_line = painter.fontMetrics().height() + 5
+
+        x = 0
+        for c, rect in self.clip_rects:
+            x += rect.width()
+
+        in_frame = clip.frame_in_out.in_frame
+        out_frame = clip.frame_in_out.out_frame
+        if out_frame and in_frame:
+            n_frames = out_frame - in_frame
+        elif in_frame:
+            n_frames = clip.total_frames - in_frame
+        elif out_frame:
+            n_frames = out_frame
+        else:
+            raise Exception("both in and out frame is blank")
+        n_mins = n_frames / clip.fps / 60
+        width = n_mins * self.WIDTH_OF_ONE_MIN
+        rect = QRect(x, height_of_line + 50, width, 100)
+        self.clip_rects.append((clip, rect))
 
         painter.end()
 
@@ -126,6 +161,19 @@ class TimelineWindow2(QMainWindow):
             self.__process()
         else:
             super().keyPressEvent(event)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        # super().mousePressEvent(event)
+
+        logging.info('mouse press')
+
+        for i, t in enumerate(self.inner_widget.clip_rects):
+            _, rect = t
+            if rect.contains(event.pos()):
+                logging.info(f'{rect} found clip at index {i}')
+
+    def add_rect_for_new_clip(self, clip: TimelineClip):
+        self.inner_widget.add_rect_for_new_clip(clip)
 
     def __process(self):
         import subprocess

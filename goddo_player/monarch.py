@@ -50,6 +50,7 @@ class MonarchSystem(QObject):
 
     def __on_add_timeline_clip_slot(self, clip: TimelineClip):
         self.state.timeline.clips.append(clip)
+        self.timeline_window.add_rect_for_new_clip(clip)
         self.timeline_window.activateWindow()
         self.timeline_window.update()
 

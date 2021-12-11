@@ -97,6 +97,7 @@ class TimelineWindow2(QMainWindow):
         self.resize(1075, 393)
 
         self.state = StateStore()
+        self.signals = StateStoreSignals()
 
         self.scrollArea = QScrollArea()
         self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -171,7 +172,5 @@ class TimelineWindow2(QMainWindow):
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         pw_state = self.state.preview_window
         clip = TimelineClip(pw_state.video_url, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
-        self.state.timeline.clips.append(clip)
 
-        self.activateWindow()
-        self.update()
+        self.signals.add_timeline_clip_slot.emit(clip)

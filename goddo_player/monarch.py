@@ -12,7 +12,7 @@ from goddo_player.file_list import FileList
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.signals import StateStoreSignals, PlayCommand
-from goddo_player.state_store import StateStore
+from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.ui.timeline_window2 import TimelineWindow2
 
 
@@ -46,6 +46,12 @@ class MonarchSystem(QObject):
         self.signals.preview_video_in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
         self.signals.preview_video_out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
         self.signals.preview_window_play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
+        self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
+
+    def __on_add_timeline_clip_slot(self, clip: TimelineClip):
+        self.state.timeline.clips.append(clip)
+        self.timeline_window.activateWindow()
+        self.timeline_window.update()
 
     def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
         logging.info('update preview file')
@@ -80,7 +86,11 @@ class MonarchSystem(QObject):
             if prev_wind_dict['frame_in_out']['out_frame'] is not None:
                 StateStoreSignals().preview_video_out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
 
-        self.state.load_file(url, handle_file_fn, handle_prev_wind_fn)
+        def handle_timeline_fn(timeline_dict):
+            for clip_dict in timeline_dict['clips']:
+                StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict))
+
+        self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame_slot(self, pos: int):
         logging.info(f'update in frame to {pos}')

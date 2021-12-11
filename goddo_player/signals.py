@@ -3,6 +3,7 @@ from enum import Enum, auto, unique
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
 
 from goddo_player.singleton_meta import singleton
+from goddo_player.state_store import TimelineClip
 
 
 @unique
@@ -20,6 +21,7 @@ class StateStoreSignals(QObject):
     preview_video_slider_update_slot = pyqtSignal()
     preview_window_play_cmd_slot = pyqtSignal(PlayCommand)
     update_preview_file_details_slot = pyqtSignal(float, int)
+    add_timeline_clip_slot = pyqtSignal(TimelineClip)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)

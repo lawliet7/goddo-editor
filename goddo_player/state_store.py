@@ -147,10 +147,14 @@ class StateStore(QObject):
         if is_existing_file:
             os.remove(tmp_save_file_name)
 
-    def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn):
+    def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
 
         logging.info(f'loading {url}')
         # todo msg box to select save file
+
+        self.preview_window: PreviewWindowState = PreviewWindowState()
+        self.file_list = FileListState()
+        self.timeline = TimelineState()
 
         load_file_name = url.path()[1:]
 
@@ -167,7 +171,10 @@ class StateStore(QObject):
             if prev_wind_dict['video_url']:
                 handle_prev_wind_fn(prev_wind_dict)
 
-
+        for timeline_dict in table_timelines:
+            handle_timeline_fn(timeline_dict)
+            # for clip_dict in timeline_dict['clips']:
+            #     self.timeline.clips.append(TimelineClip.from_dict(clip_dict))
 
         db.close()
 

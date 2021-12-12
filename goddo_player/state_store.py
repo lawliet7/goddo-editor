@@ -29,7 +29,7 @@ class PreviewWindowState:
             "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out),
             "current_frame_no": self.current_frame_no,
-            "max_speed": self.is_max_speed,
+            "is_max_speed": self.is_max_speed,
         }
 
     @staticmethod
@@ -38,7 +38,8 @@ class PreviewWindowState:
         prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
-        prev_wind_state.total_frames = json_dict['current_frame_no']
+        prev_wind_state.current_frame_no = json_dict['current_frame_no']
+        prev_wind_state.is_max_speed = json_dict['is_max_speed']
         return prev_wind_state
 
 

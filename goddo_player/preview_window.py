@@ -60,8 +60,9 @@ class PreviewWindow(QWidget):
         self.preview_widget.update_frame_pixmap(0)
 
     def go_to_frame(self, frame_no: int):
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
-        self.preview_widget.update_frame_pixmap(0)
+        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, max(frame_no-1, 0))
+        self.preview_widget.update_frame_pixmap(1)
+        self.update()
 
     def __on_update_pos(self, cur_frame_no: int, frame):
         total_frames = self.state.preview_window.total_frames
@@ -80,9 +81,7 @@ class PreviewWindow(QWidget):
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.info(f'value changed to {value}, frame to {frame_no}, '
                      f'total_frames={self.state.preview_window.total_frames}')
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no-1)
-        if not self.preview_widget.timer.isActive():
-            self.update()
+        self.signals.preview_window.seek_slot.emit(frame_no)
 
     def switch_video(self, url: 'QUrl'):
         self.preview_widget.switch_video(url)

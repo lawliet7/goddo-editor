@@ -101,14 +101,20 @@ class MonarchSystem(QObject):
             StateStoreSignals().add_file_slot.emit(QUrl.fromLocalFile(file_dict['name']))
 
         def handle_prev_wind_fn(prev_wind_dict):
-            StateStoreSignals().preview_window.switch_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
+            pw_signals = StateStoreSignals().preview_window
+
+            pw_signals.switch_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
             if prev_wind_dict['frame_in_out']['in_frame'] is not None:
-                StateStoreSignals().preview_window.in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
+                pw_signals.in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
             if prev_wind_dict['frame_in_out']['out_frame'] is not None:
-                StateStoreSignals().preview_window.out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
+                pw_signals.out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
             if prev_wind_dict['current_frame_no'] > 1:
-                StateStoreSignals().preview_window.seek_slot.emit(prev_wind_dict['current_frame_no'])
+                pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'])
+            else:
+                pw_signals.seek_slot.emit(0)
+            if prev_wind_dict['is_max_speed']:
+                pw_signals.switch_speed_slot.emit()
 
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:

@@ -20,6 +20,7 @@ class PreviewWindowState:
     total_frames = 0
     frame_in_out = FrameInOut()
     current_frame_no = -1
+    is_max_speed = False
 
     def as_dict(self):
         return {
@@ -28,6 +29,7 @@ class PreviewWindowState:
             "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out),
             "current_frame_no": self.current_frame_no,
+            "max_speed": self.is_max_speed,
         }
 
     @staticmethod

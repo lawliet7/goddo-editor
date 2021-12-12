@@ -16,6 +16,7 @@ class PlayCommand(Enum):
 @singleton
 class PreviewWindowSignals(QObject):
     switch_video_slot = pyqtSignal(QUrl, bool)
+    switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
     out_frame_slot = pyqtSignal(int)
     slider_update_slot = pyqtSignal()

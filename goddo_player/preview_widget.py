@@ -75,7 +75,7 @@ class PreviewWidget(QWidget):
         # self.timer.start()
 
     def switch_speed(self):
-        speed = 1 if self.timer.interval() != 1 else num_frames_to_num_millis(self.state.preview_window.fps)
+        speed = num_frames_to_num_millis(self.state.preview_window.fps) if self.state.preview_window.is_max_speed else 1
         logging.info(f'switching speed from {self.timer.interval()} to {speed}')
 
         self.timer.stop()
@@ -84,7 +84,9 @@ class PreviewWidget(QWidget):
         self.timer.setInterval(speed)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.timeout.connect(self.update_frame_pixmap)
-        self.timer.start()
+        # self.timer.start()
+
+        return speed
 
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:

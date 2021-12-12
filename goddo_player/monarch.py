@@ -48,6 +48,18 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek_slot)
+        self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed_slot)
+
+    def __on_switch_speed_slot(self):
+        is_playing = self.preview_window.is_playing()
+        if is_playing:
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+        speed = self.preview_window.preview_widget.switch_speed()
+        self.state.preview_window.is_max_speed = (speed == 1)
+        self.preview_window.preview_widget.update_frame_pixmap(0)
+        self.preview_window.update()
+        if is_playing:
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_preview_window_seek_slot(self, frame_no: int):
         is_playing = self.preview_window.is_playing()

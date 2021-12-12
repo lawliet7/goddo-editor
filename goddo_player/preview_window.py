@@ -73,7 +73,7 @@ class PreviewWindow(QWidget):
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        speed = 'max' if self.preview_widget.timer.interval() == 1 else 'normal'
+        speed = 'max' if self.state.preview_window.is_max_speed else 'normal'
         self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
 
     def on_value_changed(self, value):
@@ -102,7 +102,7 @@ class PreviewWindow(QWidget):
         elif event.key() == Qt.Key_Space:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
-            self.preview_widget.switch_speed()
+            self.signals.preview_window.switch_speed_slot.emit()
         elif event.key() == Qt.Key_I:
             self.signals.preview_window.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_window.slider_update_slot.emit()

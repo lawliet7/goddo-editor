@@ -94,6 +94,8 @@ class MonarchSystem(QObject):
         self.file_list.add_video(item.name)
 
     def __on_save_file(self, url: QUrl):
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+        self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
         self.state.save_file(url)
 
     def __on_load_file(self, url: QUrl):
@@ -105,14 +107,20 @@ class MonarchSystem(QObject):
 
             pw_signals.switch_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
-            if prev_wind_dict['frame_in_out']['in_frame'] is not None:
-                pw_signals.in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
-            if prev_wind_dict['frame_in_out']['out_frame'] is not None:
-                pw_signals.out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
+
+            frame_in_out_dict = prev_wind_dict['frame_in_out']
+
+            if frame_in_out_dict['in_frame'] is not None:
+                pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
+
+            if frame_in_out_dict['out_frame'] is not None:
+                pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
+
             if prev_wind_dict['current_frame_no'] > 1:
                 pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'])
             else:
                 pw_signals.seek_slot.emit(0)
+
             if prev_wind_dict['is_max_speed']:
                 pw_signals.switch_speed_slot.emit()
 
@@ -132,8 +140,6 @@ class MonarchSystem(QObject):
 
     def __on_preview_window_play_cmd_slot(self, play_cmd: PlayCommand):
         self.preview_window.toggle_play_pause(play_cmd)
-        if not self.preview_window.is_playing():
-            self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
 
 
 def convert_to_log_level(log_level_str: str):

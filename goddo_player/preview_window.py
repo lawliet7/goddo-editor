@@ -100,36 +100,36 @@ class PreviewWindow(QWidget):
             url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
             self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.TOGGLE)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
             self.preview_widget.switch_speed()
         elif event.key() == Qt.Key_I:
-            self.signals.preview_video_in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.signals.preview_video_slider_update_slot.emit()
+            self.signals.preview_window.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+            self.signals.preview_window.slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_I:
-            self.signals.preview_video_in_frame_slot.emit(None)
-            self.signals.preview_video_slider_update_slot.emit()
+            self.signals.preview_window.in_frame_slot.emit(None)
+            self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
-            self.signals.preview_video_out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.signals.preview_video_slider_update_slot.emit()
+            self.signals.preview_window.out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+            self.signals.preview_window.slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_O:
-            self.signals.preview_video_out_frame_slot.emit(None)
-            self.signals.preview_video_slider_update_slot.emit()
+            self.signals.preview_window.out_frame_slot.emit(None)
+            self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
             self.preview_widget.update_frame_pixmap(1)
             self.update()
         elif event.key() == Qt.Key_BracketLeft:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
-                self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.key() == Qt.Key_BracketRight:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
-                self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
@@ -138,7 +138,7 @@ class PreviewWindow(QWidget):
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
             self.preview_widget.update_frame_pixmap(-5)
             self.update()
         else:
@@ -169,7 +169,7 @@ class FrameInOutSlider(ClickSlider):
         self.state = StateStore()
         self.signals = StateStoreSignals()
 
-        self.signals.preview_video_slider_update_slot.connect(lambda: self.update())
+        self.signals.preview_window.slider_update_slot.connect(lambda: self.update())
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)

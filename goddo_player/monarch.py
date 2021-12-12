@@ -38,24 +38,24 @@ class MonarchSystem(QObject):
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
         self.signals: StateStoreSignals = StateStoreSignals()
-        self.signals.switch_preview_video_slot.connect(self.__on_update_preview_file)
-        self.signals.update_preview_file_details_slot.connect(self.__on_update_preview_file_details)
+        self.signals.preview_window.switch_video_slot.connect(self.__on_update_preview_file)
+        self.signals.preview_window.update_file_details_slot.connect(self.__on_update_preview_file_details)
         self.signals.add_file_slot.connect(self.__on_add_file)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
-        self.signals.preview_video_in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
-        self.signals.preview_video_out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
-        self.signals.preview_window_play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
+        self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
+        self.signals.preview_window.out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
+        self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
-        self.signals.preview_window_seek_slot.connect(self.__on_preview_window_seek_slot)
+        self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek_slot)
 
     def __on_preview_window_seek_slot(self, frame_no: int):
         is_playing = self.preview_window.is_playing()
         if is_playing:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.preview_window.go_to_frame(frame_no)
         if is_playing:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PLAY)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_add_timeline_clip_slot(self, clip: TimelineClip):
         self.state.timeline.clips.append(clip)
@@ -69,7 +69,7 @@ class MonarchSystem(QObject):
         self.state.preview_window.frame_in_out = FrameInOut()
         self.preview_window.switch_video(self.state.preview_window.video_url)
         if should_play:
-            self.signals.preview_window_play_cmd_slot.emit(PlayCommand.PLAY)
+            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
         self.preview_window.activateWindow()
 
     def __on_update_preview_file_details(self, fps: float, total_frames: int):
@@ -89,15 +89,14 @@ class MonarchSystem(QObject):
             StateStoreSignals().add_file_slot.emit(QUrl.fromLocalFile(file_dict['name']))
 
         def handle_prev_wind_fn(prev_wind_dict):
-            StateStoreSignals().switch_preview_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
+            StateStoreSignals().preview_window.switch_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
             if prev_wind_dict['frame_in_out']['in_frame'] is not None:
-                StateStoreSignals().preview_video_in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
+                StateStoreSignals().preview_window.in_frame_slot.emit(prev_wind_dict['frame_in_out']['in_frame'])
             if prev_wind_dict['frame_in_out']['out_frame'] is not None:
-                StateStoreSignals().preview_video_out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
+                StateStoreSignals().preview_window.out_frame_slot.emit(prev_wind_dict['frame_in_out']['out_frame'])
             if prev_wind_dict['current_frame_no'] > 1:
-                StateStoreSignals().preview_window_seek_slot.emit(prev_wind_dict['current_frame_no'])
-
+                StateStoreSignals().preview_window.seek_slot.emit(prev_wind_dict['current_frame_no'])
 
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:

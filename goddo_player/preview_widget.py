@@ -57,14 +57,14 @@ class PreviewWidget(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
-        self.signals.switch_preview_video_slot.emit(event.mimeData().urls()[0], True)
+        self.signals.preview_window.switch_video_slot.emit(event.mimeData().urls()[0], True)
 
     def switch_video(self, url: 'QUrl'):
         self.cap = cv2.VideoCapture(url.path())
 
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.signals.update_preview_file_details_slot.emit(fps, total_frames)
+        self.signals.preview_window.update_file_details_slot.emit(fps, total_frames)
 
         self.timer.stop()
         self.timer.deleteLater()

@@ -14,15 +14,23 @@ class PlayCommand(Enum):
 
 
 @singleton
+class PreviewWindowSignals(QObject):
+    switch_video_slot = pyqtSignal(QUrl, bool)
+    in_frame_slot = pyqtSignal(int)
+    out_frame_slot = pyqtSignal(int)
+    slider_update_slot = pyqtSignal()
+    play_cmd_slot = pyqtSignal(PlayCommand)
+    seek_slot = pyqtSignal(int)
+    update_file_details_slot = pyqtSignal(float, int)
+
+
+@singleton
 class StateStoreSignals(QObject):
-    switch_preview_video_slot = pyqtSignal(QUrl, bool)
-    preview_video_in_frame_slot = pyqtSignal(int)
-    preview_video_out_frame_slot = pyqtSignal(int)
-    preview_video_slider_update_slot = pyqtSignal()
-    preview_window_play_cmd_slot = pyqtSignal(PlayCommand)
-    preview_window_seek_slot = pyqtSignal(int)
-    update_preview_file_details_slot = pyqtSignal(float, int)
+    preview_window = PreviewWindowSignals()
     add_timeline_clip_slot = pyqtSignal(TimelineClip)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)
+
+
+

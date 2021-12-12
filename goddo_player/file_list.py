@@ -196,7 +196,7 @@ class FileList(QWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         logging.info(f'playing {item_widget.url}')
-        self.state_signals.switch_preview_video_slot.emit(item_widget.url, True)
+        self.state_signals.preview_window.switch_video_slot.emit(item_widget.url, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:

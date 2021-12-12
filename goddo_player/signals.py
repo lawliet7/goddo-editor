@@ -20,6 +20,7 @@ class StateStoreSignals(QObject):
     preview_video_out_frame_slot = pyqtSignal(int)
     preview_video_slider_update_slot = pyqtSignal()
     preview_window_play_cmd_slot = pyqtSignal(PlayCommand)
+    preview_window_seek_slot = pyqtSignal(int)
     update_preview_file_details_slot = pyqtSignal(float, int)
     add_timeline_clip_slot = pyqtSignal(TimelineClip)
     add_file_slot = pyqtSignal(QUrl)

@@ -33,6 +33,7 @@ class StateStoreSignals(QObject):
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)
+    timeline_delete_selected_clip_slot = pyqtSignal()
 
 
 

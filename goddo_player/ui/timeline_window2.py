@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
@@ -42,6 +43,7 @@ class TimelineWidget2(QWidget):
         return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        logging.info('painting')
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -164,6 +166,12 @@ class TimelineWindow2(QMainWindow):
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
 
+    def update(self):
+        super().update()
+
+        # scroll area widget resizable is not enabled so need to manually signal repaint
+        self.inner_widget.update()
+
     def resizeEvent(self, resize_event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(resize_event)
         self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()),
@@ -174,17 +182,23 @@ class TimelineWindow2(QMainWindow):
             QApplication.exit(0)
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
             self.__process()
+        elif event.key() == Qt.Key_Delete:
+            if self.inner_widget.selected_clip_index >= 0:
+                print(f'delete {self.inner_widget.selected_clip_index}')
+                # self.delete_selected_clip()
+                print(self.updatesEnabled())
+                self.signals.timeline_delete_selected_clip_slot.emit()
         else:
             super().keyPressEvent(event)
 
-    # def mouseMoveEvent(self, e):
-    #     print('mouse move')
-    #     self.x = e.x()
-    #     self.y = e.y()
-    #
-    #     p = self.mapToGlobal(e.pos())
-    #
-    #     QToolTip.showText(p, f'{self.x}:{self.y}')
+    # def delete_selected_clip(self):
+    #     selected_idx = self.inner_widget.selected_clip_index
+    #     clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
+    #     self.state.timeline.clips = []
+    #     for c in clips:
+    #         self.signals.add_timeline_clip_slot.emit(c)
+    #     self.inner_widget.selected_clip_index = self.inner_widget.selected_clip_index if len(self.state.timeline.clips) > self.inner_widget.selected_clip_index else len(self.state.timeline.clips) - 1
+    #     self.update()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)

@@ -49,6 +49,17 @@ class MonarchSystem(QObject):
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek_slot)
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed_slot)
+        self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
+
+    def __on_timeline_delete_selected_clip_slot(self):
+        selected_idx = self.timeline_window.inner_widget.selected_clip_index
+        clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
+        self.state.timeline.clips = []
+        for c in clips:
+            self.signals.add_timeline_clip_slot.emit(c)
+        self.timeline_window.inner_widget.selected_clip_index = self.timeline_window.inner_widget.selected_clip_index if len(
+            self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index else len(self.state.timeline.clips) - 1
+        self.timeline_window.update()
 
     def __on_switch_speed_slot(self):
         is_playing = self.preview_window.is_playing()

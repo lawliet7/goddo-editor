@@ -19,13 +19,17 @@ class PreviewWindowState:
     fps = 0
     total_frames = 0
     frame_in_out = FrameInOut()
+    current_frame_no = -1
+    is_max_speed = False
 
     def as_dict(self):
         return {
             "video_url": self.video_url.path() if self.video_url is not None else None,
             "fps": self.fps,
             "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out)
+            "frame_in_out": asdict(self.frame_in_out),
+            "current_frame_no": self.current_frame_no,
+            "is_max_speed": self.is_max_speed,
         }
 
     @staticmethod
@@ -34,6 +38,8 @@ class PreviewWindowState:
         prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
+        prev_wind_state.current_frame_no = json_dict['current_frame_no']
+        prev_wind_state.is_max_speed = json_dict['is_max_speed']
         return prev_wind_state
 
 
@@ -173,8 +179,6 @@ class StateStore(QObject):
 
         for timeline_dict in table_timelines:
             handle_timeline_fn(timeline_dict)
-            # for clip_dict in timeline_dict['clips']:
-            #     self.timeline.clips.append(TimelineClip.from_dict(clip_dict))
 
         db.close()
 

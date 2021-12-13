@@ -47,6 +47,8 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 | preview | ->  |  advance 1 frame |
 | preview | <-  |  go back 5 frames |
 | preview | s  | switch between normal speed and max speed  |
+| preview (slider) | mouse wheel up  |  advance 1 min |
+| preview (slider) | mouse wheel down  |  go back 1 min |
 | file | ctrl + s  | save  |
 
 <h3>Credits:</h3>

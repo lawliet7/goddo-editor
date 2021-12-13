@@ -4,12 +4,12 @@ import os
 import cv2
 from PyQt5.QtCore import QRect, Qt, QUrl, QMimeData
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
-    QResizeEvent
+    QResizeEvent, QWheelEvent
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.preview_widget import PreviewWidget
-from goddo_player.signals import StateStoreSignals, PlayCommand
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
 
@@ -59,8 +59,14 @@ class PreviewWindow(QWidget):
 
         self.preview_widget.update_frame_pixmap(0)
 
-    def go_to_frame(self, frame_no: int):
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, max(frame_no-1, 0))
+    def go_to_frame(self, frame_no: int, pos_type: PositionType):
+        if pos_type is PositionType.ABSOLUTE:
+            target_frame_no = frame_no - 1
+        else:
+            target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
+        target_frame_no = min(max(0, target_frame_no), self.state.preview_window.total_frames - 1)
+
+        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
         self.preview_widget.update_frame_pixmap(1)
         self.update()
 
@@ -81,7 +87,7 @@ class PreviewWindow(QWidget):
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.info(f'value changed to {value}, frame to {frame_no}, '
                      f'total_frames={self.state.preview_window.total_frames}')
-        self.signals.preview_window.seek_slot.emit(frame_no)
+        self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
     def switch_video(self, url: 'QUrl'):
         self.preview_widget.switch_video(url)
@@ -201,3 +207,13 @@ class FrameInOutSlider(ClickSlider):
         painter.setPen(pen)
         painter.setBrush(brush)
         painter.end()
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        logging.info('wheel event')
+        # super().wheelEvent(e)
+        if event.angleDelta().y() > 0:
+            frame_diff = int(self.state.preview_window.fps * 60)
+        else:
+            frame_diff = int(self.state.preview_window.fps * -60)
+
+        self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

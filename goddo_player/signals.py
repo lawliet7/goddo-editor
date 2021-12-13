@@ -2,6 +2,7 @@ from enum import Enum, auto, unique
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
 
+from goddo_player.enums import PositionType
 from goddo_player.singleton_meta import singleton
 from goddo_player.state_store import TimelineClip
 
@@ -21,7 +22,7 @@ class PreviewWindowSignals(QObject):
     out_frame_slot = pyqtSignal(int)
     slider_update_slot = pyqtSignal()
     play_cmd_slot = pyqtSignal(PlayCommand)
-    seek_slot = pyqtSignal(int)
+    seek_slot = pyqtSignal(int, PositionType)
     update_file_details_slot = pyqtSignal(float, int)
 
 

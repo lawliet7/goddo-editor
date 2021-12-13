@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QApplication
 from goddo_player.file_list import FileList
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
-from goddo_player.signals import StateStoreSignals, PlayCommand
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.ui.timeline_window2 import TimelineWindow2
 
@@ -61,11 +61,11 @@ class MonarchSystem(QObject):
         if is_playing:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
-    def __on_preview_window_seek_slot(self, frame_no: int):
+    def __on_preview_window_seek_slot(self, frame_no: int, pos_type: PositionType):
         is_playing = self.preview_window.is_playing()
         if is_playing:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-        self.preview_window.go_to_frame(frame_no)
+        self.preview_window.go_to_frame(frame_no, pos_type)
         if is_playing:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
@@ -117,9 +117,9 @@ class MonarchSystem(QObject):
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
             if prev_wind_dict['current_frame_no'] > 1:
-                pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'])
+                pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
             else:
-                pw_signals.seek_slot.emit(0)
+                pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
 
             if prev_wind_dict['is_max_speed']:
                 pw_signals.switch_speed_slot.emit()

@@ -1,18 +1,13 @@
 import logging
-import platform
-import re
-import time
-from dataclasses import dataclass
-from typing import List
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QSize, QRect, QUrl
+from PyQt5.QtCore import Qt, QSize, QRect
 from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.frame_in_out import FrameInOut
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
+from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars
 
 
 class TimelineWidget2(QWidget):
@@ -89,7 +84,9 @@ class TimelineWidget2(QWidget):
 
             painter.setPen(Qt.white)
             filename = c.video_url.fileName()
-            painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame} - {out_frame}')
+            in_frame_ts = build_time_str_least_chars(*frames_to_time_components(in_frame, c.fps))
+            out_frame_ts = build_time_str_least_chars(*frames_to_time_components(out_frame, c.fps))
+            painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             painter.setPen(pen)
             x += width + 1
 
@@ -182,7 +179,6 @@ class TimelineWindow2(QMainWindow):
         self.inner_widget.add_rect_for_new_clip(clip)
 
     def __process(self):
-        import subprocess
         import os
 
         tmp_dir = os.path.join('..', '..', 'output', 'tmp')

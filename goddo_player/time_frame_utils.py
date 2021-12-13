@@ -31,5 +31,10 @@ def build_time_str(hours=0, mins=0, secs=0, frames=0):
     return "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames)
 
 
-def format_time(hour, min, sec, ms):
-    return "{}:{:02d}:{:02d}.{:02d}".format(hour, min, sec, ms)
+def build_time_str_least_chars(hours=0, mins=0, secs=0, frames=0):
+    if hours > 0:
+        return "{}:{:02d}:{:02d}.{:02d}".format(hours, mins, secs, frames)
+    elif mins > 0:
+        return "{:2d}:{:02d}.{:02d}".format(mins, secs, frames)
+    else:
+        return "{:2d}.{:02d}".format(secs, frames)

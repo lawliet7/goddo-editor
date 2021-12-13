@@ -16,6 +16,12 @@ def frames_to_time_components(total_frames, fps):
     hours = int(total_frames / fps / 60 / 60 % 60)
     return hours, mins, secs, frames
 
+def frames_to_time_ms_components(total_frames, fps):
+    ms = int(total_frames / fps * 1000)
+    secs = int(total_frames / fps % 60)
+    mins = int(total_frames / fps / 60 % 60)
+    hours = int(total_frames / fps / 60 / 60 % 60)
+    return hours, mins, secs, ms
 
 def ms_to_time_components(ms, fps):
     total_secs = ms / 1000
@@ -38,3 +44,12 @@ def build_time_str_least_chars(hours=0, mins=0, secs=0, frames=0):
         return "{:2d}:{:02d}.{:02d}".format(mins, secs, frames)
     else:
         return "{:2d}.{:02d}".format(secs, frames)
+
+
+def build_time_ms_str_least_chars(hours=0, mins=0, secs=0, ms=0):
+    if hours > 0:
+        return "{}:{:02d}:{:02d}.{:03d}".format(hours, mins, secs, ms)
+    elif mins > 0:
+        return "{:2d}:{:02d}.{:03d}".format(mins, secs, ms)
+    else:
+        return "{:2d}.{:03d}".format(secs, ms)

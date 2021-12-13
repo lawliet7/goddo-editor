@@ -3,11 +3,12 @@ import logging
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
 from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy, QToolTip
 
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
-from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars
+from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
+    build_time_ms_str_least_chars
 
 
 class TimelineWidget2(QWidget):
@@ -34,6 +35,8 @@ class TimelineWidget2(QWidget):
 
         self.clip_rects = []
         self.selected_clip_index = -1
+
+        self.setMouseTracking(True)
 
     def sizeHint(self) -> QtCore.QSize:
         return QSize(TimelineWidget2.INITIAL_WIDTH, 393)
@@ -92,6 +95,20 @@ class TimelineWidget2(QWidget):
 
         painter.end()
 
+    def mouseMoveEvent(self, event):
+        for i, t in enumerate(self.clip_rects):
+            c, rect = t
+            if rect.contains(event.pos()):
+                filename = c.video_url.fileName()
+                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.in_frame, c.fps))
+                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame, c.fps))
+                duration = build_time_ms_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame - c.frame_in_out.in_frame, c.fps))
+                msg = f'{filename}\n{in_frame_ts} - {out_frame_ts}\nduration: {duration}'
+                QToolTip.showText(self.mapToGlobal(event.pos()), msg)
+                return
+
+        QToolTip.hideText()
+
     def add_rect_for_new_clip(self, clip: TimelineClip):
 
         painter = QPainter(self)
@@ -145,6 +162,7 @@ class TimelineWindow2(QMainWindow):
         print(f'{self.scrollArea.width()} x {self.scrollArea.height()}')
 
         self.setAcceptDrops(True)
+        self.setMouseTracking(True)
 
     def resizeEvent(self, resize_event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(resize_event)
@@ -158,6 +176,15 @@ class TimelineWindow2(QMainWindow):
             self.__process()
         else:
             super().keyPressEvent(event)
+
+    # def mouseMoveEvent(self, e):
+    #     print('mouse move')
+    #     self.x = e.x()
+    #     self.y = e.y()
+    #
+    #     p = self.mapToGlobal(e.pos())
+    #
+    #     QToolTip.showText(p, f'{self.x}:{self.y}')
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)

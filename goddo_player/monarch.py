@@ -55,6 +55,7 @@ class MonarchSystem(QObject):
         selected_idx = self.timeline_window.inner_widget.selected_clip_index
         clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
         self.state.timeline.clips = []
+        self.timeline_window.inner_widget.clip_rects = []
         for c in clips:
             self.signals.add_timeline_clip_slot.emit(c)
         self.timeline_window.inner_widget.selected_clip_index = self.timeline_window.inner_widget.selected_clip_index if len(

@@ -11,7 +11,7 @@ from goddo_player.click_slider import ClickSlider
 from goddo_player.preview_widget import PreviewWidget
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
+from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, build_time_ms_str_least_chars
 
 
 class PreviewWindow(QWidget):
@@ -75,7 +75,7 @@ class PreviewWindow(QWidget):
         self.preview_widget.update_frame_pixmap(1)
         self.update()
 
-    def __on_update_pos(self, cur_frame_no: int, frame):
+    def __on_update_pos(self, cur_frame_no: int, _):
         total_frames = self.state.preview_window.total_frames
         pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
         self.slider.blockSignals(True)
@@ -85,8 +85,17 @@ class PreviewWindow(QWidget):
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        speed = 'max' if self.state.preview_window.is_max_speed else 'normal'
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}  skip={self.time_skip_multiplier}')
+        speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
+        skip_txt = self.__build_skip_label_txt()
+
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+
+    def __build_skip_label_txt(self):
+        num_secs = self.time_skip_multiplier * 5 % 60
+        num_mins = int(self.time_skip_multiplier * 5 / 60) % 60
+        min_txt = f'{num_mins}m ' if num_mins > 0 else ''
+        sec_txt = f'{num_secs}s' if num_secs > 0 else ''
+        return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))

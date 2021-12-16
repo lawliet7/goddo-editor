@@ -29,7 +29,7 @@ class PreviewWindow(QWidget):
         # self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
-        self.slider = FrameInOutSlider(Qt.Horizontal)
+        self.slider = FrameInOutSlider(self.get_wheel_skip_n_frames, Qt.Horizontal)
         self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
@@ -53,6 +53,11 @@ class PreviewWindow(QWidget):
         vbox.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(vbox)
+
+        self.time_skip_multiplier = 6
+
+    def get_wheel_skip_n_frames(self):
+        return self.time_skip_multiplier * 5 * self.state.preview_window.fps
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -81,7 +86,7 @@ class PreviewWindow(QWidget):
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
         speed = 'max' if self.state.preview_window.is_max_speed else 'normal'
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}  skip={self.time_skip_multiplier}')
 
     def on_value_changed(self, value):
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
@@ -138,6 +143,12 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+            self.time_skip_multiplier = min(self.time_skip_multiplier + 1, 60)
+            self.preview_widget.update_frame_pixmap(0)
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+            self.time_skip_multiplier = max(self.time_skip_multiplier - 1, 1)
+            self.preview_widget.update_frame_pixmap(0)
         else:
             super().keyPressEvent(event)
 
@@ -168,13 +179,14 @@ class PreviewWindow(QWidget):
 
 
 class FrameInOutSlider(ClickSlider):
-    def __init__(self, parent=None):
+    def __init__(self, get_wheel_skip_n_frames, parent=None):
         super().__init__(parent)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()
 
         self.signals.preview_window.slider_update_slot.connect(lambda: self.update())
+        self.get_wheel_skip_time = get_wheel_skip_n_frames
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
@@ -212,8 +224,8 @@ class FrameInOutSlider(ClickSlider):
         logging.info('wheel event')
         # super().wheelEvent(e)
         if event.angleDelta().y() > 0:
-            frame_diff = int(self.state.preview_window.fps * 60)
+            frame_diff = self.get_wheel_skip_time()
         else:
-            frame_diff = int(self.state.preview_window.fps * -60)
+            frame_diff = self.get_wheel_skip_time() * -1
 
         self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

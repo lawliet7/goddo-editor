@@ -42,6 +42,8 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 | preview | o  | mark out  |
 | preview | shift + i  | unmark in  |
 | preview | shift + o  | unmark out  |
+| preview | numpad +  | increase mouse wheel skip  |
+| preview | numpad -  | decrease mouse wheel skip  |
 | preview | [  |  go to in |
 | preview | ]  |  go to out |
 | preview | ->  |  advance 1 frame |

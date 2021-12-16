@@ -224,8 +224,8 @@ class FrameInOutSlider(ClickSlider):
         logging.info('wheel event')
         # super().wheelEvent(e)
         if event.angleDelta().y() > 0:
-            frame_diff = self.get_wheel_skip_time()
-        else:
             frame_diff = self.get_wheel_skip_time() * -1
+        else:
+            frame_diff = self.get_wheel_skip_time()
 
         self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

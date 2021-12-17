@@ -56,6 +56,11 @@ class PreviewWindow(QWidget):
 
         self.time_skip_multiplier = 6
 
+    def update(self):
+        super().update()
+
+        self.update_label_text()
+
     def get_wheel_skip_n_frames(self):
         return self.time_skip_multiplier * 5 * self.state.preview_window.fps
 
@@ -81,6 +86,12 @@ class PreviewWindow(QWidget):
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
+
+        self.update()
+
+    def update_label_text(self):
+        total_frames = self.state.preview_window.total_frames
+        cur_frame_no = self.preview_widget.get_cur_frame_no()
 
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))

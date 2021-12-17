@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QApplication
 from goddo_player.file_list import FileList
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.ui.timeline_window2 import TimelineWindow2
 
@@ -49,7 +49,16 @@ class MonarchSystem(QObject):
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek_slot)
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed_slot)
+        self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
+
+    def __on_preview_window_update_skip_slot(self, skip_type: MouseWheelSkip):
+        cur_skip = self.state.preview_window.time_skip_multiplier
+        if skip_type is MouseWheelSkip.INC:
+            self.state.preview_window.time_skip_multiplier = min(cur_skip + 1, 60)
+        else:
+            self.state.preview_window.time_skip_multiplier = max(cur_skip - 1, 1)
+        self.preview_window.update()
 
     def __on_timeline_delete_selected_clip_slot(self):
         selected_idx = self.timeline_window.inner_widget.selected_clip_index
@@ -68,7 +77,6 @@ class MonarchSystem(QObject):
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         speed = self.preview_window.preview_widget.switch_speed()
         self.state.preview_window.is_max_speed = (speed == 1)
-        self.preview_window.preview_widget.update_frame_pixmap(0)
         self.preview_window.update()
         if is_playing:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)

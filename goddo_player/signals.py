@@ -14,6 +14,12 @@ class PlayCommand(Enum):
     PAUSE = auto()
 
 
+@unique
+class MouseWheelSkip(Enum):
+    INC = 1
+    DEC = -1
+
+
 @singleton
 class PreviewWindowSignals(QObject):
     switch_video_slot = pyqtSignal(QUrl, bool)
@@ -24,6 +30,7 @@ class PreviewWindowSignals(QObject):
     play_cmd_slot = pyqtSignal(PlayCommand)
     seek_slot = pyqtSignal(int, PositionType)
     update_file_details_slot = pyqtSignal(float, int)
+    update_skip_slot = pyqtSignal(MouseWheelSkip)
 
 
 @singleton

@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.preview_widget import PreviewWidget
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, build_time_ms_str_least_chars
+from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
 
 
 class PreviewWindow(QWidget):
@@ -62,7 +62,7 @@ class PreviewWindow(QWidget):
         self.update_label_text()
 
     def get_wheel_skip_n_frames(self):
-        return self.time_skip_multiplier * 5 * self.state.preview_window.fps
+        return self.state.preview_window.time_skip_multiplier * 5 * self.state.preview_window.fps
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -102,8 +102,8 @@ class PreviewWindow(QWidget):
         self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
 
     def __build_skip_label_txt(self):
-        num_secs = self.time_skip_multiplier * 5 % 60
-        num_mins = int(self.time_skip_multiplier * 5 / 60) % 60
+        num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
+        num_mins = int(self.state.preview_window.time_skip_multiplier * 5 / 60) % 60
         min_txt = f'{num_mins}m ' if num_mins > 0 else ''
         sec_txt = f'{num_secs}s' if num_secs > 0 else ''
         return f'{min_txt}{sec_txt}'
@@ -164,11 +164,9 @@ class PreviewWindow(QWidget):
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
-            self.time_skip_multiplier = min(self.time_skip_multiplier + 1, 60)
-            self.preview_widget.update_frame_pixmap(0)
+            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.INC)
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
-            self.time_skip_multiplier = max(self.time_skip_multiplier - 1, 1)
-            self.preview_widget.update_frame_pixmap(0)
+            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.DEC)
         else:
             super().keyPressEvent(event)
 

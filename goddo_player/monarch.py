@@ -144,6 +144,17 @@ class MonarchSystem(QObject):
             if prev_wind_dict['is_max_speed']:
                 pw_signals.switch_speed_slot.emit()
 
+            if prev_wind_dict['time_skip_multiplier']:
+                new_multiplier = prev_wind_dict['time_skip_multiplier']
+                cur_multiplier = self.state.preview_window.time_skip_multiplier
+
+                if new_multiplier > cur_multiplier:
+                    for i in range(new_multiplier - cur_multiplier):
+                        pw_signals.update_skip_slot.emit(MouseWheelSkip.INC)
+                elif new_multiplier < cur_multiplier:
+                    for i in range(cur_multiplier - new_multiplier):
+                        pw_signals.update_skip_slot.emit(MouseWheelSkip.DEC)
+
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:
                 StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict))

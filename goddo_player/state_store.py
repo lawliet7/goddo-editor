@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 from dataclasses import dataclass, field, asdict
-from typing import List
+from typing import List, ClassVar
 
 from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB

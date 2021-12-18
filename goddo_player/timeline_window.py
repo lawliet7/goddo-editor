@@ -191,15 +191,6 @@ class TimelineWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    # def delete_selected_clip(self):
-    #     selected_idx = self.inner_widget.selected_clip_index
-    #     clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
-    #     self.state.timeline.clips = []
-    #     for c in clips:
-    #         self.signals.add_timeline_clip_slot.emit(c)
-    #     self.inner_widget.selected_clip_index = self.inner_widget.selected_clip_index if len(self.state.timeline.clips) > self.inner_widget.selected_clip_index else len(self.state.timeline.clips) - 1
-    #     self.update()
-
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)
 

@@ -1,4 +1,7 @@
 import logging
+import platform
+import subprocess
+import time
 import typing
 
 from PyQt5 import QtGui, QtCore
@@ -6,6 +9,7 @@ from PyQt5.QtCore import Qt, QSize, QRect
 from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy, QToolTip
 
+from goddo_player.frame_in_out import FrameInOut
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
@@ -219,33 +223,29 @@ class TimelineWindow(QMainWindow):
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
 
-        # for i, clip in enumerate(self.state.timeline['clips']):
-        #     file = [x for x in self.state.files if x['file_path'] == clip['source'].path()][0]
-        #     # print(self.state.files)
-        #     print(file)
-        #     print(clip)
-        #     print(clip['source'].toLocalFile())
-        #     frame_in_out: FrameInOut = clip['frame_in_out']
-        #     start_time = frame_in_out.in_frame * file['fps'] / 1000
-        #     end_time = frame_in_out.out_frame * file['fps'] / 1000
-        #     file_path = file['file_path'][1:] if platform.system() == 'Windows' else file['file_path']
-        #     output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
-        #     cmd = f"ffmpeg -ss {start_time} -i {file_path} -to {end_time - start_time} -cbr 15" \
-        #           f" {output_path}"
-        #     print(f'executing cmd: {cmd}')
-        #     subprocess.call(cmd, shell=True)
-        #
-        # concat_file_path = os.path.join(tmp_dir, 'concat.txt')
-        # tmp_vid_files = [f"file '{os.path.join(tmp_dir, f)}'\n" for f in os.listdir(tmp_dir)]
-        # with open(concat_file_path, mode='w', encoding='utf-8') as f:
-        #     f.writelines(tmp_vid_files)
-        #
-        # output_file_path = os.path.join(tmp_dir, '..',  f'output_{time.time()}.mp4')
-        # cmd = f"ffmpeg -f concat -safe 0 -i {concat_file_path} -c copy {output_file_path}"
-        # print(f'executing cmd: {cmd}')
-        # subprocess.call(cmd, shell=True)
+        for i, clip in enumerate(self.state.timeline.clips):
+            start_time = clip.frame_in_out.in_frame / clip.fps
+            end_time = clip.frame_in_out.out_frame / clip.fps
+            file_path = clip.video_url.path()[1:] if platform.system() == 'Windows' else clip.video_url.path()
+            output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
+            cmd = f"ffmpeg -ss {start_time:.3f} -i {file_path} -to {end_time - start_time:.3f} -cbr 15 {output_path}"
+            logging.info(f'executing cmd: {cmd}')
+            subprocess.call(cmd, shell=True)
 
-        print('output generated!!')
+            logging.info(f'{i} - {clip}')
+            logging.info(f'{file_path} - {output_path} - {cmd}')
+
+        concat_file_path = os.path.join(tmp_dir, 'concat.txt')
+        tmp_vid_files = [f"file '{os.path.abspath(os.path.join(tmp_dir, f))}'\n" for f in os.listdir(tmp_dir)]
+        with open(concat_file_path, mode='w', encoding='utf-8') as f:
+            f.writelines(tmp_vid_files)
+        logging.info('\n'.join(tmp_vid_files))
+
+        output_file_path = os.path.join(tmp_dir, '..',  f'output_{time.time()}.mp4')
+        cmd = f"ffmpeg -f concat -safe 0 -i {concat_file_path} -c copy {output_file_path}"
+        logging.info(f'executing cmd: {cmd}')
+        subprocess.call(cmd, shell=True)
+        logging.info('output generated!!')
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if event.mimeData().text() == 'source':

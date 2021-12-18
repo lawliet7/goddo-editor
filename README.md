@@ -52,6 +52,7 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 | preview | ->  |  advance 1 frame |
 | preview | <-  |  go back 5 frames |
 | file | ctrl + s  | save  |
+| timeline | ctrl + p  | process output  |
 
 <h3>Credits:</h3>
 <b>ClickSlider</b> class modified based on answer from this post:

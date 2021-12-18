@@ -13,7 +13,7 @@ from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
 from goddo_player.state_store import StateStore, TimelineClip
-from goddo_player.ui.timeline_window2 import TimelineWindow2
+from goddo_player.timeline_window import TimelineWindow
 
 
 class MonarchSystem(QObject):
@@ -33,7 +33,7 @@ class MonarchSystem(QObject):
         self.preview_window.show()
         self.preview_window.move(left, top)
 
-        self.timeline_window = TimelineWindow2()
+        self.timeline_window = TimelineWindow()
         self.timeline_window.show()
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 

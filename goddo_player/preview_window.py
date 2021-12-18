@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.preview_widget import PreviewWidget
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
 from goddo_player.state_store import StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
 
@@ -29,7 +29,7 @@ class PreviewWindow(QWidget):
         # self.resize(self.minimumSize())
         self.setAcceptDrops(True)
 
-        self.slider = FrameInOutSlider(Qt.Horizontal)
+        self.slider = FrameInOutSlider(self.get_wheel_skip_n_frames, Qt.Horizontal)
         self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
@@ -54,6 +54,16 @@ class PreviewWindow(QWidget):
 
         self.setLayout(vbox)
 
+        self.time_skip_multiplier = 6
+
+    def update(self):
+        super().update()
+
+        self.update_label_text()
+
+    def get_wheel_skip_n_frames(self):
+        return self.state.preview_window.time_skip_multiplier * 5 * self.state.preview_window.fps
+
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
 
@@ -70,18 +80,33 @@ class PreviewWindow(QWidget):
         self.preview_widget.update_frame_pixmap(1)
         self.update()
 
-    def __on_update_pos(self, cur_frame_no: int, frame):
+    def __on_update_pos(self, cur_frame_no: int, _):
         total_frames = self.state.preview_window.total_frames
         pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
 
+        self.update()
+
+    def update_label_text(self):
+        total_frames = self.state.preview_window.total_frames
+        cur_frame_no = self.preview_widget.get_cur_frame_no()
+
         fps = self.state.preview_window.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        speed = 'max' if self.state.preview_window.is_max_speed else 'normal'
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed}')
+        speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
+        skip_txt = self.__build_skip_label_txt()
+
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+
+    def __build_skip_label_txt(self):
+        num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
+        num_mins = int(self.state.preview_window.time_skip_multiplier * 5 / 60) % 60
+        min_txt = f'{num_mins}m ' if num_mins > 0 else ''
+        sec_txt = f'{num_secs}s' if num_secs > 0 else ''
+        return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
@@ -138,6 +163,10 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.INC)
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.DEC)
         else:
             super().keyPressEvent(event)
 
@@ -168,13 +197,14 @@ class PreviewWindow(QWidget):
 
 
 class FrameInOutSlider(ClickSlider):
-    def __init__(self, parent=None):
+    def __init__(self, get_wheel_skip_n_frames, parent=None):
         super().__init__(parent)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()
 
         self.signals.preview_window.slider_update_slot.connect(lambda: self.update())
+        self.get_wheel_skip_time = get_wheel_skip_n_frames
 
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
@@ -212,8 +242,8 @@ class FrameInOutSlider(ClickSlider):
         logging.info('wheel event')
         # super().wheelEvent(e)
         if event.angleDelta().y() > 0:
-            frame_diff = int(self.state.preview_window.fps * 60)
+            frame_diff = self.get_wheel_skip_time() * -1
         else:
-            frame_diff = int(self.state.preview_window.fps * -60)
+            frame_diff = self.get_wheel_skip_time()
 
         self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

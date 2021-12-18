@@ -100,7 +100,8 @@ class PreviewWidget(QWidget):
                                           interpolation=cv2.INTER_AREA)
                 self.frame_pixmap = numpy_to_pixmap(scaled_frame)
             elif num_of_frames_to_advance == 0 and self.frame_pixmap:
-                self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
+                if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
+                    self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
             else:
                 target_frame_no = max(self.get_cur_frame_no() + num_of_frames_to_advance - 1, 0)
                 scaled_frame = cv2.resize(self.get_next_frame(target_frame_no), (self.width(), self.height()),

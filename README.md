@@ -42,14 +42,17 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 | preview | o  | mark out  |
 | preview | shift + i  | unmark in  |
 | preview | shift + o  | unmark out  |
+| preview | numpad +  | increase mouse wheel skip  |
+| preview | numpad -  | decrease mouse wheel skip  |
 | preview | [  |  go to in |
 | preview | ]  |  go to out |
+| preview | s  | switch between normal speed and max speed  |
+| preview (slider) | mouse wheel down  |  advance 1 min |
+| preview (slider) | mouse wheel up  |  go back 1 min |
 | preview | ->  |  advance 1 frame |
 | preview | <-  |  go back 5 frames |
-| preview | s  | switch between normal speed and max speed  |
-| preview (slider) | mouse wheel up  |  advance 1 min |
-| preview (slider) | mouse wheel down  |  go back 1 min |
 | file | ctrl + s  | save  |
+| timeline | ctrl + p  | process output  |
 
 <h3>Credits:</h3>
 <b>ClickSlider</b> class modified based on answer from this post:

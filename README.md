@@ -1,10 +1,10 @@
 # goddo-editor
 Goddo Serenade's Video Editor  (** WIP **)
 
-Supported Video Formats:
+<h5>Supported Video Formats:</h5>
 *.avi, *.mp4, *.wmv, *.webm, *.mov, *.flv, *.mkv
 
-Environment - Use Conda
+<h5>Environment - Use Conda</h5>
 - python 3.8
 - conda install pyqt
 - conda install -c conda-forge opencv
@@ -29,12 +29,34 @@ Environment Variables:
 
 * if you have icon put it in main package as icon.png
 
-Run like this:
-
+<h5>Run like this:</h5>
 python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 
-shortcuts:
-- spacebar to pause/play
-- i to mark in
-- o to mark out
-- left/right to move 1 frame
+<h4>shortcuts:</h4>
+
+| window |  key | description  |
+| --- | ------------ | ------------ |
+| all | esc  | quit  |
+| preview | space  | play/pause  |
+| preview | i  | mark in  |
+| preview | o  | mark out  |
+| preview | shift + i  | unmark in  |
+| preview | shift + o  | unmark out  |
+| preview | numpad +  | increase mouse wheel skip  |
+| preview | numpad -  | decrease mouse wheel skip  |
+| preview | [  |  go to in |
+| preview | ]  |  go to out |
+| preview | s  | switch between normal speed and max speed  |
+| preview (slider) | mouse wheel down  |  advance 1 min |
+| preview (slider) | mouse wheel up  |  go back 1 min |
+| preview | ->  |  advance 1 frame |
+| preview | <-  |  go back 5 frames |
+| file | ctrl + s  | save  |
+| timeline | ctrl + p  | process output  |
+
+<h3>Credits:</h3>
+<b>ClickSlider</b> class modified based on answer from this post:
+https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011
+
+<b>FlowLayout</b> class based on answer from this post:
+https://stackoverflow.com/q/46681266

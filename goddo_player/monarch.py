@@ -130,10 +130,10 @@ class MonarchSystem(QObject):
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
 
-            if frame_in_out_dict['in_frame'] is not None:
+            if 'in_frame' in frame_in_out_dict:
                 pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
 
-            if frame_in_out_dict['out_frame'] is not None:
+            if 'out_frame' in frame_in_out_dict:
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
             if prev_wind_dict['current_frame_no'] > 1:
@@ -141,10 +141,10 @@ class MonarchSystem(QObject):
             else:
                 pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
 
-            if prev_wind_dict['is_max_speed']:
+            if 'is_max_speed' in prev_wind_dict:
                 pw_signals.switch_speed_slot.emit()
 
-            if prev_wind_dict['time_skip_multiplier']:
+            if 'time_skip_multiplier' in prev_wind_dict:
                 new_multiplier = prev_wind_dict['time_skip_multiplier']
                 cur_multiplier = self.state.preview_window.time_skip_multiplier
 

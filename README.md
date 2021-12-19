@@ -55,8 +55,7 @@ python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
 | timeline | ctrl + p  | process output  |
 
 <h3>Credits:</h3>
-<b>ClickSlider</b> class modified based on answer from this post:
-https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011
+<b>ClickSlider</b> class modified based on answer from this post: [stackoverflow link](https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011)
 
-<b>FlowLayout</b> class based on answer from this post:
-https://stackoverflow.com/q/46681266
+
+<b>FlowLayout</b> class based on answer from this post: [stackoverlow link](https://stackoverflow.com/q/46681266)

@@ -2,14 +2,12 @@ import logging
 import platform
 import subprocess
 import time
-import typing
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
 from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy, QToolTip
 
-from goddo_player.frame_in_out import FrameInOut
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
@@ -89,12 +87,14 @@ class TimelineWidget(QWidget):
             else:
                 painter.setPen(Qt.red)
             painter.drawRect(rect)
-            # self.clip_rects.append((c, rect))
+
+            final_in_frame = in_frame if in_frame is not None else 1
+            final_out_frame = out_frame if out_frame is not None else c.total_frames
 
             painter.setPen(Qt.white)
             filename = c.video_url.fileName()
-            in_frame_ts = build_time_str_least_chars(*frames_to_time_components(in_frame, c.fps))
-            out_frame_ts = build_time_str_least_chars(*frames_to_time_components(out_frame, c.fps))
+            in_frame_ts = build_time_str_least_chars(*frames_to_time_components(final_in_frame, c.fps))
+            out_frame_ts = build_time_str_least_chars(*frames_to_time_components(final_out_frame, c.fps))
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             painter.setPen(pen)
             x += width + 1
@@ -108,7 +108,8 @@ class TimelineWidget(QWidget):
                 filename = c.video_url.fileName()
                 in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.in_frame, c.fps))
                 out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame, c.fps))
-                duration = build_time_ms_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame - c.frame_in_out.in_frame, c.fps))
+                frame_diff = c.frame_in_out.out_frame - c.frame_in_out.in_frame
+                duration = build_time_ms_str_least_chars(*frames_to_time_components(frame_diff, c.fps))
                 msg = f'{filename}\n{in_frame_ts} - {out_frame_ts}\nduration: {duration}'
                 QToolTip.showText(self.mapToGlobal(event.pos()), msg)
                 return

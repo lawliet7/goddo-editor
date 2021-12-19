@@ -91,14 +91,15 @@ class PreviewWidget(QWidget):
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:
             if 0 < num_of_frames_to_advance <= 10:
-                logging.info(f'num frames {num_of_frames_to_advance}')
-                frame = None
-                for i in range(num_of_frames_to_advance):
-                    logging.info('advancing frame')
-                    frame = self.get_next_frame()
-                scaled_frame = cv2.resize(frame, (self.width(), self.height()),
-                                          interpolation=cv2.INTER_AREA)
-                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+                logging.debug(f'num frames {num_of_frames_to_advance}')
+                if self.get_cur_frame_no() < self.state.preview_window.total_frames:
+                    frame = None
+                    for i in range(num_of_frames_to_advance):
+                        logging.debug('advancing frame')
+                        frame = self.get_next_frame()
+                    scaled_frame = cv2.resize(frame, (self.width(), self.height()),
+                                              interpolation=cv2.INTER_AREA)
+                    self.frame_pixmap = numpy_to_pixmap(scaled_frame)
             elif num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())

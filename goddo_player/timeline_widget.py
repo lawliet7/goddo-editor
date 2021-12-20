@@ -12,7 +12,7 @@ from goddo_player.time_frame_utils import frames_to_time_components, build_time_
 
 
 class TimelineWidget(QWidget):
-    INITIAL_WIDTH = 1000
+    INITIAL_WIDTH = 1075
     WIDTH_OF_ONE_MIN = 120
     LENGTH_OF_TICK = 20
 
@@ -38,8 +38,19 @@ class TimelineWidget(QWidget):
 
         self.setMouseTracking(True)
 
-    def sizeHint(self) -> QtCore.QSize:
-        return QSize(TimelineWidget.INITIAL_WIDTH, 393)
+    def resize_timeline_widget(self):
+        required_total_secs = 0
+        for i, c in enumerate(self.state.timeline.clips):
+            final_in_frame = c.frame_in_out.in_frame if c.frame_in_out.in_frame is not None else 1
+            final_out_frame = c.frame_in_out.out_frame if c.frame_in_out.out_frame is not None else c.total_frames
+            required_total_secs += (final_out_frame - final_in_frame) / c.fps
+        cur_total_secs = self.width() / self.WIDTH_OF_ONE_MIN * 60
+        logging.info(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
+        if required_total_secs + 60 > cur_total_secs:
+            x = (required_total_secs / 60 + 1) * self.WIDTH_OF_ONE_MIN
+            self.resize(x, self.height())
+        elif required_total_secs + 60 < cur_total_secs:
+            self.resize(self.INITIAL_WIDTH, self.height())
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         logging.info('painting')

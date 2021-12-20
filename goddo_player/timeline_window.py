@@ -19,7 +19,7 @@ class TimelineWindow(QMainWindow):
 
         # self.setWindowTitle('当真ゆきが風俗嬢')
         self.setWindowTitle('美少女捜査官')
-        self.resize(1075, 393)
+        self.resize(TimelineWidget.INITIAL_WIDTH, 393)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()
@@ -50,6 +50,9 @@ class TimelineWindow(QMainWindow):
         super().resizeEvent(resize_event)
         self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()),
                                  resize_event.size().height())
+
+    def resize_timeline_widget(self):
+        self.inner_widget.resize_timeline_widget()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:

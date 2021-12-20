@@ -69,6 +69,7 @@ class MonarchSystem(QObject):
             self.signals.add_timeline_clip_slot.emit(c)
         self.timeline_window.inner_widget.selected_clip_index = self.timeline_window.inner_widget.selected_clip_index if len(
             self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index else len(self.state.timeline.clips) - 1
+        self.timeline_window.resize_timeline_widget()
         self.timeline_window.update()
 
     def __on_switch_speed_slot(self):
@@ -90,8 +91,10 @@ class MonarchSystem(QObject):
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_add_timeline_clip_slot(self, clip: TimelineClip):
+        logging.info('monarch on add timeline clip')
         self.state.timeline.clips.append(clip)
         self.timeline_window.add_rect_for_new_clip(clip)
+        self.timeline_window.resize_timeline_widget()
         self.timeline_window.activateWindow()
         self.timeline_window.update()
 

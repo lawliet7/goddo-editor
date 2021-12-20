@@ -1,4 +1,5 @@
 import logging
+import math
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
@@ -77,7 +78,7 @@ class TimelineWidget(QWidget):
 
         height_of_line = painter.fontMetrics().height()+5
         painter.setPen(QColor(173, 202, 235))
-        for i in range(int(self.width()/self.WIDTH_OF_ONE_MIN)):
+        for i in range(int(math.ceil(self.width()/self.WIDTH_OF_ONE_MIN))):
             x = (i+1)*self.WIDTH_OF_ONE_MIN
             painter.drawLine(x, height_of_line, x, 393)
             painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")

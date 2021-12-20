@@ -68,22 +68,6 @@ class TimelineWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        # super().mousePressEvent(event)
-
-        logging.info('mouse press')
-
-        for i, t in enumerate(self.inner_widget.clip_rects):
-            _, rect = t
-            if rect.contains(event.pos()):
-                logging.info(f'{rect} found clip at index {i}')
-                self.inner_widget.selected_clip_index = i
-                self.inner_widget.update()
-                return
-
-        self.inner_widget.selected_clip_index = -1
-        self.inner_widget.update()
-
     def add_rect_for_new_clip(self, clip: TimelineClip):
         self.inner_widget.add_rect_for_new_clip(clip)
 

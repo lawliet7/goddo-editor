@@ -2,7 +2,7 @@ import logging
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QSize, QRect
-from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtGui import QPainter, QColor, QMouseEvent
 from PyQt5.QtWidgets import QWidget, QToolTip
 
 from goddo_player.signals import StateStoreSignals
@@ -37,6 +37,22 @@ class TimelineWidget(QWidget):
         self.selected_clip_index = -1
 
         self.setMouseTracking(True)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        # super().mousePressEvent(event)
+
+        logging.debug(f'mouse press {event.pos()}')
+
+        for i, t in enumerate(self.clip_rects):
+            _, rect = t
+            if rect.contains(event.pos()):
+                logging.info(f'{rect} found clip at index {i}')
+                self.selected_clip_index = i
+                self.update()
+                return
+
+        self.selected_clip_index = -1
+        self.update()
 
     def resize_timeline_widget(self):
         required_total_secs = 0

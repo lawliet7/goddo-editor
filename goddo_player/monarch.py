@@ -4,8 +4,8 @@ import os
 import pathlib
 import sys
 
-from PyQt5.QtCore import QObject, QUrl, QRect
-from PyQt5.QtGui import QIcon, QPainter
+from PyQt5.QtCore import QObject, QUrl
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.enums import IncDec
@@ -68,30 +68,6 @@ class MonarchSystem(QObject):
 
         self.timeline_window.recalculate_clip_rects()
 
-        # painter = QPainter(self.timeline_window)
-        # painter.setRenderHint(QPainter.Antialiasing)
-        # height_of_line = painter.fontMetrics().height() + 5
-        #
-        # x = 0
-        # new_clip_rects = []
-        # for clip in self.state.timeline.clips:
-        #     n_frames = clip.frame_in_out.calc_no_of_frames(clip.total_frames)
-        #     n_mins = n_frames / clip.fps / 60
-        #     width = n_mins * self.state.timeline.width_of_one_min
-        #     rect = QRect(x, height_of_line + 50, width, 100)
-        #     new_clip_rects.append((clip, rect))
-        #     x += rect.width()
-        #
-        # self.timeline_window.inner_widget.clip_rects = new_clip_rects
-        #
-        # #     self.signals.add_timeline_clip_slot.emit(c)
-        # # self.timeline_window.inner_widget.selected_clip_index = self.timeline_window.inner_widget.selected_clip_index if len(
-        # #     self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index else len(
-        # #     self.state.timeline.clips) - 1
-        # # self.timeline_window.resize_timeline_widget()
-        #
-        # painter.end()
-
         logging.debug(f'after clip rects {self.timeline_window.inner_widget.clip_rects}')
 
         self.timeline_window.update()
@@ -111,8 +87,10 @@ class MonarchSystem(QObject):
         self.timeline_window.inner_widget.clip_rects = []
         for c in clips:
             self.signals.add_timeline_clip_slot.emit(c)
-        self.timeline_window.inner_widget.selected_clip_index = self.timeline_window.inner_widget.selected_clip_index if len(
-            self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index else len(self.state.timeline.clips) - 1
+        self.timeline_window.inner_widget.selected_clip_index = \
+            self.timeline_window.inner_widget.selected_clip_index \
+                if len(self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index \
+                else len(self.state.timeline.clips) - 1
         self.timeline_window.resize_timeline_widget()
         self.timeline_window.update()
 
@@ -206,6 +184,17 @@ class MonarchSystem(QObject):
             for clip_dict in timeline_dict['clips']:
                 StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict))
 
+            if 'width_of_one_min' in timeline_dict:
+                width_of_one_min = timeline_dict['width_of_one_min']
+                if width_of_one_min > PlayerConfigs.timeline_initial_width:
+                    iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width) / 6)
+                    for i in range(iterations):
+                        StateStoreSignals().timeline_update_width_of_one_min.emit(IncDec.DEC)
+                elif width_of_one_min < PlayerConfigs.timeline_initial_width:
+                    iterations = int((PlayerConfigs.timeline_initial_width - width_of_one_min) / 6)
+                    for i in range(iterations):
+                        StateStoreSignals().timeline_update_width_of_one_min.emit(IncDec.INC)
+
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame_slot(self, pos: int):
@@ -235,7 +224,8 @@ def main():
     print(args)
 
     log_level = convert_to_log_level(args.log_level) or logging.INFO
-    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(module)s.%(funcName)s - %(message)s', level=log_level)
+    logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(module)s.%(funcName)s - %(message)s',
+                        level=log_level)
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon('icon.jpg'))

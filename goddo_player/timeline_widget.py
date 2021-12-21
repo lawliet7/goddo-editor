@@ -41,7 +41,6 @@ class TimelineWidget(QWidget):
         n_frames = clip.frame_in_out.calc_no_of_frames(clip.total_frames)
         n_mins = n_frames / clip.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
-        print(f'x={x} n_frames={n_frames} fps={clip.fps} n_mins={n_mins} width={width}')
 
         return QRect(x, self.height_of_line + 50, width, 100)
 
@@ -52,7 +51,6 @@ class TimelineWidget(QWidget):
             rect = self.inner_widget.calc_rect_for_clip(clip, x)
             new_clip_rects.append((clip, rect))
             x += rect.width()
-            print(f'new x = {x} width={rect.width}')
 
         self.inner_widget.clip_rects = new_clip_rects
 
@@ -68,7 +66,6 @@ class TimelineWidget(QWidget):
 
         for i, t in enumerate(self.clip_rects):
             _, rect = t
-            print(rect)
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
                 self.selected_clip_index = i

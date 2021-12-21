@@ -4,8 +4,8 @@ import subprocess
 import time
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QRect
-from PyQt5.QtGui import QKeyEvent, QMouseEvent, QPainter
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.enums import IncDec

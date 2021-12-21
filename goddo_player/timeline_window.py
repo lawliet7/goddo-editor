@@ -4,8 +4,8 @@ import subprocess
 import time
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeyEvent, QMouseEvent
+from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtGui import QKeyEvent, QMouseEvent, QPainter
 from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.enums import IncDec
@@ -73,6 +73,16 @@ class TimelineWindow(QMainWindow):
 
     def add_rect_for_new_clip(self, clip: TimelineClip):
         self.inner_widget.add_rect_for_new_clip(clip)
+
+    def recalculate_clip_rects(self):
+        x = 0
+        new_clip_rects = []
+        for clip in self.state.timeline.clips:
+            rect = self.inner_widget.calc_rect_for_clip(clip, x)
+            new_clip_rects.append((clip, rect))
+            x += rect.width()
+
+        self.inner_widget.clip_rects = new_clip_rects
 
     def __process(self):
         import os

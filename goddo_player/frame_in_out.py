@@ -23,3 +23,19 @@ class FrameInOut:
     def update_out_frame(self, out_frame: int):
         in_frame = None if self.in_frame and out_frame and self.in_frame > out_frame else self.in_frame
         return FrameInOut(in_frame, out_frame)
+
+    def calc_no_of_frames(self, total_frames):
+        if self.out_frame and self.in_frame:
+            return self.out_frame - self.in_frame
+        elif self.in_frame:
+            return total_frames - self.in_frame
+        elif self.out_frame:
+            return self.out_frame
+        else:
+            return 0
+
+    def get_resolved_in_frame(self):
+        return self.in_frame if self.in_frame is not None else 1
+
+    def get_resolved_out_frame(self, total_frames):
+        return self.out_frame if self.in_frame is not None else total_frames

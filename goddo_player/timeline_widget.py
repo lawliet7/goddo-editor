@@ -30,11 +30,36 @@ class TimelineWidget(QWidget):
         palette.setColor(self.backgroundRole(), QColor(12, 29, 45))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
+        self.height_of_line = 1
 
         self.clip_rects = []
         self.selected_clip_index = -1
 
         self.setMouseTracking(True)
+
+    def calc_rect_for_clip(self, clip: TimelineClip, x=0):
+        n_frames = clip.frame_in_out.calc_no_of_frames(clip.total_frames)
+        n_mins = n_frames / clip.fps / 60
+        width = round(n_mins * self.state.timeline.width_of_one_min)
+        print(f'x={x} n_frames={n_frames} fps={clip.fps} n_mins={n_mins} width={width}')
+
+        return QRect(x, self.height_of_line + 50, width, 100)
+
+    def recalculate_all_clip_rects(self):
+        x = 0
+        new_clip_rects = []
+        for clip in self.state.timeline.clips:
+            rect = self.inner_widget.calc_rect_for_clip(clip, x)
+            new_clip_rects.append((clip, rect))
+            x += rect.width()
+            print(f'new x = {x} width={rect.width}')
+
+        self.inner_widget.clip_rects = new_clip_rects
+
+    def initPainter(self, painter: QtGui.QPainter) -> None:
+        super().initPainter(painter)
+
+        self.height_of_line = painter.fontMetrics().height() + 5
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)
@@ -43,6 +68,7 @@ class TimelineWidget(QWidget):
 
         for i, t in enumerate(self.clip_rects):
             _, rect = t
+            print(rect)
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
                 self.selected_clip_index = i
@@ -67,7 +93,6 @@ class TimelineWidget(QWidget):
             self.resize(PlayerConfigs.timeline_initial_width, self.height())
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
-        logging.info('painting')
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -76,55 +101,48 @@ class TimelineWidget(QWidget):
         length_of_one_min = self.state.timeline.width_of_one_min
         length_of_tick = length_of_one_min / 6
 
-        height_of_line = painter.fontMetrics().height()+5
+        # height_of_line = painter.fontMetrics().height()+5
         painter.setPen(QColor(173, 202, 235))
         for i in range(int(math.ceil(self.width() / length_of_one_min))):
             x = (i+1) * length_of_one_min
-            painter.drawLine(x, height_of_line, x, 393)
-            painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")
+            painter.drawLine(x, self.height_of_line, x, 393)
+            painter.drawText(int(x-size_width/2), self.height_of_line-5, f"{i+1}:00")
 
             for j in range(6):
                 tick_x = int(x - length_of_one_min / 6 * (j+1))
                 tick_length = length_of_tick if j == 2 else int(length_of_tick / 2)
-                painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
+                painter.drawLine(tick_x, self.height_of_line, tick_x, self.height_of_line + tick_length)
 
-        painter.drawLine(0, height_of_line, self.width(), height_of_line)
+        painter.drawLine(0, self.height_of_line, self.width(), self.height_of_line)
 
         x = 0
-        for i, c in enumerate(self.state.timeline.clips):
-            in_frame = c.frame_in_out.in_frame
-            out_frame = c.frame_in_out.out_frame
-            if out_frame and in_frame:
-                n_frames = out_frame - in_frame
-            elif in_frame:
-                n_frames = c.total_frames - in_frame
-            elif out_frame:
-                n_frames = out_frame
-            else:
-                raise Exception("both in and out frame is blank")
-            n_mins = n_frames / c.fps / 60
-            width = n_mins * length_of_one_min
-            rect = QRect(x, height_of_line+50, width, 100)
+        pen = painter.pen()
+        for clip, rect in self.clip_rects:
+            in_frame = clip.frame_in_out.get_resolved_in_frame()
+            out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
+
             painter.fillRect(rect, Qt.darkRed)
             pen = painter.pen()
-            if i == self.selected_clip_index:
-                painter.setPen(Qt.green)
-            else:
-                painter.setPen(Qt.red)
+            painter.setPen(Qt.red)
             painter.drawRect(rect)
 
-            final_in_frame = in_frame if in_frame is not None else 1
-            final_out_frame = out_frame if out_frame is not None else c.total_frames
-
             painter.setPen(Qt.white)
-            filename = c.video_url.fileName()
-            in_frame_ts = build_time_str_least_chars(*frames_to_time_components(final_in_frame, c.fps))
-            out_frame_ts = build_time_str_least_chars(*frames_to_time_components(final_out_frame, c.fps))
+            filename = clip.video_url.fileName()
+            in_frame_ts = self.build_time_str(in_frame, clip.fps)
+            out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
-            painter.setPen(pen)
-            x += width + 1
+            x += rect.width()
 
+        if self.selected_clip_index >= 0:
+            painter.setPen(Qt.green)
+            painter.drawRect(self.clip_rects[self.selected_clip_index][1])
+
+        painter.setPen(pen)
         painter.end()
+
+    @staticmethod
+    def build_time_str(no_of_frames, fps):
+        return build_time_str_least_chars(*frames_to_time_components(no_of_frames, fps))
 
     def mouseMoveEvent(self, event):
         for i, t in enumerate(self.clip_rects):
@@ -142,28 +160,6 @@ class TimelineWidget(QWidget):
         QToolTip.hideText()
 
     def add_rect_for_new_clip(self, clip: TimelineClip):
-
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        height_of_line = painter.fontMetrics().height() + 5
-
-        x = 0
-        for c, rect in self.clip_rects:
-            x += rect.width()
-
-        in_frame = clip.frame_in_out.in_frame
-        out_frame = clip.frame_in_out.out_frame
-        if out_frame and in_frame:
-            n_frames = out_frame - in_frame
-        elif in_frame:
-            n_frames = clip.total_frames - in_frame
-        elif out_frame:
-            n_frames = out_frame
-        else:
-            raise Exception("both in and out frame is blank")
-        n_mins = n_frames / clip.fps / 60
-        width = n_mins * self.state.timeline.width_of_one_min
-        rect = QRect(x, height_of_line + 50, width, 100)
+        x = self.clip_rects[-1][1].right() + 1 if self.clip_rects else 0
+        rect = self.calc_rect_for_clip(clip, x)
         self.clip_rects.append((clip, rect))
-
-        painter.end()

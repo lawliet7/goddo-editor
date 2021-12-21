@@ -99,15 +99,19 @@ class TimelineClip:
 @dataclass
 class TimelineState:
     clips: List[TimelineClip] = field(default_factory=list)
+    width_of_one_min = 120
 
     def as_dict(self):
         return {
-            "clips": [x.as_dict() for x in self.clips]
+            "clips": [x.as_dict() for x in self.clips],
+            "width_of_one_min": self.width_of_one_min,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        return TimelineState([TimelineClip.from_dict(x) for x in json_dict['clips']])
+        return TimelineState(
+            clips=[TimelineClip.from_dict(x) for x in json_dict['clips']],
+            width_of_one_min=json_dict['width_of_one_min'])
 
 
 @singleton

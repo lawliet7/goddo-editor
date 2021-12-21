@@ -8,8 +8,9 @@ from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, Q
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
+from goddo_player.enums import IncDec
 from goddo_player.preview_widget import PreviewWidget
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
 
@@ -164,9 +165,9 @@ class PreviewWindow(QWidget):
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
-            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.INC)
+            self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
-            self.signals.preview_window.update_skip_slot.emit(MouseWheelSkip.DEC)
+            self.signals.preview_window.update_skip_slot.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)
 

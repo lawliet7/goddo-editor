@@ -1,11 +1,12 @@
 import logging
 import math
 
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QSize, QRect
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QPainter, QColor, QMouseEvent
 from PyQt5.QtWidgets import QWidget, QToolTip
 
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
@@ -13,10 +14,6 @@ from goddo_player.time_frame_utils import frames_to_time_components, build_time_
 
 
 class TimelineWidget(QWidget):
-    INITIAL_WIDTH = 1075
-    WIDTH_OF_ONE_MIN = 120
-    LENGTH_OF_TICK = 20
-
     def __init__(self):
         super().__init__()
         # self.get_height = get_height
@@ -61,13 +58,13 @@ class TimelineWidget(QWidget):
             final_in_frame = c.frame_in_out.in_frame if c.frame_in_out.in_frame is not None else 1
             final_out_frame = c.frame_in_out.out_frame if c.frame_in_out.out_frame is not None else c.total_frames
             required_total_secs += (final_out_frame - final_in_frame) / c.fps
-        cur_total_secs = self.width() / self.WIDTH_OF_ONE_MIN * 60
+        cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
         logging.info(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
         if required_total_secs + 60 > cur_total_secs:
-            x = (required_total_secs / 60 + 1) * self.WIDTH_OF_ONE_MIN
+            x = (required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min
             self.resize(x, self.height())
         elif required_total_secs + 60 < cur_total_secs:
-            self.resize(self.INITIAL_WIDTH, self.height())
+            self.resize(PlayerConfigs.timeline_initial_width, self.height())
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         logging.info('painting')
@@ -76,16 +73,19 @@ class TimelineWidget(QWidget):
 
         size_width = painter.fontMetrics().width('00:00')
 
+        length_of_one_min = self.state.timeline.width_of_one_min
+        length_of_tick = length_of_one_min / 6
+
         height_of_line = painter.fontMetrics().height()+5
         painter.setPen(QColor(173, 202, 235))
-        for i in range(int(math.ceil(self.width()/self.WIDTH_OF_ONE_MIN))):
-            x = (i+1)*self.WIDTH_OF_ONE_MIN
+        for i in range(int(math.ceil(self.width() / length_of_one_min))):
+            x = (i+1) * length_of_one_min
             painter.drawLine(x, height_of_line, x, 393)
             painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")
 
             for j in range(6):
-                tick_x = int(x - self.WIDTH_OF_ONE_MIN/6*(j+1))
-                tick_length = self.LENGTH_OF_TICK if j == 2 else int(self.LENGTH_OF_TICK / 2)
+                tick_x = int(x - length_of_one_min / 6 * (j+1))
+                tick_length = length_of_tick if j == 2 else int(length_of_tick / 2)
                 painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
 
         painter.drawLine(0, height_of_line, self.width(), height_of_line)
@@ -103,7 +103,7 @@ class TimelineWidget(QWidget):
             else:
                 raise Exception("both in and out frame is blank")
             n_mins = n_frames / c.fps / 60
-            width = n_mins * self.WIDTH_OF_ONE_MIN
+            width = n_mins * length_of_one_min
             rect = QRect(x, height_of_line+50, width, 100)
             painter.fillRect(rect, Qt.darkRed)
             pen = painter.pen()
@@ -162,7 +162,7 @@ class TimelineWidget(QWidget):
         else:
             raise Exception("both in and out frame is blank")
         n_mins = n_frames / clip.fps / 60
-        width = n_mins * self.WIDTH_OF_ONE_MIN
+        width = n_mins * self.state.timeline.width_of_one_min
         rect = QRect(x, height_of_line + 50, width, 100)
         self.clip_rects.append((clip, rect))
 

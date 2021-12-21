@@ -8,6 +8,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
+from goddo_player.enums import IncDec
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.timeline_widget import TimelineWidget
@@ -19,7 +21,7 @@ class TimelineWindow(QMainWindow):
 
         # self.setWindowTitle('当真ゆきが風俗嬢')
         self.setWindowTitle('美少女捜査官')
-        self.resize(TimelineWidget.INITIAL_WIDTH, 393)
+        self.resize(PlayerConfigs.timeline_initial_width, 393)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()
@@ -61,10 +63,11 @@ class TimelineWindow(QMainWindow):
             self.__process()
         elif event.key() == Qt.Key_Delete:
             if self.inner_widget.selected_clip_index >= 0:
-                print(f'delete {self.inner_widget.selected_clip_index}')
-                # self.delete_selected_clip()
-                print(self.updatesEnabled())
                 self.signals.timeline_delete_selected_clip_slot.emit()
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+            self.signals.timeline_update_width_of_one_min.emit(IncDec.INC)
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+            self.signals.timeline_update_width_of_one_min.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)
 

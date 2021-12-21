@@ -8,10 +8,12 @@ from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
+from goddo_player.enums import IncDec
 from goddo_player.file_list import FileList
 from goddo_player.frame_in_out import FrameInOut
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.preview_window import PreviewWindow
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType, MouseWheelSkip
+from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.timeline_window import TimelineWindow
 
@@ -51,10 +53,21 @@ class MonarchSystem(QObject):
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed_slot)
         self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
+        self.signals.timeline_update_width_of_one_min.connect(self.__on_timeline_update_width_of_one_min)
 
-    def __on_preview_window_update_skip_slot(self, skip_type: MouseWheelSkip):
+    def __on_timeline_update_width_of_one_min(self, inc_dec: IncDec):
+        if inc_dec is IncDec.INC:
+            self.state.timeline.width_of_one_min = min(self.state.timeline.width_of_one_min + 6,
+                                                       PlayerConfigs.timeline_max_width_of_one_min)
+        else:
+            self.state.timeline.width_of_one_min = max(self.state.timeline.width_of_one_min - 6,
+                                                       PlayerConfigs.timeline_min_width_of_one_min)
+        logging.info(f'width_of_one_min updated to {self.state.timeline.width_of_one_min}')
+        self.timeline_window.update()
+
+    def __on_preview_window_update_skip_slot(self, skip_type: IncDec):
         cur_skip = self.state.preview_window.time_skip_multiplier
-        if skip_type is MouseWheelSkip.INC:
+        if skip_type is IncDec.INC:
             self.state.preview_window.time_skip_multiplier = min(cur_skip + 1, 60)
         else:
             self.state.preview_window.time_skip_multiplier = max(cur_skip - 1, 1)
@@ -153,10 +166,10 @@ class MonarchSystem(QObject):
 
                 if new_multiplier > cur_multiplier:
                     for i in range(new_multiplier - cur_multiplier):
-                        pw_signals.update_skip_slot.emit(MouseWheelSkip.INC)
+                        pw_signals.update_skip_slot.emit(IncDec.INC)
                 elif new_multiplier < cur_multiplier:
                     for i in range(cur_multiplier - new_multiplier):
-                        pw_signals.update_skip_slot.emit(MouseWheelSkip.DEC)
+                        pw_signals.update_skip_slot.emit(IncDec.DEC)
 
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:

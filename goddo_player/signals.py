@@ -2,7 +2,7 @@ from enum import Enum, auto, unique
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
 
-from goddo_player.enums import PositionType
+from goddo_player.enums import PositionType, IncDec
 from goddo_player.singleton_meta import singleton
 from goddo_player.state_store import TimelineClip
 
@@ -12,12 +12,6 @@ class PlayCommand(Enum):
     TOGGLE = auto()
     PLAY = auto()
     PAUSE = auto()
-
-
-@unique
-class MouseWheelSkip(Enum):
-    INC = 1
-    DEC = -1
 
 
 @singleton
@@ -30,7 +24,7 @@ class PreviewWindowSignals(QObject):
     play_cmd_slot = pyqtSignal(PlayCommand)
     seek_slot = pyqtSignal(int, PositionType)
     update_file_details_slot = pyqtSignal(float, int)
-    update_skip_slot = pyqtSignal(MouseWheelSkip)
+    update_skip_slot = pyqtSignal(IncDec)
 
 
 @singleton
@@ -41,6 +35,7 @@ class StateStoreSignals(QObject):
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)
     timeline_delete_selected_clip_slot = pyqtSignal()
+    timeline_update_width_of_one_min = pyqtSignal(IncDec)
 
 
 

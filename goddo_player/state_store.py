@@ -10,6 +10,7 @@ from tinydb import TinyDB
 from tinydb.table import Table
 
 from goddo_player.frame_in_out import FrameInOut
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.singleton_meta import singleton
 
 
@@ -99,15 +100,19 @@ class TimelineClip:
 @dataclass
 class TimelineState:
     clips: List[TimelineClip] = field(default_factory=list)
+    width_of_one_min = PlayerConfigs.timeline_initial_width_of_one_min
 
     def as_dict(self):
         return {
-            "clips": [x.as_dict() for x in self.clips]
+            "clips": [x.as_dict() for x in self.clips],
+            "width_of_one_min": self.width_of_one_min,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        return TimelineState([TimelineClip.from_dict(x) for x in json_dict['clips']])
+        return TimelineState(
+            clips=[TimelineClip.from_dict(x) for x in json_dict['clips']],
+            width_of_one_min=json_dict['width_of_one_min'])
 
 
 @singleton

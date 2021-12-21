@@ -2,145 +2,17 @@ import logging
 import platform
 import subprocess
 import time
-import typing
 
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QSize, QRect
-from PyQt5.QtGui import QPainter, QColor, QKeyEvent, QMouseEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QMainWindow, QSizePolicy, QToolTip
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.frame_in_out import FrameInOut
+from goddo_player.enums import IncDec
+from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
-from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
-    build_time_ms_str_least_chars
-
-
-class TimelineWidget(QWidget):
-    INITIAL_WIDTH = 1000
-    WIDTH_OF_ONE_MIN = 120
-    LENGTH_OF_TICK = 20
-
-    def __init__(self):
-        super().__init__()
-        # self.get_height = get_height
-        # self.scroll_area = scroll_area
-
-        # self.setWindowTitle('臥底女捜査官')
-        # self.setWindowTitle('美少女捜査官')
-        # self.setGeometry(600, 550, 1024, 360)
-
-        self.state = StateStore()
-        self.signals = StateStoreSignals()
-
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor(12, 29, 45))
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
-
-        self.clip_rects = []
-        self.selected_clip_index = -1
-
-        self.setMouseTracking(True)
-
-    def sizeHint(self) -> QtCore.QSize:
-        return QSize(TimelineWidget.INITIAL_WIDTH, 393)
-
-    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
-        logging.info('painting')
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        size_width = painter.fontMetrics().width('00:00')
-
-        height_of_line = painter.fontMetrics().height()+5
-        painter.setPen(QColor(173, 202, 235))
-        for i in range(int(self.width()/self.WIDTH_OF_ONE_MIN)):
-            x = (i+1)*self.WIDTH_OF_ONE_MIN
-            painter.drawLine(x, height_of_line, x, 393)
-            painter.drawText(int(x-size_width/2), height_of_line-5, f"{i+1}:00")
-
-            for j in range(6):
-                tick_x = int(x - self.WIDTH_OF_ONE_MIN/6*(j+1))
-                tick_length = self.LENGTH_OF_TICK if j == 2 else int(self.LENGTH_OF_TICK / 2)
-                painter.drawLine(tick_x, height_of_line, tick_x, height_of_line + tick_length)
-
-        painter.drawLine(0, height_of_line, self.width(), height_of_line)
-
-        x = 0
-        for i, c in enumerate(self.state.timeline.clips):
-            in_frame = c.frame_in_out.in_frame
-            out_frame = c.frame_in_out.out_frame
-            if out_frame and in_frame:
-                n_frames = out_frame - in_frame
-            elif in_frame:
-                n_frames = c.total_frames - in_frame
-            elif out_frame:
-                n_frames = out_frame
-            else:
-                raise Exception("both in and out frame is blank")
-            n_mins = n_frames / c.fps / 60
-            width = n_mins * self.WIDTH_OF_ONE_MIN
-            rect = QRect(x, height_of_line+50, width, 100)
-            painter.fillRect(rect, Qt.darkRed)
-            pen = painter.pen()
-            if i == self.selected_clip_index:
-                painter.setPen(Qt.green)
-            else:
-                painter.setPen(Qt.red)
-            painter.drawRect(rect)
-            # self.clip_rects.append((c, rect))
-
-            painter.setPen(Qt.white)
-            filename = c.video_url.fileName()
-            in_frame_ts = build_time_str_least_chars(*frames_to_time_components(in_frame, c.fps))
-            out_frame_ts = build_time_str_least_chars(*frames_to_time_components(out_frame, c.fps))
-            painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
-            painter.setPen(pen)
-            x += width + 1
-
-        painter.end()
-
-    def mouseMoveEvent(self, event):
-        for i, t in enumerate(self.clip_rects):
-            c, rect = t
-            if rect.contains(event.pos()):
-                filename = c.video_url.fileName()
-                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.in_frame, c.fps))
-                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame, c.fps))
-                duration = build_time_ms_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame - c.frame_in_out.in_frame, c.fps))
-                msg = f'{filename}\n{in_frame_ts} - {out_frame_ts}\nduration: {duration}'
-                QToolTip.showText(self.mapToGlobal(event.pos()), msg)
-                return
-
-        QToolTip.hideText()
-
-    def add_rect_for_new_clip(self, clip: TimelineClip):
-
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        height_of_line = painter.fontMetrics().height() + 5
-
-        x = 0
-        for c, rect in self.clip_rects:
-            x += rect.width()
-
-        in_frame = clip.frame_in_out.in_frame
-        out_frame = clip.frame_in_out.out_frame
-        if out_frame and in_frame:
-            n_frames = out_frame - in_frame
-        elif in_frame:
-            n_frames = clip.total_frames - in_frame
-        elif out_frame:
-            n_frames = out_frame
-        else:
-            raise Exception("both in and out frame is blank")
-        n_mins = n_frames / clip.fps / 60
-        width = n_mins * self.WIDTH_OF_ONE_MIN
-        rect = QRect(x, height_of_line + 50, width, 100)
-        self.clip_rects.append((clip, rect))
-
-        painter.end()
+from goddo_player.timeline_widget import TimelineWidget
 
 
 class TimelineWindow(QMainWindow):
@@ -149,7 +21,7 @@ class TimelineWindow(QMainWindow):
 
         # self.setWindowTitle('当真ゆきが風俗嬢')
         self.setWindowTitle('美少女捜査官')
-        self.resize(1075, 393)
+        self.resize(PlayerConfigs.timeline_initial_width, 393)
 
         self.state = StateStore()
         self.signals = StateStoreSignals()
@@ -181,6 +53,9 @@ class TimelineWindow(QMainWindow):
         self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()),
                                  resize_event.size().height())
 
+    def resize_timeline_widget(self):
+        self.inner_widget.resize_timeline_widget()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
@@ -188,31 +63,26 @@ class TimelineWindow(QMainWindow):
             self.__process()
         elif event.key() == Qt.Key_Delete:
             if self.inner_widget.selected_clip_index >= 0:
-                print(f'delete {self.inner_widget.selected_clip_index}')
-                # self.delete_selected_clip()
-                print(self.updatesEnabled())
                 self.signals.timeline_delete_selected_clip_slot.emit()
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+            self.signals.timeline_update_width_of_one_min.emit(IncDec.INC)
+        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+            self.signals.timeline_update_width_of_one_min.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        # super().mousePressEvent(event)
-
-        logging.info('mouse press')
-
-        for i, t in enumerate(self.inner_widget.clip_rects):
-            _, rect = t
-            if rect.contains(event.pos()):
-                logging.info(f'{rect} found clip at index {i}')
-                self.inner_widget.selected_clip_index = i
-                self.inner_widget.update()
-                return
-
-        self.inner_widget.selected_clip_index = -1
-        self.inner_widget.update()
-
     def add_rect_for_new_clip(self, clip: TimelineClip):
         self.inner_widget.add_rect_for_new_clip(clip)
+
+    def recalculate_clip_rects(self):
+        x = 0
+        new_clip_rects = []
+        for clip in self.state.timeline.clips:
+            rect = self.inner_widget.calc_rect_for_clip(clip, x)
+            new_clip_rects.append((clip, rect))
+            x += rect.width()
+
+        self.inner_widget.clip_rects = new_clip_rects
 
     def __process(self):
         import os

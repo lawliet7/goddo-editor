@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QPainter, QColor, QMouseEvent
 from PyQt5.QtWidgets import QWidget, QToolTip
 
+from goddo_player.enums import PositionType
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
@@ -58,6 +59,29 @@ class TimelineWidget(QWidget):
         super().initPainter(painter)
 
         self.height_of_line = painter.fontMetrics().height() + 5
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        # super().mouseDoubleClickEvent(event)
+
+        for i, t in enumerate(self.clip_rects):
+            clip, rect = t
+            if rect.contains(event.pos()):
+                logging.info(f'double click {rect} clip at index {i}')
+
+                pw_signals = self.signals.preview_window
+
+                pw_signals.switch_video_slot.emit(clip.video_url, False)
+
+                if clip.frame_in_out.in_frame is not None:
+                    pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
+
+                if clip.frame_in_out.out_frame is not None:
+                    pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
+
+                pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
+
+                if self.state.preview_window.is_max_speed:
+                    pw_signals.switch_speed_slot.emit()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)

@@ -16,6 +16,7 @@ from goddo_player.singleton_meta import singleton
 
 @dataclass
 class PreviewWindowState:
+    name: str
     video_url: QUrl = None
     fps = 0
     total_frames = 0
@@ -120,7 +121,8 @@ class StateStore(QObject):
     def __init__(self):
         super().__init__()
 
-        self.preview_window: PreviewWindowState = PreviewWindowState()
+        self.preview_window: PreviewWindowState = PreviewWindowState('source')
+        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
@@ -163,7 +165,8 @@ class StateStore(QObject):
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
-        self.preview_window: PreviewWindowState = PreviewWindowState()
+        self.preview_window: PreviewWindowState = PreviewWindowState('source')
+        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
         self.file_list = FileListState()
         self.timeline = TimelineState()
 

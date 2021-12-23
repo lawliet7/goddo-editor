@@ -14,8 +14,11 @@ class PlayCommand(Enum):
     PAUSE = auto()
 
 
-@singleton
 class PreviewWindowSignals(QObject):
+    def __init__(self, name: str):
+        super().__init__()
+        self.setObjectName(name)
+
     switch_video_slot = pyqtSignal(QUrl, bool)
     switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
@@ -29,7 +32,8 @@ class PreviewWindowSignals(QObject):
 
 @singleton
 class StateStoreSignals(QObject):
-    preview_window = PreviewWindowSignals()
+    preview_window = PreviewWindowSignals('source')
+    preview_window_output = PreviewWindowSignals('output')
     add_timeline_clip_slot = pyqtSignal(TimelineClip)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)

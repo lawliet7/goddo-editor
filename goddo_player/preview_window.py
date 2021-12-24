@@ -18,7 +18,7 @@ from goddo_player.time_frame_utils import build_time_str, frames_to_time_compone
 class PreviewWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.base_title = '天使美女捜査官'
+        self.base_title = '美女天使捜査官'
         self.setWindowTitle(self.base_title)
 
         self.state = StateStore()

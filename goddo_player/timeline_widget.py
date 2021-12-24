@@ -68,7 +68,7 @@ class TimelineWidget(QWidget):
             if rect.contains(event.pos()):
                 logging.info(f'double click {rect} clip at index {i}')
 
-                pw_signals = self.signals.preview_window
+                pw_signals = self.signals.preview_window_output
 
                 pw_signals.switch_video_slot.emit(clip.video_url, False)
 

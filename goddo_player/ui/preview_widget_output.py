@@ -57,14 +57,14 @@ class PreviewWidgetOutput(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
-        self.signals.preview_window.switch_video_slot.emit(event.mimeData().urls()[0], True)
+        self.signals.preview_window_output.switch_video_slot.emit(event.mimeData().urls()[0], True)
 
     def switch_video(self, url: 'QUrl'):
         self.cap = cv2.VideoCapture(url.path())
 
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.signals.preview_window.update_file_details_slot.emit(fps, total_frames)
+        self.signals.preview_window_output.update_file_details_slot.emit(fps, total_frames)
 
         self.timer.stop()
         self.timer.deleteLater()
@@ -75,7 +75,7 @@ class PreviewWidgetOutput(QWidget):
         # self.timer.start()
 
     def switch_speed(self):
-        speed = num_frames_to_num_millis(self.state.preview_window.fps) if self.state.preview_window.is_max_speed else 1
+        speed = num_frames_to_num_millis(self.state.preview_window_output.fps) if self.state.preview_window_output.is_max_speed else 1
         logging.info(f'switching speed from {self.timer.interval()} to {speed}')
 
         self.timer.stop()
@@ -92,7 +92,7 @@ class PreviewWidgetOutput(QWidget):
         if self.cap:
             if 0 < num_of_frames_to_advance <= 10:
                 logging.debug(f'num frames {num_of_frames_to_advance}')
-                if self.get_cur_frame_no() < self.state.preview_window.total_frames:
+                if self.get_cur_frame_no() < self.state.preview_window_output.total_frames:
                     frame = None
                     for i in range(num_of_frames_to_advance):
                         logging.debug('advancing frame')

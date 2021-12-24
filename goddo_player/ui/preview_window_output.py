@@ -18,7 +18,7 @@ from goddo_player.ui.preview_widget_output import PreviewWidgetOutput
 class PreviewWindowOutput(QWidget):
     def __init__(self):
         super().__init__()
-        self.base_title = '天使美女捜査官'
+        self.base_title = '美女魔王捜査官'
         self.setWindowTitle(self.base_title)
 
         self.state = StateStore()
@@ -63,7 +63,7 @@ class PreviewWindowOutput(QWidget):
         self.update_label_text()
 
     def get_wheel_skip_n_frames(self):
-        return self.state.preview_window.time_skip_multiplier * 5 * self.state.preview_window.fps
+        return self.state.preview_window_output.time_skip_multiplier * 5 * self.state.preview_window_output.fps
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -75,14 +75,14 @@ class PreviewWindowOutput(QWidget):
             target_frame_no = frame_no - 1
         else:
             target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
-        target_frame_no = min(max(0, target_frame_no), self.state.preview_window.total_frames - 1)
+        target_frame_no = min(max(0, target_frame_no), self.state.preview_window_output.total_frames - 1)
 
         self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
         self.preview_widget.update_frame_pixmap(1)
         self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
-        total_frames = self.state.preview_window.total_frames
+        total_frames = self.state.preview_window_output.total_frames
         pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
@@ -91,29 +91,29 @@ class PreviewWindowOutput(QWidget):
         self.update()
 
     def update_label_text(self):
-        total_frames = self.state.preview_window.total_frames
+        total_frames = self.state.preview_window_output.total_frames
         cur_frame_no = self.preview_widget.get_cur_frame_no()
 
-        fps = self.state.preview_window.fps
+        fps = self.state.preview_window_output.fps
         cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
         total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
+        speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
         skip_txt = self.__build_skip_label_txt()
 
         self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
 
     def __build_skip_label_txt(self):
-        num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
-        num_mins = int(self.state.preview_window.time_skip_multiplier * 5 / 60) % 60
+        num_secs = self.state.preview_window_output.time_skip_multiplier * 5 % 60
+        num_mins = int(self.state.preview_window_output.time_skip_multiplier * 5 / 60) % 60
         min_txt = f'{num_mins}m ' if num_mins > 0 else ''
         sec_txt = f'{num_secs}s' if num_secs > 0 else ''
         return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
-        frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
+        frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window_output.total_frames))
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
-                      f'total_frames={self.state.preview_window.total_frames}')
-        self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
+                      f'total_frames={self.state.preview_window_output.total_frames}')
+        self.signals.preview_window_output.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
     def switch_video(self, url: 'QUrl'):
         self.preview_widget.switch_video(url)
@@ -131,49 +131,49 @@ class PreviewWindowOutput(QWidget):
             url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
             self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
-            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.TOGGLE)
+            self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
-            self.signals.preview_window.switch_speed_slot.emit()
+            self.signals.preview_window_output.switch_speed_slot.emit()
         elif event.key() == Qt.Key_I:
-            self.signals.preview_window.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.signals.preview_window.slider_update_slot.emit()
+            self.signals.preview_window_output.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+            self.signals.preview_window_output.slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_I:
-            self.signals.preview_window.in_frame_slot.emit(None)
-            self.signals.preview_window.slider_update_slot.emit()
+            self.signals.preview_window_output.in_frame_slot.emit(None)
+            self.signals.preview_window_output.slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
-            self.signals.preview_window.out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.signals.preview_window.slider_update_slot.emit()
+            self.signals.preview_window_output.out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+            self.signals.preview_window_output.slider_update_slot.emit()
         elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_O:
-            self.signals.preview_window.out_frame_slot.emit(None)
-            self.signals.preview_window.slider_update_slot.emit()
+            self.signals.preview_window_output.out_frame_slot.emit(None)
+            self.signals.preview_window_output.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
-            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
             self.preview_widget.update_frame_pixmap(1)
             self.update()
         elif event.key() == Qt.Key_BracketLeft:
-            frame_in_out = self.state.preview_window.frame_in_out
+            frame_in_out = self.state.preview_window_output.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
-                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.key() == Qt.Key_BracketRight:
-            frame_in_out = self.state.preview_window.frame_in_out
+            frame_in_out = self.state.preview_window_output.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
-                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
-            self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
+            self.signals.preview_window_output.update_skip_slot.emit(IncDec.INC)
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
-            self.signals.preview_window.update_skip_slot.emit(IncDec.DEC)
+            self.signals.preview_window_output.update_skip_slot.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
-            self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+            self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
             self.preview_widget.update_frame_pixmap(-5)
             self.update()
         else:
@@ -182,7 +182,7 @@ class PreviewWindowOutput(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)
 
-        frame_in_out = self.state.preview_window.frame_in_out
+        frame_in_out = self.state.preview_window_output.frame_in_out
         if frame_in_out.in_frame is not None or frame_in_out.out_frame is not None:
             drag = QDrag(self)
             mime_data = QMimeData()
@@ -204,7 +204,7 @@ class FrameInOutSlider(ClickSlider):
         self.state = StateStore()
         self.signals = StateStoreSignals()
 
-        self.signals.preview_window.slider_update_slot.connect(lambda: self.update())
+        self.signals.preview_window_output.slider_update_slot.connect(lambda: self.update())
         self.get_wheel_skip_time = get_wheel_skip_n_frames
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -218,8 +218,8 @@ class FrameInOutSlider(ClickSlider):
         pen = painter.pen()
         brush = painter.brush()
 
-        frame_in_out = self.state.preview_window.frame_in_out
-        total_frames = self.state.preview_window.total_frames
+        frame_in_out = self.state.preview_window_output.frame_in_out
+        total_frames = self.state.preview_window_output.total_frames
         if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
             left = int(round(frame_in_out.in_frame / total_frames * self.width()))
             right = int(round(frame_in_out.out_frame / total_frames * self.width()))
@@ -247,4 +247,4 @@ class FrameInOutSlider(ClickSlider):
         else:
             frame_diff = self.get_wheel_skip_time()
 
-        self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)
+        self.signals.preview_window_output.seek_slot.emit(frame_diff, PositionType.RELATIVE)

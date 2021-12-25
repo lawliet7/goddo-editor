@@ -93,10 +93,13 @@ class PreviewWindowOutput(QWidget):
     def update_label_text(self):
         total_frames = self.state.preview_window_output.total_frames
         cur_frame_no = self.preview_widget.get_cur_frame_no()
+        in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
+
+        no_of_frames = self.state.preview_window_output.frame_in_out.calc_no_of_frames(total_frames)
 
         fps = self.state.preview_window_output.fps
-        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
-        total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
+        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - in_frame, fps))
+        total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
         speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
         skip_txt = self.__build_skip_label_txt()
 

@@ -102,6 +102,7 @@ class TimelineClip:
 class TimelineState:
     clips: List[TimelineClip] = field(default_factory=list)
     width_of_one_min = PlayerConfigs.timeline_initial_width_of_one_min
+    selected_clip_index = -1
 
     def as_dict(self):
         return {

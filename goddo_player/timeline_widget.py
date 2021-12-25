@@ -34,7 +34,6 @@ class TimelineWidget(QWidget):
         self.height_of_line = 1
 
         self.clip_rects = []
-        self.selected_clip_index = -1
 
         self.setMouseTracking(True)
 
@@ -92,11 +91,11 @@ class TimelineWidget(QWidget):
             _, rect = t
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
-                self.selected_clip_index = i
+                self.state.timeline.selected_clip_index = i
                 self.update()
                 return
 
-        self.selected_clip_index = -1
+        self.state.timeline.selected_clip_index = -1
         self.update()
 
     def resize_timeline_widget(self):
@@ -154,9 +153,9 @@ class TimelineWidget(QWidget):
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             x += rect.width()
 
-        if self.selected_clip_index >= 0:
+        if self.state.timeline.selected_clip_index >= 0:
             painter.setPen(Qt.green)
-            painter.drawRect(self.clip_rects[self.selected_clip_index][1])
+            painter.drawRect(self.clip_rects[self.state.timeline.selected_clip_index][1])
 
         painter.setPen(pen)
         painter.end()

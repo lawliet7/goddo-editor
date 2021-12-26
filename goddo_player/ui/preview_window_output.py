@@ -158,6 +158,7 @@ class PreviewWindowOutput(QWidget):
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
                 self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
+                logging.info(f'bracklet left pressed for frame diff - {frame_diff}')
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
         elif event.key() == Qt.Key_BracketRight:

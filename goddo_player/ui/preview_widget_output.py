@@ -92,13 +92,15 @@ class PreviewWidgetOutput(QWidget):
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:
             total_frames = self.state.preview_window_output.total_frames
-            stop_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(total_frames)
+            out_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(total_frames)
+            in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
+            to_frame = self.get_cur_frame_no() + num_of_frames_to_advance
 
             if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
-            elif self.get_cur_frame_no() >= stop_frame:
-                pass
+            elif to_frame < in_frame or to_frame > out_frame:
+                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
             elif 0 < num_of_frames_to_advance <= 10:
                 logging.debug(f'num frames {num_of_frames_to_advance}')
                 frame = None

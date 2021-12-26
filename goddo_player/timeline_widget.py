@@ -68,6 +68,7 @@ class TimelineWidget(QWidget):
                 logging.info(f'double click {rect} clip at index {i}')
 
                 pw_signals = self.signals.preview_window_output
+                pw_state = self.state.preview_window_output
 
                 pw_signals.switch_video_slot.emit(clip.video_url, False)
 
@@ -79,7 +80,7 @@ class TimelineWidget(QWidget):
 
                 pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
 
-                if self.state.preview_window.is_max_speed:
+                if pw_state.is_max_speed:
                     pw_signals.switch_speed_slot.emit()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

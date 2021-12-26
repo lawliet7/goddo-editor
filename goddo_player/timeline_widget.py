@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QToolTip
 
 from goddo_player.enums import PositionType
 from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals
+from goddo_player.signals import StateStoreSignals, PlayCommand
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
@@ -82,6 +82,8 @@ class TimelineWidget(QWidget):
 
                 if pw_state.is_max_speed:
                     pw_signals.switch_speed_slot.emit()
+
+                pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)

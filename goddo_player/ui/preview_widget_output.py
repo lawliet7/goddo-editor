@@ -32,6 +32,7 @@ class PreviewWidgetOutput(QWidget):
         self.timer = QTimer(self)
 
         self.frame_pixmap = None
+        self.restrict_frame_interval = True
 
     def get_cur_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -90,19 +91,23 @@ class PreviewWidgetOutput(QWidget):
 
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:
-            if 0 < num_of_frames_to_advance <= 10:
-                logging.debug(f'num frames {num_of_frames_to_advance}')
-                if self.get_cur_frame_no() < self.state.preview_window_output.total_frames:
-                    frame = None
-                    for i in range(num_of_frames_to_advance):
-                        logging.debug('advancing frame')
-                        frame = self.get_next_frame()
-                    scaled_frame = cv2.resize(frame, (self.width(), self.height()),
-                                              interpolation=cv2.INTER_AREA)
-                    self.frame_pixmap = numpy_to_pixmap(scaled_frame)
-            elif num_of_frames_to_advance == 0 and self.frame_pixmap:
+            total_frames = self.state.preview_window_output.total_frames
+            stop_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(total_frames)
+
+            if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
+            elif self.get_cur_frame_no() >= stop_frame:
+                pass
+            elif 0 < num_of_frames_to_advance <= 10:
+                logging.debug(f'num frames {num_of_frames_to_advance}')
+                frame = None
+                for i in range(num_of_frames_to_advance):
+                    logging.debug('advancing frame')
+                    frame = self.get_next_frame()
+                scaled_frame = cv2.resize(frame, (self.width(), self.height()),
+                                          interpolation=cv2.INTER_AREA)
+                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
             else:
                 target_frame_no = max(self.get_cur_frame_no() + num_of_frames_to_advance - 1, 0)
                 scaled_frame = cv2.resize(self.get_next_frame(target_frame_no), (self.width(), self.height()),

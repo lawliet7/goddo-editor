@@ -61,9 +61,29 @@ class MonarchSystem(QObject):
         self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
         self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
-        self.signals.timeline_update_width_of_one_min.connect(self.__on_timeline_update_width_of_one_min)
+        self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
+        self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
 
-    def __on_timeline_update_width_of_one_min(self, inc_dec: IncDec):
+    def __on_timeline_clip_double_click_slot(self, clip, rect):
+        pw_signals = self.signals.preview_window_output
+        pw_state = self.state.preview_window_output
+
+        pw_signals.switch_video_slot.emit(clip.video_url, False)
+
+        if clip.frame_in_out.in_frame is not None:
+            pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
+
+        if clip.frame_in_out.out_frame is not None:
+            pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
+
+        pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
+
+        if pw_state.is_max_speed:
+            pw_signals.switch_speed_slot.emit()
+
+        pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
+
+    def __on_timeline_update_width_of_one_min_slot(self, inc_dec: IncDec):
         if inc_dec is IncDec.INC:
             self.state.timeline.width_of_one_min = min(self.state.timeline.width_of_one_min + 6,
                                                        PlayerConfigs.timeline_max_width_of_one_min)
@@ -223,11 +243,11 @@ class MonarchSystem(QObject):
                 if width_of_one_min > PlayerConfigs.timeline_initial_width:
                     iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width) / 6)
                     for i in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min.emit(IncDec.DEC)
+                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
                 elif width_of_one_min < PlayerConfigs.timeline_initial_width:
                     iterations = int((PlayerConfigs.timeline_initial_width - width_of_one_min) / 6)
                     for i in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min.emit(IncDec.INC)
+                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
 
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 

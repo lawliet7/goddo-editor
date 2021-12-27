@@ -1,6 +1,6 @@
 from enum import Enum, auto, unique
 
-from PyQt5.QtCore import QObject, pyqtSignal, QUrl
+from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
 from goddo_player.enums import PositionType, IncDec
 from goddo_player.singleton_meta import singleton
@@ -39,7 +39,8 @@ class StateStoreSignals(QObject):
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)
     timeline_delete_selected_clip_slot = pyqtSignal()
-    timeline_update_width_of_one_min = pyqtSignal(IncDec)
+    timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
+    timeline_clip_double_click_slot = pyqtSignal(TimelineClip, QRect)
 
 
 

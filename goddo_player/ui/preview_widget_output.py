@@ -99,7 +99,7 @@ class PreviewWidgetOutput(QWidget):
             if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
-            elif to_frame < in_frame or to_frame > out_frame:
+            elif self.restrict_frame_interval and (to_frame < in_frame or to_frame > out_frame):
                 self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
             elif 0 < num_of_frames_to_advance <= 10:
                 logging.debug(f'num frames {num_of_frames_to_advance}')

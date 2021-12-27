@@ -103,7 +103,7 @@ class PreviewWindowOutput(QWidget):
         speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
         skip_txt = self.__build_skip_label_txt()
 
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}  restrict={self.preview_widget.restrict_frame_interval}')
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window_output.time_skip_multiplier * 5 % 60
@@ -172,6 +172,9 @@ class PreviewWindowOutput(QWidget):
             self.signals.preview_window_output.update_skip_slot.emit(IncDec.INC)
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
             self.signals.preview_window_output.update_skip_slot.emit(IncDec.DEC)
+        elif event.key() == Qt.Key_F:
+            self.preview_widget.restrict_frame_interval = not self.preview_widget.restrict_frame_interval
+            self.update()
         else:
             super().keyPressEvent(event)
 

@@ -76,6 +76,11 @@ class MonarchSystem(QObject):
         if clip.frame_in_out.out_frame is not None:
             pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
 
+        no_of_frames = pw_state.frame_in_out.calc_no_of_frames(pw_state.total_frames)
+        no_of_secs = int(round(no_of_frames / pw_state.fps * 4))  # 4 ticks per sec of video
+        self.preview_window_output.slider.setRange(0, no_of_secs)
+        # self.preview_window_output.slider.update()
+
         pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
 
         if pw_state.is_max_speed:

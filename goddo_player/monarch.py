@@ -64,7 +64,7 @@ class MonarchSystem(QObject):
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
 
-    def __on_timeline_clip_double_click_slot(self, clip, rect):
+    def __on_timeline_clip_double_click_slot(self, clip, _):
         pw_signals = self.signals.preview_window_output
         pw_state = self.state.preview_window_output
 
@@ -76,10 +76,30 @@ class MonarchSystem(QObject):
         if clip.frame_in_out.out_frame is not None:
             pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
 
-        no_of_frames = pw_state.frame_in_out.calc_no_of_frames(pw_state.total_frames) + pw_state.fps * 20
+        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
+        extra_frames_config = int(round(pw_state.extra_frames_in_secs_config * pw_state.fps))
+        in_frame = pw_state.frame_in_out.get_resolved_in_frame()
+        in_frame_in_secs = int(round(in_frame / pw_state.fps))
+        leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
+        leftover_frames_in_secs = int(round(leftover_frames / pw_state.fps))
+        extra_frames_on_left = extra_frames_config \
+            if in_frame_in_secs > extra_frames_in_secs_config \
+            else in_frame
+        extra_frames_on_right = extra_frames_config \
+            if leftover_frames_in_secs > extra_frames_in_secs_config \
+            else leftover_frames
+        total_extra_frames = extra_frames_on_left + extra_frames_on_right
+        start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+        no_of_frames = int(round(pw_state.frame_in_out.calc_no_of_frames(pw_state.total_frames) + total_extra_frames))
         no_of_ticks = int(round(no_of_frames / pw_state.fps * 4))  # 4 ticks per sec of video
         self.preview_window_output.slider.setRange(0, no_of_ticks)
+
+        pw_state.no_of_frames = no_of_frames
+        pw_state.start_frame = start_frame
+        pw_state.extra_frames_on_left = extra_frames_on_left
+        pw_state.extra_frames_on_right = extra_frames_on_right
         print(f'no_of_frames={no_of_frames} no_of_ticks={no_of_ticks} max={self.preview_window_output.slider.maximum()}')
+        print(pw_state)
         # self.preview_window_output.slider.update()
 
         pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
@@ -198,9 +218,7 @@ class MonarchSystem(QObject):
 
     def __on_save_file(self, url: QUrl):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-        # self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
-        # self.state.preview_window_output.current_frame_no = self.preview_window_output.preview_widget.get_cur_frame_no()
         self.state.save_file(url)
 
     def __on_load_file(self, url: QUrl):

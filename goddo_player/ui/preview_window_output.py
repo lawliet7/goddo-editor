@@ -82,13 +82,8 @@ class PreviewWindowOutput(QWidget):
         self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
-        total_frames = self.state.preview_window_output.total_frames
-        fps = self.state.preview_window_output.fps
-        frame_in_out = self.state.preview_window_output.frame_in_out
-        frame_no = int(round(cur_frame_no - (frame_in_out.get_resolved_in_frame() - fps * 10)))
-        no_of_frames = frame_in_out.calc_no_of_frames(total_frames) + fps * 20
-        # no_of_secs = int(round(frame_no / self.state.preview_window_output.fps))
-        pos = self.slider.pct_to_slider_value(frame_no / no_of_frames)
+        frame_no = cur_frame_no - self.state.preview_window_output.start_frame
+        pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.no_of_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
@@ -96,19 +91,18 @@ class PreviewWindowOutput(QWidget):
         self.update()
 
     def update_label_text(self):
-        total_frames = self.state.preview_window_output.total_frames
         cur_frame_no = self.preview_widget.get_cur_frame_no()
-        in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
-
-        no_of_frames = self.state.preview_window_output.frame_in_out.calc_no_of_frames(total_frames)
+        start_frame = self.state.preview_window_output.start_frame
+        no_of_frames = self.state.preview_window_output.no_of_frames
 
         fps = self.state.preview_window_output.fps
-        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - in_frame, fps))
-        total_time_str = build_time_str(*frames_to_time_components(self.slider.maximum() / 4 * fps, fps))
+        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
+        total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
         speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
         skip_txt = self.__build_skip_label_txt()
 
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}  restrict={self.preview_widget.restrict_frame_interval}')
+        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
+                           f'  restrict={self.preview_widget.restrict_frame_interval}')
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window_output.time_skip_multiplier * 5 % 60
@@ -232,12 +226,9 @@ class FrameInOutSlider(ClickSlider):
 
         # todo: allow the in out frame range to be extended
         frame_in_out = self.state.preview_window_output.frame_in_out
-        total_frames = self.state.preview_window_output.total_frames
-        fps = self.state.preview_window_output.fps
-        # no_of_frames = self.state.preview_window_output.frame_in_out.calc_no_of_frames(total_frames)
-        no_of_frames = frame_in_out.calc_no_of_frames(total_frames) + fps * 20
+        start_frame = self.state.preview_window_output.start_frame
+        no_of_frames = self.state.preview_window_output.no_of_frames
         if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
-            start_frame = int(round(frame_in_out.in_frame - fps * 10))
             left = int(round((frame_in_out.in_frame - start_frame) / no_of_frames * self.width()))
             right = int(round((frame_in_out.out_frame - start_frame) / no_of_frames * self.width()))
             rect = QRect(left, 0, right - left, self.height())

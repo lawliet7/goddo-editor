@@ -2,8 +2,8 @@ import logging
 import math
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QRect
-from PyQt5.QtGui import QPainter, QColor, QMouseEvent
+from PyQt5.QtCore import Qt, QRect, QPoint
+from PyQt5.QtGui import QPainter, QColor, QMouseEvent, QBrush
 from PyQt5.QtWidgets import QWidget, QToolTip
 
 from goddo_player.enums import PositionType
@@ -67,7 +67,7 @@ class TimelineWidget(QWidget):
             if rect.contains(event.pos()):
                 logging.info(f'double click {rect} clip at index {i}')
 
-                self.signals.timeline_clip_double_click_slot.emit(clip, rect)
+                self.signals.timeline_clip_double_click_slot.emit(i, clip, rect)
 
                 break
 
@@ -126,7 +126,7 @@ class TimelineWidget(QWidget):
 
         x = 0
         pen = painter.pen()
-        for clip, rect in self.clip_rects:
+        for i, (clip, rect) in enumerate(self.clip_rects):
             in_frame = clip.frame_in_out.get_resolved_in_frame()
             out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
@@ -134,6 +134,17 @@ class TimelineWidget(QWidget):
             pen = painter.pen()
             painter.setPen(Qt.red)
             painter.drawRect(rect)
+
+            if self.state.timeline.opened_clip_index == i:
+                orig_brush = painter.brush()
+                color = Qt.lightGray
+                painter.setPen(color)
+                painter.setBrush(QBrush(color, Qt.SolidPattern))
+                pt1 = QPoint(rect.right() - 15, rect.top())
+                pt2 = rect.topRight()
+                pt3 = QPoint(rect.right(), rect.top() + 15)
+                painter.drawPolygon(pt1, pt2, pt3)
+                painter.setBrush(orig_brush)
 
             painter.setPen(Qt.white)
             filename = clip.video_url.fileName()
@@ -145,6 +156,8 @@ class TimelineWidget(QWidget):
         if self.state.timeline.selected_clip_index >= 0:
             painter.setPen(Qt.green)
             painter.drawRect(self.clip_rects[self.state.timeline.selected_clip_index][1])
+
+
 
         painter.setPen(pen)
         painter.end()

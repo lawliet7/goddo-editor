@@ -142,19 +142,25 @@ class TimelineClip:
 class TimelineState:
     clips: List[TimelineClip] = field(default_factory=list)
     width_of_one_min: int = field(default=PlayerConfigs.timeline_initial_width_of_one_min)
-    selected_clip_index = -1
+    selected_clip_index: int = field(default=-1)
+    opened_clip_index: int = field(default=-1)
 
     def as_dict(self):
         return {
             "clips": [x.as_dict() for x in self.clips],
             "width_of_one_min": self.width_of_one_min,
+            "selected_clip_index": self.selected_clip_index,
+            "opened_clip_index": self.opened_clip_index,
         }
 
     @staticmethod
     def from_dict(json_dict):
         return TimelineState(
             clips=[TimelineClip.from_dict(x) for x in json_dict['clips']],
-            width_of_one_min=json_dict['width_of_one_min'])
+            width_of_one_min=json_dict['width_of_one_min'],
+            selected_clip_index=json_dict['selected_clip_index'],
+            opened_clip_index=json_dict['opened_clip_index'],
+            )
 
 
 @singleton

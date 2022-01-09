@@ -64,7 +64,7 @@ class MonarchSystem(QObject):
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
 
-    def __on_timeline_clip_double_click_slot(self, clip, _):
+    def __on_timeline_clip_double_click_slot(self, idx, clip, _):
         pw_signals = self.signals.preview_window_output
         pw_state = self.state.preview_window_output
 
@@ -98,9 +98,9 @@ class MonarchSystem(QObject):
         pw_state.start_frame = start_frame
         pw_state.extra_frames_on_left = extra_frames_on_left
         pw_state.extra_frames_on_right = extra_frames_on_right
-        print(f'no_of_frames={no_of_frames} no_of_ticks={no_of_ticks} max={self.preview_window_output.slider.maximum()}')
-        print(pw_state)
-        # self.preview_window_output.slider.update()
+        logging.debug(f'no_of_frames={no_of_frames} no_of_ticks={no_of_ticks} '
+                      f'max={self.preview_window_output.slider.maximum()}')
+        logging.debug(pw_state)
 
         pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
 
@@ -108,6 +108,8 @@ class MonarchSystem(QObject):
             pw_signals.switch_speed_slot.emit()
 
         pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
+
+        self.state.timeline.opened_clip_index = idx
 
     def __on_timeline_update_width_of_one_min_slot(self, inc_dec: IncDec):
         if inc_dec is IncDec.INC:

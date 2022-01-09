@@ -136,14 +136,17 @@ class TimelineWidget(QWidget):
             painter.drawRect(rect)
 
             if self.state.timeline.opened_clip_index == i:
-                orig_brush = painter.brush()
                 color = Qt.lightGray
+                orig_brush = painter.brush()
                 painter.setPen(color)
                 painter.setBrush(QBrush(color, Qt.SolidPattern))
-                pt1 = QPoint(rect.right() - 15, rect.top())
-                pt2 = rect.topRight()
-                pt3 = QPoint(rect.right(), rect.top() + 15)
-                painter.drawPolygon(pt1, pt2, pt3)
+                if rect.width() >= PlayerConfigs.timeline_length_of_triangle:
+                    top_left_pt = QPoint(rect.right() - PlayerConfigs.timeline_length_of_triangle, rect.top())
+                    bott_right_pt = QPoint(rect.right(), rect.top() + PlayerConfigs.timeline_length_of_triangle)
+                else:
+                    top_left_pt = QPoint(rect.left(), rect.top())
+                    bott_right_pt = QPoint(rect.right(), rect.top() + rect.width())
+                painter.drawPolygon(top_left_pt, rect.topRight(), bott_right_pt)
                 painter.setBrush(orig_brush)
 
             painter.setPen(Qt.white)

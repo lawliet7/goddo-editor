@@ -65,6 +65,8 @@ class MonarchSystem(QObject):
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
 
     def __on_timeline_clip_double_click_slot(self, idx, clip, _):
+        self.state.timeline.opened_clip_index = idx
+
         pw_signals = self.signals.preview_window_output
         pw_state = self.state.preview_window_output
 
@@ -108,8 +110,6 @@ class MonarchSystem(QObject):
             pw_signals.switch_speed_slot.emit()
 
         pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
-
-        self.state.timeline.opened_clip_index = idx
 
     def __on_timeline_update_width_of_one_min_slot(self, inc_dec: IncDec):
         if inc_dec is IncDec.INC:
@@ -278,9 +278,13 @@ class MonarchSystem(QObject):
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame_slot(self, pos: int):
-        logging.info(f'update in frame to {pos}')
+        logging.info(f'update in frame to {pos} sender={self.sender()}')
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
+
+        if self.sender() is self.signals.preview_window_output:
+            print('is output window')
+
 
     def __on_preview_video_out_frame_slot(self, pos: int):
         logging.info(f'update out frame to {pos}')

@@ -121,7 +121,8 @@ class PreviewWindowOutput(QWidget):
         self.preview_widget.switch_video(url)
 
         name, _ = os.path.splitext(url.fileName())
-        self.setWindowTitle(self.base_title + ' - ' + name)
+        clip_idx = self.state.timeline.opened_clip_index + 1
+        self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)
@@ -183,7 +184,7 @@ class PreviewWindowOutput(QWidget):
             self.preview_widget.update_frame_pixmap(-5)
             self.update()
         else:
-            super().keyPressEvent(event)
+            super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)

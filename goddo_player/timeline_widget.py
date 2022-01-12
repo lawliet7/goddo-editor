@@ -48,11 +48,11 @@ class TimelineWidget(QWidget):
         x = 0
         new_clip_rects = []
         for clip in self.state.timeline.clips:
-            rect = self.inner_widget.calc_rect_for_clip(clip, x)
+            rect = self.calc_rect_for_clip(clip, x)
             new_clip_rects.append((clip, rect))
             x += rect.width()
 
-        self.inner_widget.clip_rects = new_clip_rects
+        self.clip_rects = new_clip_rects
 
     def initPainter(self, painter: QtGui.QPainter) -> None:
         super().initPainter(painter)
@@ -151,6 +151,7 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_url.fileName()
+            print(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
@@ -159,8 +160,6 @@ class TimelineWidget(QWidget):
         if self.state.timeline.selected_clip_index >= 0:
             painter.setPen(Qt.green)
             painter.drawRect(self.clip_rects[self.state.timeline.selected_clip_index][1])
-
-
 
         painter.setPen(pen)
         painter.end()

@@ -53,6 +53,7 @@ class TimelineWidget(QWidget):
             x += rect.width()
 
         self.clip_rects = new_clip_rects
+        self.resize_timeline_widget()
 
     def initPainter(self, painter: QtGui.QPainter) -> None:
         super().initPainter(painter)

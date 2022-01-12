@@ -73,6 +73,7 @@ class TimelineWindow(QMainWindow):
 
     def add_rect_for_new_clip(self, clip: TimelineClip):
         self.inner_widget.add_rect_for_new_clip(clip)
+        self.resize_timeline_widget()
 
     def recalculate_clip_rects(self):
         x = 0

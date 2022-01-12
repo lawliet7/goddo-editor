@@ -283,13 +283,34 @@ class MonarchSystem(QObject):
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
 
         if self.sender() is self.signals.preview_window_output:
-            print('is output window')
+            opened_clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
+            timeline_in_frame = opened_clip.frame_in_out.get_resolved_in_frame()
 
+            if timeline_in_frame != pos:
+                clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
+                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                                        frame_in_out=preview_window_state.frame_in_out)
+                self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
+                self.timeline_window.inner_widget.recalculate_all_clip_rects()
+                self.timeline_window.resize_timeline_widget()
+                self.timeline_window.update()
 
     def __on_preview_video_out_frame_slot(self, pos: int):
         logging.info(f'update out frame to {pos}')
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(pos)
+
+        if self.sender() is self.signals.preview_window_output:
+            clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
+            timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
+
+            if timeline_out_frame != pos:
+                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                                        frame_in_out=preview_window_state.frame_in_out)
+                self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
+                self.timeline_window.inner_widget.recalculate_all_clip_rects()
+                self.timeline_window.resize_timeline_widget()
+                self.timeline_window.update()
 
     def __on_preview_window_play_cmd_slot(self, play_cmd: PlayCommand):
         self.get_preview_window_from_signal(self.sender()).toggle_play_pause(play_cmd)

@@ -112,9 +112,9 @@ class FileListState:
         return item
 
     def add_file_item(self, item: FileListStateItem):
-        print(f'before adding {self.files}')
+        logging.debug(f'before adding {self.files}')
         self.files.append(item)
-        print(f'after adding {self.files}')
+        logging.debug(f'after adding {self.files}')
 
 
 @dataclass(frozen=True)

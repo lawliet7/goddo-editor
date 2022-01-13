@@ -37,8 +37,6 @@ class TimelineWindow(QMainWindow):
         self.scrollArea.setMinimumHeight(360)
         self.setCentralWidget(self.scrollArea)
 
-        print(f'{self.scrollArea.width()} x {self.scrollArea.height()}')
-
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
 

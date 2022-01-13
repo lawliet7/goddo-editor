@@ -57,7 +57,7 @@ class ClipItemWidget(QWidget):
         self.setLayout(h_layout)
 
     def delete_tag(self):
-        print(f'{self.sender()}')
+        logging.debug(f'{self.sender()}')
         self.flow_layout.removeWidget(self.sender())
 
 
@@ -67,7 +67,7 @@ class FileScrollArea(QScrollArea):
         self.list_widget = list_widget
 
     def mouseDoubleClickEvent(self, a0: QtGui.QMouseEvent) -> None:
-        print('double click')
+        logging.info('double click')
         super().mouseDoubleClickEvent(a0)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
@@ -119,7 +119,6 @@ class FileListWidget(QListWidget):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         for url in event.mimeData().urls():
-            print(url.path())
             if not url.path().isascii():
                 show_error_box(self, "sorry unicode file names are not support!")
                 break

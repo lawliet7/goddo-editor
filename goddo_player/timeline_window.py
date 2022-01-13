@@ -62,17 +62,18 @@ class TimelineWindow(QMainWindow):
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
             self.__process()
         elif event.key() == Qt.Key_Delete:
-            if self.inner_widget.selected_clip_index >= 0:
+            if self.state.timeline.selected_clip_index >= 0:
                 self.signals.timeline_delete_selected_clip_slot.emit()
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
-            self.signals.timeline_update_width_of_one_min.emit(IncDec.INC)
+            self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.INC)
         elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
-            self.signals.timeline_update_width_of_one_min.emit(IncDec.DEC)
+            self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)
 
     def add_rect_for_new_clip(self, clip: TimelineClip):
         self.inner_widget.add_rect_for_new_clip(clip)
+        self.resize_timeline_widget()
 
     def recalculate_clip_rects(self):
         x = 0

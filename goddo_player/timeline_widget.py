@@ -2,12 +2,13 @@ import logging
 import math
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QRect
-from PyQt5.QtGui import QPainter, QColor, QMouseEvent
+from PyQt5.QtCore import Qt, QRect, QPoint
+from PyQt5.QtGui import QPainter, QColor, QMouseEvent, QBrush
 from PyQt5.QtWidgets import QWidget, QToolTip
 
+from goddo_player.enums import PositionType
 from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals
+from goddo_player.signals import StateStoreSignals, PlayCommand
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
@@ -33,7 +34,6 @@ class TimelineWidget(QWidget):
         self.height_of_line = 1
 
         self.clip_rects = []
-        self.selected_clip_index = -1
 
         self.setMouseTracking(True)
 
@@ -48,16 +48,29 @@ class TimelineWidget(QWidget):
         x = 0
         new_clip_rects = []
         for clip in self.state.timeline.clips:
-            rect = self.inner_widget.calc_rect_for_clip(clip, x)
+            rect = self.calc_rect_for_clip(clip, x)
             new_clip_rects.append((clip, rect))
             x += rect.width()
 
-        self.inner_widget.clip_rects = new_clip_rects
+        self.clip_rects = new_clip_rects
+        self.resize_timeline_widget()
 
     def initPainter(self, painter: QtGui.QPainter) -> None:
         super().initPainter(painter)
 
         self.height_of_line = painter.fontMetrics().height() + 5
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        # super().mouseDoubleClickEvent(event)
+
+        for i, t in enumerate(self.clip_rects):
+            clip, rect = t
+            if rect.contains(event.pos()):
+                logging.info(f'double click {rect} clip at index {i}')
+
+                self.signals.timeline_clip_double_click_slot.emit(i, clip, rect)
+
+                break
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)
@@ -68,11 +81,11 @@ class TimelineWidget(QWidget):
             _, rect = t
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
-                self.selected_clip_index = i
+                self.state.timeline.selected_clip_index = i
                 self.update()
                 return
 
-        self.selected_clip_index = -1
+        self.state.timeline.selected_clip_index = -1
         self.update()
 
     def resize_timeline_widget(self):
@@ -114,7 +127,7 @@ class TimelineWidget(QWidget):
 
         x = 0
         pen = painter.pen()
-        for clip, rect in self.clip_rects:
+        for i, (clip, rect) in enumerate(self.clip_rects):
             in_frame = clip.frame_in_out.get_resolved_in_frame()
             out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
@@ -123,16 +136,31 @@ class TimelineWidget(QWidget):
             painter.setPen(Qt.red)
             painter.drawRect(rect)
 
+            if self.state.timeline.opened_clip_index == i:
+                color = Qt.lightGray
+                orig_brush = painter.brush()
+                painter.setPen(color)
+                painter.setBrush(QBrush(color, Qt.SolidPattern))
+                if rect.width() >= PlayerConfigs.timeline_length_of_triangle:
+                    top_left_pt = QPoint(rect.right() - PlayerConfigs.timeline_length_of_triangle, rect.top())
+                    bott_right_pt = QPoint(rect.right(), rect.top() + PlayerConfigs.timeline_length_of_triangle)
+                else:
+                    top_left_pt = QPoint(rect.left(), rect.top())
+                    bott_right_pt = QPoint(rect.right(), rect.top() + rect.width())
+                painter.drawPolygon(top_left_pt, rect.topRight(), bott_right_pt)
+                painter.setBrush(orig_brush)
+
             painter.setPen(Qt.white)
             filename = clip.video_url.fileName()
+            print(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             x += rect.width()
 
-        if self.selected_clip_index >= 0:
+        if self.state.timeline.selected_clip_index >= 0:
             painter.setPen(Qt.green)
-            painter.drawRect(self.clip_rects[self.selected_clip_index][1])
+            painter.drawRect(self.clip_rects[self.state.timeline.selected_clip_index][1])
 
         painter.setPen(pen)
         painter.end()

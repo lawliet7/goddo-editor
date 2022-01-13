@@ -35,6 +35,7 @@ class PreviewWindowOutput(QWidget):
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
         self.slider.setFixedHeight(20)
+        self.slider.setDisabled(True)
 
         # p = self.palette()
         # p.setColor(self.backgroundRole(), Qt.black)
@@ -71,15 +72,16 @@ class PreviewWindowOutput(QWidget):
         self.preview_widget.update_frame_pixmap(0)
 
     def go_to_frame(self, frame_no: int, pos_type: PositionType):
-        if pos_type is PositionType.ABSOLUTE:
-            target_frame_no = frame_no - 1
-        else:
-            target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
-        target_frame_no = min(max(0, target_frame_no), self.state.preview_window_output.total_frames - 1)
+        if self.preview_widget.cap:
+            if pos_type is PositionType.ABSOLUTE:
+                target_frame_no = frame_no - 1
+            else:
+                target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
+            target_frame_no = min(max(0, target_frame_no), self.state.preview_window_output.total_frames - 1)
 
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
-        self.preview_widget.update_frame_pixmap(1)
-        self.update()
+            self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
+            self.preview_widget.update_frame_pixmap(1)
+            self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
         frame_no = cur_frame_no - self.state.preview_window_output.start_frame
@@ -91,18 +93,21 @@ class PreviewWindowOutput(QWidget):
         self.update()
 
     def update_label_text(self):
-        cur_frame_no = self.preview_widget.get_cur_frame_no()
-        start_frame = self.state.preview_window_output.start_frame
-        no_of_frames = self.state.preview_window_output.no_of_frames
+        if self.preview_widget.cap is not None:
+            cur_frame_no = self.preview_widget.get_cur_frame_no()
+            start_frame = self.state.preview_window_output.start_frame
+            no_of_frames = self.state.preview_window_output.no_of_frames
 
-        fps = self.state.preview_window_output.fps
-        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
-        total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
-        speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
-        skip_txt = self.__build_skip_label_txt()
+            fps = self.state.preview_window_output.fps
+            cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
+            total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
+            speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
+            skip_txt = self.__build_skip_label_txt()
 
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
-                           f'  restrict={self.preview_widget.restrict_frame_interval}')
+            self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
+                               f'  restrict={self.preview_widget.restrict_frame_interval}')
+        else:
+            self.label.setText("you suck")
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window_output.time_skip_multiplier * 5 % 60
@@ -123,6 +128,14 @@ class PreviewWindowOutput(QWidget):
         name, _ = os.path.splitext(url.fileName())
         clip_idx = self.state.timeline.opened_clip_index + 1
         self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
+
+        if url.isEmpty():
+            self.slider.blockSignals(True)
+            self.slider.setValue(0)
+            self.slider.blockSignals(False)
+            self.slider.setDisabled(True)
+        else:
+            self.slider.setDisabled(False)
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)

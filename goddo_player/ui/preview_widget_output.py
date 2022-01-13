@@ -61,19 +61,27 @@ class PreviewWidgetOutput(QWidget):
         self.signals.preview_window_output.switch_video_slot.emit(event.mimeData().urls()[0], True)
 
     def switch_video(self, url: 'QUrl'):
-        self.cap = cv2.VideoCapture(url.path())
+        if not url.isEmpty():
+            self.cap = cv2.VideoCapture(url.path())
 
-        fps = self.cap.get(cv2.CAP_PROP_FPS)
-        total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.signals.preview_window_output.update_file_details_slot.emit(fps, total_frames)
+            fps = self.cap.get(cv2.CAP_PROP_FPS)
+            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.signals.preview_window_output.update_file_details_slot.emit(fps, total_frames)
 
-        self.timer.stop()
-        self.timer.deleteLater()
-        self.timer = QTimer(self)
-        self.timer.setInterval(num_frames_to_num_millis(fps))
-        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.timer.timeout.connect(self.update_frame_pixmap)
-        # self.timer.start()
+            self.timer.stop()
+            self.timer.deleteLater()
+            self.timer = QTimer(self)
+            self.timer.setInterval(num_frames_to_num_millis(fps))
+            self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+            self.timer.timeout.connect(self.update_frame_pixmap)
+            # self.timer.start()
+        else:
+            self.cap = None
+            self.signals.preview_window_output.update_file_details_slot.emit(0, 0)
+            self.frame_pixmap = None
+
+            self.timer.stop()
+            self.timer.disconnect()
 
     def switch_speed(self):
         speed = num_frames_to_num_millis(self.state.preview_window_output.fps) if self.state.preview_window_output.is_max_speed else 1

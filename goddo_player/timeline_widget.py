@@ -61,8 +61,6 @@ class TimelineWidget(QWidget):
         self.height_of_line = painter.fontMetrics().height() + 5
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        # super().mouseDoubleClickEvent(event)
-
         for i, t in enumerate(self.clip_rects):
             clip, rect = t
             if rect.contains(event.pos()):

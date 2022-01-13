@@ -138,17 +138,11 @@ class MonarchSystem(QObject):
         self.get_preview_window_from_signal(self.sender()).update()
 
     def __on_timeline_delete_selected_clip_slot(self):
-        selected_idx = self.timeline_window.inner_widget.selected_clip_index
-        clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
-        self.state.timeline.clips = []
-        self.timeline_window.inner_widget.clip_rects = []
-        for c in clips:
-            self.signals.add_timeline_clip_slot.emit(c)
-        self.timeline_window.inner_widget.selected_clip_index = \
-            self.timeline_window.inner_widget.selected_clip_index \
-            if len(self.state.timeline.clips) > self.timeline_window.inner_widget.selected_clip_index \
-            else len(self.state.timeline.clips) - 1
-        self.timeline_window.resize_timeline_widget()
+        selected_idx = self.state.timeline.selected_clip_index
+        self.state.timeline.clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
+        max_idx = len(self.state.timeline.clips)-1
+        self.state.timeline.selected_clip_index = min(selected_idx, max_idx)
+        self.timeline_window.recalculate_clip_rects()
         self.timeline_window.update()
 
     def __on_switch_speed_slot(self):

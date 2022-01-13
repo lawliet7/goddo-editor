@@ -24,7 +24,10 @@ def main():
     parser.add_argument('--log-level', help='FATAL,ERROR,WARN,INFO,DEBUG, default is INFO')
 
     args = parser.parse_args()
-    logging.info(args)
+    print(args)
+
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
 
     log_level = convert_to_log_level(args.log_level) or logging.INFO
     logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(module)s.%(funcName)s - %(message)s',

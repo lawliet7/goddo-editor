@@ -118,7 +118,7 @@ class MonarchSystem(QObject):
         else:
             self.state.timeline.width_of_one_min = max(self.state.timeline.width_of_one_min - 6,
                                                        PlayerConfigs.timeline_min_width_of_one_min)
-        logging.info(f'width_of_one_min updated to {self.state.timeline.width_of_one_min}')
+        logging.debug(f'width_of_one_min updated to {self.state.timeline.width_of_one_min}')
 
         logging.debug(f'before clip rects {self.timeline_window.inner_widget.clip_rects}')
 

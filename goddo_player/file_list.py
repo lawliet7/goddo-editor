@@ -173,7 +173,7 @@ class FileList(QWidget):
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         child = item_widget.findChild(QLabel, 'screenshot')
-        logging.info(f'found child {child}')
+        logging.debug(f'found child {child}')
         child.setPixmap(pixmap)
 
     def add_video(self, url: 'QUrl'):

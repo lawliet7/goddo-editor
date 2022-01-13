@@ -184,8 +184,8 @@ class StateStore(QObject):
         if is_existing_file:
             shutil.copy(save_file_name, tmp_save_file_name)
 
-        logging.info(f'preview {self.preview_window}')
-        logging.info(f'files {self.file_list}')
+        logging.debug(f'preview {self.preview_window}')
+        logging.debug(f'files {self.file_list}')
 
         with TinyDB(save_file_name) as db:
             table_preview_windows: Table = db.table('preview_windows')

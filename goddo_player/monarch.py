@@ -63,6 +63,12 @@ class MonarchSystem(QObject):
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
+        self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
+        self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
+
+    def __on_preview_window_reset_slot(self):
+        preview_window = self.get_preview_window_from_signal(self.sender())
+        
 
     def __on_timeline_clip_double_click_slot(self, idx, clip, _):
         self.state.timeline.opened_clip_index = idx

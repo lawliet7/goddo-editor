@@ -240,8 +240,8 @@ class FrameInOutSlider(ClickSlider):
         painter.end()
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        logging.info('wheel event')
-        # super().wheelEvent(e)
+        logging.debug('wheel event')
+
         if event.angleDelta().y() > 0:
             frame_diff = self.get_wheel_skip_time() * -1
         else:

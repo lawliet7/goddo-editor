@@ -68,7 +68,9 @@ class TimelineWidget(QWidget):
 
                 self.signals.timeline_clip_double_click_slot.emit(i, clip, rect)
 
-                break
+                return
+
+        self.signals.timeline_clip_double_click_slot.emit(-1, clip, rect)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)

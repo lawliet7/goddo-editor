@@ -216,6 +216,29 @@ class PreviewWindowOutput(QWidget):
         else:
             return False
 
+    @staticmethod
+    def get_num_of_extra_frames(extra_frames_in_secs_config, fps):
+        return int(round(extra_frames_in_secs_config * fps))
+
+    def goddo(self):
+        pw_state = self.state.preview_window_output
+        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
+        extra_frames_config = self.get_num_of_extra_frames(extra_frames_in_secs_config, pw_state.fps)
+
+        in_frame = pw_state.frame_in_out.get_resolved_in_frame()
+        in_frame_in_secs = int(round(in_frame / pw_state.fps))
+
+        leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
+        leftover_frames_in_secs = int(round(leftover_frames / pw_state.fps))
+        extra_frames_on_left = extra_frames_config \
+            if in_frame_in_secs > extra_frames_in_secs_config \
+            else in_frame
+        extra_frames_on_right = extra_frames_config \
+            if leftover_frames_in_secs > extra_frames_in_secs_config \
+            else leftover_frames
+        total_extra_frames = extra_frames_on_left + extra_frames_on_right
+        start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+
 
 class FrameInOutSlider(ClickSlider):
     def __init__(self, get_wheel_skip_n_frames, parent=None):

@@ -68,7 +68,7 @@ class PreviewWindowOutputState:
     # extra_frames_on_left: int = field(default=None)
     # extra_frames_on_right: int = field(default=None)
     cur_total_frames: int = field(default=0)
-    # start_frame: int = field(default=0)
+    start_frame: int = field(default=0)
 
     def as_dict(self):
         return {

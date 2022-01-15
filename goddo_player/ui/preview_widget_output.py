@@ -11,7 +11,7 @@ from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals, PlayCommand
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import num_frames_to_num_millis
+from goddo_player.time_frame_utils import fps_to_num_millis
 
 
 class PreviewWidgetOutput(QWidget):
@@ -72,7 +72,7 @@ class PreviewWidgetOutput(QWidget):
             self.timer.stop()
             self.timer.deleteLater()
             self.timer = QTimer(self)
-            self.timer.setInterval(num_frames_to_num_millis(fps))
+            self.timer.setInterval(fps_to_num_millis(fps))
             self.timer.setTimerType(QtCore.Qt.PreciseTimer)
             self.timer.timeout.connect(self.update_frame_pixmap)
             # self.timer.start()
@@ -85,7 +85,7 @@ class PreviewWidgetOutput(QWidget):
             self.timer.disconnect()
 
     def switch_speed(self):
-        speed = num_frames_to_num_millis(self.preview_window_state.fps) if self.preview_window_state.is_max_speed else 1
+        speed = fps_to_num_millis(self.preview_window_state.fps) if self.preview_window_state.is_max_speed else 1
         logging.info(f'switching speed from {self.timer.interval()} to {speed}')
 
         self.timer.stop()

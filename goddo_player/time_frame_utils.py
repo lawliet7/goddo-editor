@@ -1,7 +1,7 @@
 import time
 
 
-def num_frames_to_num_millis(num_frames):
+def fps_to_num_millis(num_frames):
     return int(round(1000 / num_frames))
 
 

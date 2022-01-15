@@ -18,12 +18,18 @@ from goddo_player.singleton_meta import singleton
 class PreviewWindowState:
     name: str
     video_url: QUrl = None
-    fps = 0
-    total_frames = 0
-    frame_in_out = FrameInOut()
-    current_frame_no = -1
-    is_max_speed = False
-    time_skip_multiplier = 6
+    fps: float = field(default=0)
+    total_frames: int = field(default=0)
+    frame_in_out: FrameInOut = field(default_factory=FrameInOut)
+    current_frame_no: int = field(default=-1)
+    is_max_speed: bool = field(default=False)
+    time_skip_multiplier: int = field(default=1)
+    cur_total_frames: int = field(default=0)
+
+    extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+    # extra_frames_on_left: int = field(default=None)
+    # extra_frames_on_right: int = field(default=None)
+    # start_frame: int = field(default=0)
 
     def as_dict(self):
         return {
@@ -58,11 +64,11 @@ class PreviewWindowOutputState:
     current_frame_no: int = field(default=-1)
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
-    extra_frames_in_secs_config: int = field(default=10)
-    extra_frames_on_left: int = field(default=None)
-    extra_frames_on_right: int = field(default=None)
-    no_of_frames: int = field(default=0)
-    start_frame: int = field(default=0)
+    extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+    # extra_frames_on_left: int = field(default=None)
+    # extra_frames_on_right: int = field(default=None)
+    cur_total_frames: int = field(default=0)
+    # start_frame: int = field(default=0)
 
     def as_dict(self):
         return {

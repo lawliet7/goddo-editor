@@ -85,7 +85,7 @@ class PreviewWindowOutput(QWidget):
 
     def __on_update_pos(self, cur_frame_no: int, _):
         frame_no = cur_frame_no - self.state.preview_window_output.start_frame
-        pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.no_of_frames)
+        pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.cur_total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
@@ -96,11 +96,11 @@ class PreviewWindowOutput(QWidget):
         if self.preview_widget.cap is not None:
             cur_frame_no = self.preview_widget.get_cur_frame_no()
             start_frame = self.state.preview_window_output.start_frame
-            no_of_frames = self.state.preview_window_output.no_of_frames
+            cur_total_frames = self.state.preview_window_output.cur_total_frames
 
             fps = self.state.preview_window_output.fps
             cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
-            total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
+            total_time_str = build_time_str(*frames_to_time_components(cur_total_frames, fps))
             speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
             skip_txt = self.__build_skip_label_txt()
 
@@ -241,10 +241,10 @@ class FrameInOutSlider(ClickSlider):
         # todo: allow the in out frame range to be extended
         frame_in_out = self.state.preview_window_output.frame_in_out
         start_frame = self.state.preview_window_output.start_frame
-        no_of_frames = self.state.preview_window_output.no_of_frames
+        cur_total_frames = self.state.preview_window_output.cur_total_frames
         if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
-            left = int(round((frame_in_out.in_frame - start_frame) / no_of_frames * self.width()))
-            right = int(round((frame_in_out.out_frame - start_frame) / no_of_frames * self.width()))
+            left = int(round((frame_in_out.in_frame - start_frame) / cur_total_frames * self.width()))
+            right = int(round((frame_in_out.out_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(left, 0, right - left, self.height())
             # logging.debug(f'in out {frame_in_out}, total frames {no_of_frames}, rect={rect}')
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))

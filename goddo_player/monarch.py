@@ -68,7 +68,7 @@ class MonarchSystem(QObject):
 
     def __on_preview_window_reset_slot(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
-        
+
 
     def __on_timeline_clip_double_click_slot(self, idx, clip, _):
         self.state.timeline.opened_clip_index = idx
@@ -98,15 +98,15 @@ class MonarchSystem(QObject):
             else leftover_frames
         total_extra_frames = extra_frames_on_left + extra_frames_on_right
         start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
-        no_of_frames = int(round(pw_state.frame_in_out.calc_no_of_frames(pw_state.total_frames) + total_extra_frames))
-        no_of_ticks = int(round(no_of_frames / pw_state.fps * 4))  # 4 ticks per sec of video
+        cur_total_frames = int(round(pw_state.frame_in_out.calc_cur_total_frames(pw_state.total_frames) + total_extra_frames))
+        no_of_ticks = int(round(cur_total_frames / pw_state.fps * 4))  # 4 ticks per sec of video
         self.preview_window_output.slider.setRange(0, no_of_ticks)
 
-        pw_state.no_of_frames = no_of_frames
+        pw_state.cur_total_frames = cur_total_frames
         pw_state.start_frame = start_frame
-        pw_state.extra_frames_on_left = extra_frames_on_left
-        pw_state.extra_frames_on_right = extra_frames_on_right
-        logging.debug(f'no_of_frames={no_of_frames} no_of_ticks={no_of_ticks} '
+        # pw_state.extra_frames_on_left = extra_frames_on_left
+        # pw_state.extra_frames_on_right = extra_frames_on_right
+        logging.debug(f'no_of_frames={cur_total_frames} no_of_ticks={no_of_ticks} '
                       f'max={self.preview_window_output.slider.maximum()}')
         logging.debug(pw_state)
 
@@ -218,6 +218,7 @@ class MonarchSystem(QObject):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.fps = fps
         preview_window_state.total_frames = total_frames
+        preview_window_state.cur_total_frames = total_frames
 
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)

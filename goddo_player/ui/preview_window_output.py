@@ -11,7 +11,7 @@ from goddo_player.click_slider import ClickSlider
 from goddo_player.enums import IncDec
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
+from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, frames_to_secs
 from goddo_player.ui.preview_widget_output import PreviewWidgetOutput
 
 
@@ -220,24 +220,32 @@ class PreviewWindowOutput(QWidget):
     def get_num_of_extra_frames(extra_frames_in_secs_config, fps):
         return int(round(extra_frames_in_secs_config * fps))
 
-    def goddo(self):
-        pw_state = self.state.preview_window_output
+    def get_extra_frames_on_left(self, pw_state):
         extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
         extra_frames_config = self.get_num_of_extra_frames(extra_frames_in_secs_config, pw_state.fps)
-
         in_frame = pw_state.frame_in_out.get_resolved_in_frame()
         in_frame_in_secs = int(round(in_frame / pw_state.fps))
 
-        leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
-        leftover_frames_in_secs = int(round(leftover_frames / pw_state.fps))
-        extra_frames_on_left = extra_frames_config \
+        return extra_frames_config \
             if in_frame_in_secs > extra_frames_in_secs_config \
             else in_frame
-        extra_frames_on_right = extra_frames_config \
+
+    def get_extra_frames_on_right(self, pw_state):
+        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
+        extra_frames_config = self.get_num_of_extra_frames(extra_frames_in_secs_config, pw_state.fps)
+
+        leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
+        leftover_frames_in_secs = frames_to_secs(leftover_frames / pw_state.fps)
+
+        return extra_frames_config \
             if leftover_frames_in_secs > extra_frames_in_secs_config \
             else leftover_frames
-        total_extra_frames = extra_frames_on_left + extra_frames_on_right
-        start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+
+    def get_total_extra_frames(self, pw_state):
+        return self.get_extra_frames_on_left(pw_state) + self.get_extra_frames_on_right(pw_state)
+
+    # def abs_to_relative_frame_no(self, abs_frame_no):
+    #     return pw_state.frame_in_out.get_resolved_in_frame() - self.get_extra_frames_on_left()
 
 
 class FrameInOutSlider(ClickSlider):

@@ -5,6 +5,10 @@ def fps_to_num_millis(num_frames):
     return int(round(1000 / num_frames))
 
 
+def frames_to_secs(no_of_frames, fps):
+    return int(round(no_of_frames / fps))
+
+
 def get_perf_counter_as_millis():
     return int(time.perf_counter() * 1000)
 
@@ -16,12 +20,14 @@ def frames_to_time_components(total_frames, fps):
     hours = int(total_frames / fps / 60 / 60 % 60)
     return hours, mins, secs, frames
 
+
 def frames_to_time_ms_components(total_frames, fps):
     ms = int(total_frames / fps * 1000)
     secs = int(total_frames / fps % 60)
     mins = int(total_frames / fps / 60 % 60)
     hours = int(total_frames / fps / 60 / 60 % 60)
     return hours, mins, secs, ms
+
 
 def ms_to_time_components(ms, fps):
     total_secs = ms / 1000

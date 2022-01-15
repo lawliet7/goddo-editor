@@ -38,7 +38,7 @@ class TimelineWidget(QWidget):
         self.setMouseTracking(True)
 
     def calc_rect_for_clip(self, clip: TimelineClip, x=0):
-        n_frames = clip.frame_in_out.calc_cur_total_frames(clip.total_frames)
+        n_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
         n_mins = n_frames / clip.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
 

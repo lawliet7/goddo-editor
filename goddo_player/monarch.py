@@ -98,7 +98,7 @@ class MonarchSystem(QObject):
             else leftover_frames
         total_extra_frames = extra_frames_on_left + extra_frames_on_right
         start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
-        cur_total_frames = int(round(pw_state.frame_in_out.calc_cur_total_frames(pw_state.total_frames) + total_extra_frames))
+        cur_total_frames = int(round(pw_state.frame_in_out.get_no_of_frames(pw_state.total_frames) + total_extra_frames))
         no_of_ticks = int(round(cur_total_frames / pw_state.fps * 4))  # 4 ticks per sec of video
         self.preview_window_output.slider.setRange(0, no_of_ticks)
 

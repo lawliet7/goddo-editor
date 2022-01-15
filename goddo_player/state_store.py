@@ -26,11 +26,6 @@ class PreviewWindowState:
     time_skip_multiplier: int = field(default=1)
     cur_total_frames: int = field(default=0)
 
-    extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
-    # extra_frames_on_left: int = field(default=None)
-    # extra_frames_on_right: int = field(default=None)
-    # start_frame: int = field(default=0)
-
     def as_dict(self):
         return {
             "video_url": self.video_url.path() if self.video_url is not None else None,
@@ -40,6 +35,7 @@ class PreviewWindowState:
             "current_frame_no": self.current_frame_no,
             "is_max_speed": self.is_max_speed,
             "time_skip_multiplier": self.time_skip_multiplier,
+            "cur_total_frames": self.cur_total_frames,
         }
 
     @staticmethod
@@ -51,46 +47,18 @@ class PreviewWindowState:
         prev_wind_state.current_frame_no = json_dict['current_frame_no']
         prev_wind_state.is_max_speed = json_dict['is_max_speed']
         prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
+        prev_wind_state.cur_total_frames, = json_dict['cur_total_frames']
         return prev_wind_state
 
 
 @dataclass
-class PreviewWindowOutputState:
-    name: str
-    video_url: QUrl = None
-    fps: float = field(default=0)
-    total_frames: int = field(default=0)
-    frame_in_out: FrameInOut = field(default_factory=FrameInOut)
-    current_frame_no: int = field(default=-1)
-    is_max_speed: bool = field(default=False)
-    time_skip_multiplier: int = field(default=1)
+class PreviewWindowOutputFrameCalcState:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
-    # extra_frames_on_left: int = field(default=None)
-    # extra_frames_on_right: int = field(default=None)
+    extra_frames_on_left: int = field(default=None)
+    extra_frames_on_right: int = field(default=None)
     cur_total_frames: int = field(default=0)
-    start_frame: int = field(default=0)
-
-    def as_dict(self):
-        return {
-            "video_url": self.video_url.path() if self.video_url is not None else None,
-            "fps": self.fps,
-            "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out),
-            "current_frame_no": self.current_frame_no,
-            "is_max_speed": self.is_max_speed,
-            "time_skip_multiplier": self.time_skip_multiplier,
-        }
-
-    @staticmethod
-    def from_dict(json_dict):
-        prev_wind_state = PreviewWindowState(json_dict['name'])
-        prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
-        prev_wind_state.fps = json_dict['fps']
-        prev_wind_state.total_frames = json_dict['total_frames']
-        prev_wind_state.current_frame_no = json_dict['current_frame_no']
-        prev_wind_state.is_max_speed = json_dict['is_max_speed']
-        prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
-        return prev_wind_state
+    cur_start_frame: int = field(default=0)
+    cur_end_frame: int = field(default=0)
 
 
 @dataclass
@@ -175,7 +143,8 @@ class StateStore(QObject):
         super().__init__()
 
         self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowOutputState = PreviewWindowOutputState('output')
+        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
+        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
@@ -219,7 +188,8 @@ class StateStore(QObject):
         # todo msg box to select save file
 
         self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowOutputState = PreviewWindowOutputState('output')
+        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
+        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 

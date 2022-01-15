@@ -75,6 +75,7 @@ class MonarchSystem(QObject):
 
         pw_signals = self.signals.preview_window_output
         pw_state = self.state.preview_window_output
+        pw_calc_state = self.state.preview_window_calc_state
 
         pw_signals.switch_video_slot.emit(clip.video_url, False)
 
@@ -84,8 +85,8 @@ class MonarchSystem(QObject):
         if clip.frame_in_out.out_frame is not None:
             pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
 
-        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
-        extra_frames_config = int(round(pw_state.extra_frames_in_secs_config * pw_state.fps))
+        extra_frames_in_secs_config = pw_calc_state.extra_frames_in_secs_config
+        extra_frames_config = int(round(extra_frames_in_secs_config * pw_state.fps))
         in_frame = pw_state.frame_in_out.get_resolved_in_frame()
         in_frame_in_secs = int(round(in_frame / pw_state.fps))
         leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
@@ -98,14 +99,16 @@ class MonarchSystem(QObject):
             else leftover_frames
         total_extra_frames = extra_frames_on_left + extra_frames_on_right
         start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+        end_frame = pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames) + extra_frames_on_right
         cur_total_frames = int(round(pw_state.frame_in_out.get_no_of_frames(pw_state.total_frames) + total_extra_frames))
         no_of_ticks = int(round(cur_total_frames / pw_state.fps * 4))  # 4 ticks per sec of video
         self.preview_window_output.slider.setRange(0, no_of_ticks)
 
         pw_state.cur_total_frames = cur_total_frames
-        pw_state.start_frame = start_frame
-        # pw_state.extra_frames_on_left = extra_frames_on_left
-        # pw_state.extra_frames_on_right = extra_frames_on_right
+        pw_calc_state.cur_start_frame = start_frame
+        pw_calc_state.extra_frames_on_left = extra_frames_on_left
+        pw_calc_state.extra_frames_on_right = extra_frames_on_right
+        pw_calc_state.cur_end_frame = end_frame
         logging.debug(f'no_of_frames={cur_total_frames} no_of_ticks={no_of_ticks} '
                       f'max={self.preview_window_output.slider.maximum()}')
         logging.debug(pw_state)

@@ -120,7 +120,7 @@ class PreviewWidget(QWidget):
         if self.cap:
             to_frame = self.get_cur_frame_no() + num_of_frames_to_advance
             start_frame, end_frame = self.get_start_and_end_frames()
-            logging.info(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
+            logging.debug(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
 
             if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():

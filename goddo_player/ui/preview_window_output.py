@@ -9,10 +9,11 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.enums import IncDec
+from goddo_player.app_constants import WINDOW_NAME_OUTPUT
+from goddo_player.preview_widget import PreviewWidget
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
 from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, frames_to_secs
-from goddo_player.ui.preview_widget_output import PreviewWidgetOutput
 
 
 class PreviewWindowOutput(QWidget):
@@ -46,7 +47,7 @@ class PreviewWindowOutput(QWidget):
         self.label.setText("you suck")
         self.label.setFixedHeight(15)
 
-        self.preview_widget = PreviewWidgetOutput(self.__on_update_pos)
+        self.preview_widget = PreviewWidget(self.__on_update_pos, WINDOW_NAME_OUTPUT)
         vbox = QVBoxLayout()
         vbox.addWidget(self.preview_widget)
         vbox.addWidget(self.slider)

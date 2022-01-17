@@ -7,6 +7,7 @@ from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
+from goddo_player.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals, PlayCommand
@@ -15,14 +16,14 @@ from goddo_player.time_frame_utils import fps_to_num_millis
 
 
 class PreviewWidget(QWidget):
-    def __init__(self, on_update_fn):
+    def __init__(self, on_update_fn, window_name):
         super().__init__()
 
         self.on_update_cb = on_update_fn
         self.state = StateStore()
-        self.preview_window_state = self.state.preview_window
+        self.preview_window_state = self.state.get_preview_window(window_name)
         self.signals = StateStoreSignals()
-        self.preview_window_signals = self.signals.preview_window
+        self.preview_window_signals = self.signals.get_preview_window(window_name)
 
         self.cap = None
 
@@ -33,7 +34,7 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
 
         self.frame_pixmap = None
-        self.restrict_frame_interval = False
+        self.restrict_frame_interval = True if window_name == WINDOW_NAME_OUTPUT else False
 
     def get_cur_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))

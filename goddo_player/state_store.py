@@ -11,6 +11,7 @@ from tinydb.table import Table
 
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.player_configs import PlayerConfigs
+from goddo_player.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.singleton_meta import singleton
 
 
@@ -142,8 +143,8 @@ class StateStore(QObject):
     def __init__(self):
         super().__init__()
 
-        self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
+        self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
+        self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
         self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
@@ -187,8 +188,8 @@ class StateStore(QObject):
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
-        self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowState = PreviewWindowState('output')
+        self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
+        self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
         self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
@@ -216,3 +217,6 @@ class StateStore(QObject):
         logging.info(f'finished loading {url.path()}')
         logging.info(f'preview {self.preview_window}')
         logging.info(f'files {self.file_list}')
+
+    def get_preview_window(self, window_name):
+        return self.preview_window if window_name == self.preview_window.name else self.preview_window_output

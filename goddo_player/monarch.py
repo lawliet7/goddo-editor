@@ -11,7 +11,7 @@ from goddo_player.preview_window import PreviewWindow
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.timeline_window import TimelineWindow
-from goddo_player.ui.preview_window_output import PreviewWindowOutput
+from goddo_player.preview_window_output import PreviewWindowOutput
 
 
 class MonarchSystem(QObject):

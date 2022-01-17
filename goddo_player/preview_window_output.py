@@ -145,7 +145,7 @@ class PreviewWindowOutput(QWidget):
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
-            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
+            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('', 'saves', 'a.json')))
             self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
             self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.TOGGLE)

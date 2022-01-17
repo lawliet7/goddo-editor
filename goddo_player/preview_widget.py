@@ -21,9 +21,8 @@ class PreviewWidget(QWidget):
 
         self.on_update_cb = on_update_fn
         self.state = StateStore()
-        self.preview_window_state = self.state.get_preview_window(window_name)
+        self.window_name = window_name
         self.signals = StateStoreSignals()
-        self.preview_window_signals = self.signals.get_preview_window(window_name)
 
         self.cap = None
 
@@ -60,15 +59,18 @@ class PreviewWidget(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
-        self.preview_window_signals.switch_video_slot.emit(event.mimeData().urls()[0], True)
+        preview_window_signals = self.signals.get_preview_window(self.window_name)
+        preview_window_signals.switch_video_slot.emit(event.mimeData().urls()[0], True)
 
     def switch_video(self, url: 'QUrl'):
+        preview_window_signals = self.signals.get_preview_window(self.window_name)
+
         if not url.isEmpty():
             self.cap = cv2.VideoCapture(url.path())
 
             fps = self.cap.get(cv2.CAP_PROP_FPS)
             total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.preview_window_signals.update_file_details_slot.emit(fps, total_frames)
+            preview_window_signals.update_file_details_slot.emit(fps, total_frames)
 
             self.timer.stop()
             self.timer.deleteLater()
@@ -79,14 +81,15 @@ class PreviewWidget(QWidget):
             # self.timer.start()
         else:
             self.cap = None
-            self.preview_window_signals.update_file_details_slot.emit(0, 0)
+            preview_window_signals.update_file_details_slot.emit(0, 0)
             self.frame_pixmap = None
 
             self.timer.stop()
             self.timer.disconnect()
 
     def switch_speed(self):
-        speed = fps_to_num_millis(self.preview_window_state.fps) if self.preview_window_state.is_max_speed else 1
+        preview_window_state = self.state.get_preview_window(self.window_name)
+        speed = fps_to_num_millis(preview_window_state.fps) if preview_window_state.is_max_speed else 1
         logging.info(f'switching speed from {self.timer.interval()} to {speed}')
 
         self.timer.stop()
@@ -99,28 +102,40 @@ class PreviewWidget(QWidget):
 
         return speed
 
+    def get_start_and_end_frames(self):
+        preview_window_state = self.state.get_preview_window(self.window_name)
+        total_frames = preview_window_state.total_frames
+        in_frame = preview_window_state.frame_in_out.get_resolved_in_frame()
+        out_frame = preview_window_state.frame_in_out.get_resolved_out_frame(total_frames)
+
+        if self.restrict_frame_interval:
+            return in_frame, out_frame
+        elif self.window_name == WINDOW_NAME_OUTPUT:
+            calc_state = self.state.preview_window_calc_state
+            return calc_state.cur_start_frame, calc_state.cur_end_frame
+        else:
+            return 0, total_frames
+
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:
-            total_frames = self.state.preview_window_output.total_frames
-            out_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(total_frames)
-            in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
             to_frame = self.get_cur_frame_no() + num_of_frames_to_advance
+            start_frame, end_frame = self.get_start_and_end_frames()
+            logging.info(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
 
             if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
-            elif self.restrict_frame_interval and (to_frame < in_frame or to_frame > out_frame):
+            elif to_frame < start_frame or to_frame > end_frame:
                 self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
             elif 0 < num_of_frames_to_advance <= 10:
                 logging.debug(f'num frames {num_of_frames_to_advance}')
-                if self.get_cur_frame_no() < self.state.preview_window.total_frames:
-                    frame = None
-                    for i in range(num_of_frames_to_advance):
-                        logging.debug('advancing frame')
-                        frame = self.get_next_frame()
-                    scaled_frame = cv2.resize(frame, (self.width(), self.height()),
-                                              interpolation=cv2.INTER_AREA)
-                    self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+                frame = None
+                for i in range(num_of_frames_to_advance):
+                    logging.debug('advancing frame')
+                    frame = self.get_next_frame()
+                scaled_frame = cv2.resize(frame, (self.width(), self.height()),
+                                          interpolation=cv2.INTER_AREA)
+                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
             else:
                 target_frame_no = max(self.get_cur_frame_no() + num_of_frames_to_advance - 1, 0)
                 scaled_frame = cv2.resize(self.get_next_frame(target_frame_no), (self.width(), self.height()),

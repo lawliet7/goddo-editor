@@ -31,6 +31,9 @@ class PreviewWindowSignals(QObject):
     update_skip_slot = pyqtSignal(IncDec)
     reset_slot = pyqtSignal()
 
+    def __repr__(self):
+        return f"PreviewWindowSignals(objectName={self.objectName()})"
+
 
 @singleton
 class StateStoreSignals(QObject):

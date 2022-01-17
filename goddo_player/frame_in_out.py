@@ -24,7 +24,7 @@ class FrameInOut:
         in_frame = None if self.in_frame and out_frame and self.in_frame > out_frame else self.in_frame
         return FrameInOut(in_frame, out_frame)
 
-    def calc_no_of_frames(self, total_frames):
+    def get_no_of_frames(self, total_frames):
         if self.out_frame and self.in_frame:
             return self.out_frame - self.in_frame
         elif self.in_frame:

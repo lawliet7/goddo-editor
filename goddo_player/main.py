@@ -26,6 +26,9 @@ def main():
     args = parser.parse_args()
     print(args)
 
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
     log_level = convert_to_log_level(args.log_level) or logging.INFO
     logging.basicConfig(format='%(asctime)s - [%(threadName)s] - %(levelname)s - %(module)s.%(funcName)s - %(message)s',
                         level=log_level)

@@ -11,45 +11,12 @@ from tinydb.table import Table
 
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.player_configs import PlayerConfigs
+from goddo_player.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.singleton_meta import singleton
 
 
 @dataclass
 class PreviewWindowState:
-    name: str
-    video_url: QUrl = None
-    fps = 0
-    total_frames = 0
-    frame_in_out = FrameInOut()
-    current_frame_no = -1
-    is_max_speed = False
-    time_skip_multiplier = 6
-
-    def as_dict(self):
-        return {
-            "video_url": self.video_url.path() if self.video_url is not None else None,
-            "fps": self.fps,
-            "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out),
-            "current_frame_no": self.current_frame_no,
-            "is_max_speed": self.is_max_speed,
-            "time_skip_multiplier": self.time_skip_multiplier,
-        }
-
-    @staticmethod
-    def from_dict(json_dict):
-        prev_wind_state = PreviewWindowState(json_dict['name'])
-        prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
-        prev_wind_state.fps = json_dict['fps']
-        prev_wind_state.total_frames = json_dict['total_frames']
-        prev_wind_state.current_frame_no = json_dict['current_frame_no']
-        prev_wind_state.is_max_speed = json_dict['is_max_speed']
-        prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
-        return prev_wind_state
-
-
-@dataclass
-class PreviewWindowOutputState:
     name: str
     video_url: QUrl = None
     fps: float = field(default=0)
@@ -58,11 +25,7 @@ class PreviewWindowOutputState:
     current_frame_no: int = field(default=-1)
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
-    extra_frames_in_secs_config: int = field(default=10)
-    extra_frames_on_left: int = field(default=None)
-    extra_frames_on_right: int = field(default=None)
-    no_of_frames: int = field(default=0)
-    start_frame: int = field(default=0)
+    cur_total_frames: int = field(default=0)
 
     def as_dict(self):
         return {
@@ -73,6 +36,7 @@ class PreviewWindowOutputState:
             "current_frame_no": self.current_frame_no,
             "is_max_speed": self.is_max_speed,
             "time_skip_multiplier": self.time_skip_multiplier,
+            "cur_total_frames": self.cur_total_frames,
         }
 
     @staticmethod
@@ -84,7 +48,18 @@ class PreviewWindowOutputState:
         prev_wind_state.current_frame_no = json_dict['current_frame_no']
         prev_wind_state.is_max_speed = json_dict['is_max_speed']
         prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
+        prev_wind_state.cur_total_frames, = json_dict['cur_total_frames']
         return prev_wind_state
+
+
+@dataclass
+class PreviewWindowOutputFrameCalcState:
+    extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+    extra_frames_on_left: int = field(default=None)
+    extra_frames_on_right: int = field(default=None)
+    cur_total_frames: int = field(default=0)
+    cur_start_frame: int = field(default=0)
+    cur_end_frame: int = field(default=0)
 
 
 @dataclass
@@ -112,9 +87,9 @@ class FileListState:
         return item
 
     def add_file_item(self, item: FileListStateItem):
-        print(f'before adding {self.files}')
+        logging.debug(f'before adding {self.files}')
         self.files.append(item)
-        print(f'after adding {self.files}')
+        logging.debug(f'after adding {self.files}')
 
 
 @dataclass(frozen=True)
@@ -168,8 +143,9 @@ class StateStore(QObject):
     def __init__(self):
         super().__init__()
 
-        self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowOutputState = PreviewWindowOutputState('output')
+        self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
+        self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
+        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
@@ -184,8 +160,8 @@ class StateStore(QObject):
         if is_existing_file:
             shutil.copy(save_file_name, tmp_save_file_name)
 
-        logging.info(f'preview {self.preview_window}')
-        logging.info(f'files {self.file_list}')
+        logging.debug(f'preview {self.preview_window}')
+        logging.debug(f'files {self.file_list}')
 
         with TinyDB(save_file_name) as db:
             table_preview_windows: Table = db.table('preview_windows')
@@ -212,8 +188,9 @@ class StateStore(QObject):
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
-        self.preview_window: PreviewWindowState = PreviewWindowState('source')
-        self.preview_window_output: PreviewWindowOutputState = PreviewWindowOutputState('output')
+        self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
+        self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
+        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
@@ -240,3 +217,6 @@ class StateStore(QObject):
         logging.info(f'finished loading {url.path()}')
         logging.info(f'preview {self.preview_window}')
         logging.info(f'files {self.file_list}')
+
+    def get_preview_window(self, window_name):
+        return self.preview_window if window_name == self.preview_window.name else self.preview_window_output

@@ -1,0 +1,3 @@
+
+WINDOW_NAME_SOURCE = 'source'
+WINDOW_NAME_OUTPUT = 'output'

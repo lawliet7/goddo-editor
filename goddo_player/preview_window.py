@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.enums import IncDec
+from goddo_player.app_constants import WINDOW_NAME_SOURCE
 from goddo_player.preview_widget import PreviewWidget
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
@@ -45,7 +46,7 @@ class PreviewWindow(QWidget):
         self.label.setText("you suck")
         self.label.setFixedHeight(15)
 
-        self.preview_widget = PreviewWidget(self.__on_update_pos)
+        self.preview_widget = PreviewWidget(self.__on_update_pos, WINDOW_NAME_SOURCE)
         vbox = QVBoxLayout()
         vbox.addWidget(self.preview_widget)
         vbox.addWidget(self.slider)
@@ -240,8 +241,8 @@ class FrameInOutSlider(ClickSlider):
         painter.end()
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        logging.info('wheel event')
-        # super().wheelEvent(e)
+        logging.debug('wheel event')
+
         if event.angleDelta().y() > 0:
             frame_diff = self.get_wheel_skip_time() * -1
         else:

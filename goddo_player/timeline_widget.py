@@ -6,9 +6,8 @@ from PyQt5.QtCore import Qt, QRect, QPoint
 from PyQt5.QtGui import QPainter, QColor, QMouseEvent, QBrush
 from PyQt5.QtWidgets import QWidget, QToolTip
 
-from goddo_player.enums import PositionType
 from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals, PlayCommand
+from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
 from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
@@ -38,7 +37,7 @@ class TimelineWidget(QWidget):
         self.setMouseTracking(True)
 
     def calc_rect_for_clip(self, clip: TimelineClip, x=0):
-        n_frames = clip.frame_in_out.calc_no_of_frames(clip.total_frames)
+        n_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
         n_mins = n_frames / clip.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
 
@@ -61,8 +60,6 @@ class TimelineWidget(QWidget):
         self.height_of_line = painter.fontMetrics().height() + 5
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        # super().mouseDoubleClickEvent(event)
-
         for i, t in enumerate(self.clip_rects):
             clip, rect = t
             if rect.contains(event.pos()):
@@ -70,7 +67,9 @@ class TimelineWidget(QWidget):
 
                 self.signals.timeline_clip_double_click_slot.emit(i, clip, rect)
 
-                break
+                return
+
+        self.signals.timeline_clip_double_click_slot.emit(-1, clip, rect)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)
@@ -152,7 +151,7 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_url.fileName()
-            print(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
+            logging.debug(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')

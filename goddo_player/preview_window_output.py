@@ -9,10 +9,11 @@ from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.click_slider import ClickSlider
 from goddo_player.enums import IncDec
+from goddo_player.app_constants import WINDOW_NAME_OUTPUT
+from goddo_player.preview_widget import PreviewWidget
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
-from goddo_player.ui.preview_widget_output import PreviewWidgetOutput
+from goddo_player.time_frame_utils import build_time_str, frames_to_time_components, frames_to_secs
 
 
 class PreviewWindowOutput(QWidget):
@@ -35,6 +36,7 @@ class PreviewWindowOutput(QWidget):
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
         self.slider.setFixedHeight(20)
+        self.slider.setDisabled(True)
 
         # p = self.palette()
         # p.setColor(self.backgroundRole(), Qt.black)
@@ -45,7 +47,7 @@ class PreviewWindowOutput(QWidget):
         self.label.setText("you suck")
         self.label.setFixedHeight(15)
 
-        self.preview_widget = PreviewWidgetOutput(self.__on_update_pos)
+        self.preview_widget = PreviewWidget(self.__on_update_pos, WINDOW_NAME_OUTPUT)
         vbox = QVBoxLayout()
         vbox.addWidget(self.preview_widget)
         vbox.addWidget(self.slider)
@@ -71,19 +73,20 @@ class PreviewWindowOutput(QWidget):
         self.preview_widget.update_frame_pixmap(0)
 
     def go_to_frame(self, frame_no: int, pos_type: PositionType):
-        if pos_type is PositionType.ABSOLUTE:
-            target_frame_no = frame_no - 1
-        else:
-            target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
-        target_frame_no = min(max(0, target_frame_no), self.state.preview_window_output.total_frames - 1)
+        if self.preview_widget.cap:
+            if pos_type is PositionType.ABSOLUTE:
+                target_frame_no = frame_no - 1
+            else:
+                target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
+            target_frame_no = min(max(0, target_frame_no), self.state.preview_window_output.total_frames - 1)
 
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
-        self.preview_widget.update_frame_pixmap(1)
-        self.update()
+            self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
+            self.preview_widget.update_frame_pixmap(1)
+            self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
-        frame_no = cur_frame_no - self.state.preview_window_output.start_frame
-        pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.no_of_frames)
+        frame_no = cur_frame_no - self.state.preview_window_calc_state.cur_start_frame
+        pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.cur_total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
         self.slider.blockSignals(False)
@@ -91,18 +94,21 @@ class PreviewWindowOutput(QWidget):
         self.update()
 
     def update_label_text(self):
-        cur_frame_no = self.preview_widget.get_cur_frame_no()
-        start_frame = self.state.preview_window_output.start_frame
-        no_of_frames = self.state.preview_window_output.no_of_frames
+        if self.preview_widget.cap is not None:
+            cur_frame_no = self.preview_widget.get_cur_frame_no()
+            start_frame = self.state.preview_window_calc_state.cur_start_frame
+            cur_total_frames = self.state.preview_window_output.cur_total_frames
 
-        fps = self.state.preview_window_output.fps
-        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
-        total_time_str = build_time_str(*frames_to_time_components(no_of_frames, fps))
-        speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
-        skip_txt = self.__build_skip_label_txt()
+            fps = self.state.preview_window_output.fps
+            cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
+            total_time_str = build_time_str(*frames_to_time_components(cur_total_frames, fps))
+            speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
+            skip_txt = self.__build_skip_label_txt()
 
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
-                           f'  restrict={self.preview_widget.restrict_frame_interval}')
+            self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
+                               f'  restrict={self.preview_widget.restrict_frame_interval}')
+        else:
+            self.label.setText("you suck")
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window_output.time_skip_multiplier * 5 % 60
@@ -124,6 +130,14 @@ class PreviewWindowOutput(QWidget):
         clip_idx = self.state.timeline.opened_clip_index + 1
         self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
 
+        if url.isEmpty():
+            self.slider.blockSignals(True)
+            self.slider.setValue(0)
+            self.slider.blockSignals(False)
+            self.slider.setDisabled(True)
+        else:
+            self.slider.setDisabled(False)
+
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)
 
@@ -131,7 +145,7 @@ class PreviewWindowOutput(QWidget):
         if event.key() == Qt.Key_Escape:
             QApplication.exit(0)
         elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
-            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
+            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('', 'saves', 'a.json')))
             self.signals.save_slot.emit(url)
         elif event.key() == Qt.Key_Space:
             self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.TOGGLE)
@@ -203,6 +217,37 @@ class PreviewWindowOutput(QWidget):
         else:
             return False
 
+    @staticmethod
+    def get_num_of_extra_frames(extra_frames_in_secs_config, fps):
+        return int(round(extra_frames_in_secs_config * fps))
+
+    def get_extra_frames_on_left(self, pw_state):
+        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
+        extra_frames_config = self.get_num_of_extra_frames(extra_frames_in_secs_config, pw_state.fps)
+        in_frame = pw_state.frame_in_out.get_resolved_in_frame()
+        in_frame_in_secs = int(round(in_frame / pw_state.fps))
+
+        return extra_frames_config \
+            if in_frame_in_secs > extra_frames_in_secs_config \
+            else in_frame
+
+    def get_extra_frames_on_right(self, pw_state):
+        extra_frames_in_secs_config = pw_state.extra_frames_in_secs_config
+        extra_frames_config = self.get_num_of_extra_frames(extra_frames_in_secs_config, pw_state.fps)
+
+        leftover_frames = pw_state.total_frames - pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames)
+        leftover_frames_in_secs = frames_to_secs(leftover_frames / pw_state.fps)
+
+        return extra_frames_config \
+            if leftover_frames_in_secs > extra_frames_in_secs_config \
+            else leftover_frames
+
+    def get_total_extra_frames(self, pw_state):
+        return self.get_extra_frames_on_left(pw_state) + self.get_extra_frames_on_right(pw_state)
+
+    # def abs_to_relative_frame_no(self, abs_frame_no):
+    #     return pw_state.frame_in_out.get_resolved_in_frame() - self.get_extra_frames_on_left()
+
 
 class FrameInOutSlider(ClickSlider):
     def __init__(self, get_wheel_skip_n_frames, parent=None):
@@ -227,11 +272,11 @@ class FrameInOutSlider(ClickSlider):
 
         # todo: allow the in out frame range to be extended
         frame_in_out = self.state.preview_window_output.frame_in_out
-        start_frame = self.state.preview_window_output.start_frame
-        no_of_frames = self.state.preview_window_output.no_of_frames
+        start_frame = self.state.preview_window_calc_state.cur_start_frame
+        cur_total_frames = self.state.preview_window_output.cur_total_frames
         if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
-            left = int(round((frame_in_out.in_frame - start_frame) / no_of_frames * self.width()))
-            right = int(round((frame_in_out.out_frame - start_frame) / no_of_frames * self.width()))
+            left = int(round((frame_in_out.in_frame - start_frame) / cur_total_frames * self.width()))
+            right = int(round((frame_in_out.out_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(left, 0, right - left, self.height())
             # logging.debug(f'in out {frame_in_out}, total frames {no_of_frames}, rect={rect}')
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))

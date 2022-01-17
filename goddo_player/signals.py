@@ -3,6 +3,7 @@ from enum import Enum, auto, unique
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
 from goddo_player.enums import PositionType, IncDec
+from goddo_player.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.singleton_meta import singleton
 from goddo_player.state_store import TimelineClip
 
@@ -28,12 +29,16 @@ class PreviewWindowSignals(QObject):
     seek_slot = pyqtSignal(int, PositionType)
     update_file_details_slot = pyqtSignal(float, int)
     update_skip_slot = pyqtSignal(IncDec)
+    reset_slot = pyqtSignal()
+
+    def __repr__(self):
+        return f"PreviewWindowSignals(objectName={self.objectName()})"
 
 
 @singleton
 class StateStoreSignals(QObject):
-    preview_window = PreviewWindowSignals('source')
-    preview_window_output = PreviewWindowSignals('output')
+    preview_window = PreviewWindowSignals(WINDOW_NAME_SOURCE)
+    preview_window_output = PreviewWindowSignals(WINDOW_NAME_OUTPUT)
     add_timeline_clip_slot = pyqtSignal(TimelineClip)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
@@ -41,6 +46,9 @@ class StateStoreSignals(QObject):
     timeline_delete_selected_clip_slot = pyqtSignal()
     timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
     timeline_clip_double_click_slot = pyqtSignal(int, TimelineClip, QRect)
+
+    def get_preview_window(self, window_name):
+        return self.preview_window if window_name == WINDOW_NAME_SOURCE else self.preview_window_output
 
 
 

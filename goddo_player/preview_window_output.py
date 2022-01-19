@@ -118,10 +118,15 @@ class PreviewWindowOutput(QWidget):
         return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
-        frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window_output.total_frames))
+        pct = self.slider.slider_value_to_pct(value)
+        cur_total_frames = self.state.preview_window_output.cur_total_frames
+        start_frame = self.state.preview_window_calc_state.cur_start_frame
+        frame_no = int(round(pct * cur_total_frames)) + start_frame
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window_output.total_frames}')
-        self.signals.preview_window_output.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
+        frame_in_out = self.state.preview_window_output.frame_in_out
+        if frame_in_out.contains_frame(frame_no):
+            self.signals.preview_window_output.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
     def switch_video(self, url: 'QUrl'):
         self.preview_widget.switch_video(url)

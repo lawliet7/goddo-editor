@@ -125,7 +125,7 @@ class PreviewWindowOutput(QWidget):
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window_output.total_frames}')
         frame_in_out = self.state.preview_window_output.frame_in_out
-        if frame_in_out.contains_frame(frame_no):
+        if not self.preview_widget.restrict_frame_interval or frame_in_out.contains_frame(frame_no):
             self.signals.preview_window_output.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
     def switch_video(self, url: 'QUrl'):

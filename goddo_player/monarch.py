@@ -63,11 +63,16 @@ class MonarchSystem(QObject):
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
-        # self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
-        # self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
+        self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
+        self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
 
-    # def __on_preview_window_reset_slot(self):
-    #     preview_window = self.get_preview_window_from_signal(self.sender())
+    def __on_preview_window_reset_slot(self):
+        preview_window = self.get_preview_window_from_signal(self.sender())
+
+        self.sender().switch_video_slot.emit(QUrl(), False)
+
+        self.timeline_window.update()
+        preview_window.update()
 
     def __on_timeline_clip_double_click_slot(self, idx, clip, _):
         self.state.timeline.opened_clip_index = idx
@@ -118,10 +123,7 @@ class MonarchSystem(QObject):
 
             pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
         else:
-            self.signals.preview_window_output.switch_video_slot.emit(QUrl(), False)
-
-            self.timeline_window.update()
-            self.preview_window_output.update()
+            self.signals.preview_window_output.reset_slot.emit()
 
     def __on_timeline_update_width_of_one_min_slot(self, inc_dec: IncDec):
         if inc_dec is IncDec.INC:
@@ -159,10 +161,10 @@ class MonarchSystem(QObject):
 
         if selected_idx == opened_idx:
             self.state.timeline.opened_clip_index = -1
-            self.signals.preview_window_output.switch_video_slot.emit(QUrl(), False)
-
-        self.timeline_window.update()
-        self.preview_window_output.update()
+            self.signals.preview_window_output.reset_slot.emit()
+        else:
+            self.timeline_window.update()
+            self.preview_window_output.update()
 
     def __on_switch_speed_slot(self):
         preview_window = self.get_preview_window_from_signal(self.sender())

@@ -110,17 +110,14 @@ class PreviewWidget(QWidget):
 
         if self.restrict_frame_interval:
             return in_frame, out_frame
-        elif self.window_name == WINDOW_NAME_OUTPUT:
-            calc_state = self.state.preview_window_calc_state
-            return calc_state.cur_start_frame, calc_state.cur_end_frame
         else:
-            return 0, total_frames
+            return preview_window_state.cur_start_frame, preview_window_state.cur_end_frame
 
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:
             to_frame = self.get_cur_frame_no() + num_of_frames_to_advance
             start_frame, end_frame = self.get_start_and_end_frames()
-            logging.info(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
+            logging.debug(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
 
             if num_of_frames_to_advance == 0 and self.frame_pixmap:
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():

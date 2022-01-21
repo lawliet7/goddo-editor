@@ -26,6 +26,8 @@ class PreviewWindowState:
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
     cur_total_frames: int = field(default=0)
+    cur_start_frame: int = field(default=0)
+    cur_end_frame: int = field(default=0)
 
     def as_dict(self):
         return {
@@ -37,6 +39,8 @@ class PreviewWindowState:
             "is_max_speed": self.is_max_speed,
             "time_skip_multiplier": self.time_skip_multiplier,
             "cur_total_frames": self.cur_total_frames,
+            "cur_start_frame": self.cur_start_frame,
+            "cur_end_frame": self.cur_end_frame,
         }
 
     @staticmethod
@@ -48,18 +52,15 @@ class PreviewWindowState:
         prev_wind_state.current_frame_no = json_dict['current_frame_no']
         prev_wind_state.is_max_speed = json_dict['is_max_speed']
         prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
-        prev_wind_state.cur_total_frames, = json_dict['cur_total_frames']
+        prev_wind_state.cur_total_frames = json_dict['cur_total_frames']
+        prev_wind_state.cur_start_frame = json_dict['cur_start_frame']
+        prev_wind_state.cur_end_frame = json_dict['cur_end_frame']
         return prev_wind_state
 
 
 @dataclass
-class PreviewWindowOutputFrameCalcState:
+class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
-    extra_frames_on_left: int = field(default=None)
-    extra_frames_on_right: int = field(default=None)
-    cur_total_frames: int = field(default=0)
-    cur_start_frame: int = field(default=0)
-    cur_end_frame: int = field(default=0)
 
 
 @dataclass
@@ -145,7 +146,7 @@ class StateStore(QObject):
 
         self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
         self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
-        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
+        self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
@@ -190,7 +191,7 @@ class StateStore(QObject):
 
         self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
         self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
-        self.preview_window_calc_state: PreviewWindowOutputFrameCalcState = PreviewWindowOutputFrameCalcState()
+        self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.timeline = TimelineState()
 

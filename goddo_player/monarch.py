@@ -42,8 +42,8 @@ class MonarchSystem(QObject):
         self.signals: StateStoreSignals = StateStoreSignals()
         self.signals.preview_window.switch_video_slot.connect(self.__on_update_preview_file)
         self.signals.preview_window_output.switch_video_slot.connect(self.__on_update_preview_file)
-        self.signals.preview_window.update_file_details_slot.connect(self.__on_update_preview_file_details)
-        self.signals.preview_window_output.update_file_details_slot.connect(self.__on_update_preview_file_details)
+        self.signals.preview_window.update_file_details_slot.connect(self.__on_update_file_details)
+        self.signals.preview_window_output.update_file_details_slot.connect(self.__on_update_file_details)
         self.signals.add_file_slot.connect(self.__on_add_file)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
@@ -63,19 +63,17 @@ class MonarchSystem(QObject):
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
-        self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
-        self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
+        # self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
+        # self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
 
-    def __on_preview_window_reset_slot(self):
-        preview_window = self.get_preview_window_from_signal(self.sender())
-
+    # def __on_preview_window_reset_slot(self):
+    #     preview_window = self.get_preview_window_from_signal(self.sender())
 
     def __on_timeline_clip_double_click_slot(self, idx, clip, _):
         self.state.timeline.opened_clip_index = idx
 
         pw_signals = self.signals.preview_window_output
         pw_state = self.state.preview_window_output
-        pw_calc_state = self.state.preview_window_calc_state
 
         pw_signals.switch_video_slot.emit(clip.video_url, False)
 
@@ -85,7 +83,7 @@ class MonarchSystem(QObject):
         if clip.frame_in_out.out_frame is not None:
             pw_signals.out_frame_slot.emit(clip.frame_in_out.out_frame)
 
-        extra_frames_in_secs_config = pw_calc_state.extra_frames_in_secs_config
+        extra_frames_in_secs_config = self.state.app_config.extra_frames_in_secs_config
         extra_frames_config = int(round(extra_frames_in_secs_config * pw_state.fps))
         in_frame = pw_state.frame_in_out.get_resolved_in_frame()
         in_frame_in_secs = int(round(in_frame / pw_state.fps))
@@ -100,15 +98,13 @@ class MonarchSystem(QObject):
         total_extra_frames = extra_frames_on_left + extra_frames_on_right
         start_frame = pw_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
         end_frame = pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames) + extra_frames_on_right
-        cur_total_frames = int(round(pw_state.frame_in_out.get_no_of_frames(pw_state.total_frames) + total_extra_frames))
+        cur_total_frames = pw_state.frame_in_out.get_no_of_frames(pw_state.total_frames) + total_extra_frames
         no_of_ticks = int(round(cur_total_frames / pw_state.fps * 4))  # 4 ticks per sec of video
         self.preview_window_output.slider.setRange(0, no_of_ticks)
 
         pw_state.cur_total_frames = cur_total_frames
-        pw_calc_state.cur_start_frame = start_frame
-        pw_calc_state.extra_frames_on_left = extra_frames_on_left
-        pw_calc_state.extra_frames_on_right = extra_frames_on_right
-        pw_calc_state.cur_end_frame = end_frame
+        pw_state.cur_start_frame = start_frame
+        pw_state.cur_end_frame = end_frame
         logging.debug(f'no_of_frames={cur_total_frames} no_of_ticks={no_of_ticks} '
                       f'max={self.preview_window_output.slider.maximum()}')
         logging.debug(pw_state)
@@ -217,11 +213,13 @@ class MonarchSystem(QObject):
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
         preview_window.activateWindow()
 
-    def __on_update_preview_file_details(self, fps: float, total_frames: int):
+    def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.fps = fps
         preview_window_state.total_frames = total_frames
         preview_window_state.cur_total_frames = total_frames
+        preview_window_state.cur_start_frame = 0
+        preview_window_state.cur_end_frame = total_frames
 
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)

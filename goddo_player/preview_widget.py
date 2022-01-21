@@ -110,11 +110,8 @@ class PreviewWidget(QWidget):
 
         if self.restrict_frame_interval:
             return in_frame, out_frame
-        elif self.window_name == WINDOW_NAME_OUTPUT:
-            calc_state = self.state.preview_window_calc_state
-            return calc_state.cur_start_frame, calc_state.cur_end_frame
         else:
-            return 0, total_frames
+            return preview_window_state.cur_start_frame, preview_window_state.cur_end_frame
 
     def update_frame_pixmap(self, num_of_frames_to_advance=1):
         if self.cap:

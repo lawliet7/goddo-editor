@@ -85,7 +85,7 @@ class PreviewWindowOutput(QWidget):
             self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
-        frame_no = cur_frame_no - self.state.preview_window_calc_state.cur_start_frame
+        frame_no = cur_frame_no - self.state.preview_window_output.cur_start_frame
         pos = self.slider.pct_to_slider_value(frame_no / self.state.preview_window_output.cur_total_frames)
         self.slider.blockSignals(True)
         self.slider.setValue(pos)
@@ -96,7 +96,7 @@ class PreviewWindowOutput(QWidget):
     def update_label_text(self):
         if self.preview_widget.cap is not None:
             cur_frame_no = self.preview_widget.get_cur_frame_no()
-            start_frame = self.state.preview_window_calc_state.cur_start_frame
+            start_frame = self.state.preview_window_output.cur_start_frame
             cur_total_frames = self.state.preview_window_output.cur_total_frames
 
             fps = self.state.preview_window_output.fps
@@ -120,7 +120,7 @@ class PreviewWindowOutput(QWidget):
     def on_value_changed(self, value):
         pct = self.slider.slider_value_to_pct(value)
         cur_total_frames = self.state.preview_window_output.cur_total_frames
-        start_frame = self.state.preview_window_calc_state.cur_start_frame
+        start_frame = self.state.preview_window_output.cur_start_frame
         frame_no = int(round(pct * cur_total_frames)) + start_frame
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window_output.total_frames}')
@@ -277,7 +277,7 @@ class FrameInOutSlider(ClickSlider):
 
         # todo: allow the in out frame range to be extended
         frame_in_out = self.state.preview_window_output.frame_in_out
-        start_frame = self.state.preview_window_calc_state.cur_start_frame
+        start_frame = self.state.preview_window_output.cur_start_frame
         cur_total_frames = self.state.preview_window_output.cur_total_frames
         if frame_in_out.in_frame is not None and frame_in_out.out_frame is not None:
             left = int(round((frame_in_out.in_frame - start_frame) / cur_total_frames * self.width()))

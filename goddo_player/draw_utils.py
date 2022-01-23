@@ -40,7 +40,7 @@ def draw_polygon_points(painter: QPainter, points: List[QPoint], brush=None, pen
     painter.drawPolygon(polygon)
 
 
-def draw_polygon_tuple(painter: QPainter, points: List[Tuple[int,int]], brush=None, pen=None):
+def draw_polygon_tuple(painter: QPainter, points: List[Tuple[int, int]], brush=None, pen=None):
     draw_polygon_points(painter, [QPoint(t[0], t[1]) for t in points], brush=brush, pen=pen)
 
 
@@ -61,7 +61,7 @@ def paint_helper(paint_device: QPaintDevice, fn: Callable[[QPainter], None], ant
     painter.end()
 
 
-def draw_circle(painter: QPainter, coor: Tuple[int,int], radius: int, pen=None, brush=None):
+def draw_circle(painter: QPainter, coor: Tuple[int, int], radius: int, pen=None, brush=None):
     if brush:
         painter.setBrush(brush)
 
@@ -78,7 +78,7 @@ def draw_circle(painter: QPainter, rect: QRect, pen=None, brush=None, pct_of_rec
     if pen:
         painter.setPen(pen)
 
-    radius = convert_to_int(min(rect.height(),rect.width()) * pct_of_rect)
+    radius = convert_to_int(min(rect.height(), rect.width()) * pct_of_rect)
     x = convert_to_int(rect.width() / 2 + rect.x() - radius / 2)
     y = convert_to_int(rect.height() / 2 + rect.y() - radius / 2)
     painter.drawEllipse(x, y, radius, radius)

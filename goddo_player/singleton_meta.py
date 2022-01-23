@@ -10,6 +10,7 @@ import functools
 #             raise Exception('you blew it')
 #         return cls._instances[cls]
 
+
 def singleton(class_):
     instances = {}
 

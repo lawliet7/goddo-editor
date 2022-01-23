@@ -36,7 +36,7 @@ def main():
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon('icon.jpg'))
 
-    monarch = MonarchSystem(app)
+    _ = MonarchSystem(app)
 
     local_save_path = os.path.abspath(os.path.join('..', 'saves', 'a.json'))
     if pathlib.Path(local_save_path).resolve().exists():

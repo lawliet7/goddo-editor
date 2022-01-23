@@ -154,7 +154,7 @@ class FileList(QWidget):
         super().__init__()
         title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
 
-        self.setGeometry(500, title_bar_height, 500, 1000)
+        self.setGeometry(0, title_bar_height, 500, 1000)
         self.setWindowTitle('中毒美女捜査官')
         self.state_signals: StateStoreSignals = StateStoreSignals()
 

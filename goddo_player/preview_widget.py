@@ -154,8 +154,6 @@ class PreviewWidget(QWidget):
         brush = painter.brush()
 
         if self.frame_pixmap:
-            # scaled_frame = cv2.resize(self.get_next_frame(), (self.width(), self.height()), interpolation=cv2.INTER_AREA)
-            # pixmap = numpy_to_pixmap(scaled_frame)
             painter.drawPixmap(0, 0, self.frame_pixmap)
         else:
             painter.fillRect(QRect(0, 0, self.geometry().width(), self.geometry().height()), Qt.black)

@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.enums import IncDec
-from goddo_player.file_list import FileList
+from goddo_player.file_list_window import FileList
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.preview_window import PreviewWindow
@@ -24,7 +24,7 @@ class MonarchSystem(QObject):
         self.file_list = FileList()
         self.file_list.show()
 
-        left = self.file_list.geometry().left() + 50
+        left = self.file_list.geometry().right()
         top = self.file_list.geometry().top() + 20
 
         self.preview_window = PreviewWindow()

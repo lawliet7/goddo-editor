@@ -4,8 +4,7 @@ from typing import List, Tuple, Callable
 from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QImage, QPixmap, QPen, QPainter, QPolygonF, QPaintDevice, QBrush, QColor
 
-from goddo_player.number_utils import convert_to_int
-from theme import Theme
+from goddo_player.utils.number_utils import convert_to_int
 
 
 def numpy_to_qimage(numpy):

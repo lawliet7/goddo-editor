@@ -8,11 +8,11 @@ from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app_constants import WINDOW_NAME_OUTPUT
-from goddo_player.draw_utils import numpy_to_pixmap
+from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals, PlayCommand
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import fps_to_num_millis
+from goddo_player.utils.time_frame_utils import fps_to_num_millis
 
 
 class PreviewWidget(QWidget):

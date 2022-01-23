@@ -13,7 +13,7 @@ from goddo_player.app_constants import WINDOW_NAME_SOURCE
 from goddo_player.preview_widget import PreviewWidget
 from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.state_store import StateStore
-from goddo_player.time_frame_utils import build_time_str, frames_to_time_components
+from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 
 
 class PreviewWindow(QWidget):

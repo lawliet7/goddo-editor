@@ -10,9 +10,9 @@ from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QStyle)
 
-from goddo_player.draw_utils import numpy_to_pixmap
+from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.flow import FlowLayout
-from goddo_player.message_box_utils import show_error_box
+from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 

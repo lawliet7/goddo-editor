@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QToolTip
 from goddo_player.player_configs import PlayerConfigs
 from goddo_player.signals import StateStoreSignals
 from goddo_player.state_store import StateStore, TimelineClip
-from goddo_player.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
+from goddo_player.utils.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
 
 

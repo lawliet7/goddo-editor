@@ -11,10 +11,10 @@ from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QL
                              QScrollArea, QStyle)
 
 from goddo_player.utils.draw_utils import numpy_to_pixmap
-from goddo_player.flow import FlowLayout
+from goddo_player.widgets.flow import FlowLayout
 from goddo_player.utils.message_box_utils import show_error_box
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.signals import StateStoreSignals
 
 
 class ClipItemWidget(QWidget):

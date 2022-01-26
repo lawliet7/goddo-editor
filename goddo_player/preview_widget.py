@@ -7,11 +7,11 @@ from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
-from goddo_player.app_constants import WINDOW_NAME_OUTPUT
+from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.utils.draw_utils import numpy_to_pixmap
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals, PlayCommand
-from goddo_player.state_store import StateStore
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.signals import StateStoreSignals, PlayCommand
+from goddo_player.app.state_store import StateStore
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
 
 

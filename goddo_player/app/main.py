@@ -8,8 +8,8 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.monarch import MonarchSystem
-from goddo_player.signals import StateStoreSignals
+from goddo_player.app.monarch import MonarchSystem
+from goddo_player.app.signals import StateStoreSignals
 
 
 def convert_to_log_level(log_level_str: str):

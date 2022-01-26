@@ -3,13 +3,13 @@ import logging
 from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.enums import IncDec
+from goddo_player.utils.enums import IncDec
 from goddo_player.file_list_window import FileList
 from goddo_player.frame_in_out import FrameInOut
-from goddo_player.player_configs import PlayerConfigs
+from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window import PreviewWindow
-from goddo_player.signals import StateStoreSignals, PlayCommand, PositionType
-from goddo_player.state_store import StateStore, TimelineClip
+from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
+from goddo_player.app.state_store import StateStore, TimelineClip
 from goddo_player.timeline_window import TimelineWindow
 from goddo_player.preview_window_output import PreviewWindowOutput
 

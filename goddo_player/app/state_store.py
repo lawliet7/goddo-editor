@@ -10,9 +10,9 @@ from tinydb import TinyDB
 from tinydb.table import Table
 
 from goddo_player.frame_in_out import FrameInOut
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
-from goddo_player.singleton_meta import singleton
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
+from goddo_player.utils.singleton_meta import singleton
 
 
 @dataclass

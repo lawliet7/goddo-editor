@@ -2,10 +2,10 @@ from enum import Enum, auto, unique
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
-from goddo_player.enums import PositionType, IncDec
-from goddo_player.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
-from goddo_player.singleton_meta import singleton
-from goddo_player.state_store import TimelineClip
+from goddo_player.utils.enums import PositionType, IncDec
+from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
+from goddo_player.utils.singleton_meta import singleton
+from goddo_player.app.state_store import TimelineClip
 
 
 @unique

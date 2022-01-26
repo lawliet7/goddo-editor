@@ -8,8 +8,8 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.monarch import MonarchSystem
-from goddo_player.signals import StateStoreSignals
+from goddo_player.app.monarch import MonarchSystem
+from goddo_player.app.signals import StateStoreSignals
 
 
 def convert_to_log_level(log_level_str: str):
@@ -36,7 +36,7 @@ def main():
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon('icon.jpg'))
 
-    monarch = MonarchSystem(app)
+    _ = MonarchSystem(app)
 
     local_save_path = os.path.abspath(os.path.join('..', 'saves', 'a.json'))
     if pathlib.Path(local_save_path).resolve().exists():

@@ -8,10 +8,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.enums import IncDec
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals
-from goddo_player.state_store import StateStore, TimelineClip
+from goddo_player.utils.enums import IncDec
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.signals import StateStoreSignals
+from goddo_player.app.state_store import StateStore, TimelineClip
 from goddo_player.timeline_widget import TimelineWidget
 
 

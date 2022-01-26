@@ -10,11 +10,11 @@ from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QStyle)
 
-from goddo_player.draw_utils import numpy_to_pixmap
-from goddo_player.flow import FlowLayout
-from goddo_player.message_box_utils import show_error_box
-from goddo_player.player_configs import PlayerConfigs
-from goddo_player.signals import StateStoreSignals
+from goddo_player.utils.draw_utils import numpy_to_pixmap
+from goddo_player.widgets.flow import FlowLayout
+from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.signals import StateStoreSignals
 
 
 class ClipItemWidget(QWidget):
@@ -154,7 +154,7 @@ class FileList(QWidget):
         super().__init__()
         title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
 
-        self.setGeometry(500, title_bar_height, 500, 1000)
+        self.setGeometry(0, title_bar_height, 500, 1000)
         self.setWindowTitle('中毒美女捜査官')
         self.state_signals: StateStoreSignals = StateStoreSignals()
 

@@ -148,7 +148,7 @@ class SceenshotThread(QRunnable):
         self.signal.emit(pixmap, self.item)
 
 
-class FileList(QWidget):
+class FileListWindow(QWidget):
     update_screenshot_slot = pyqtSignal(QPixmap, QListWidgetItem)
 
     def __init__(self):

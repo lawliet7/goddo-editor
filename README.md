@@ -37,6 +37,8 @@
   | window |  key | description  |
   | --- | ------------ | ------------ |
   | all | esc  | quit  |
+  | all | ctrl + s  | save  |
+  | all | F2  | show all windows  |
   | preview | space  | play/pause  |
   | preview | i  | mark in  |
   | preview | o  | mark out  |
@@ -51,7 +53,6 @@
   | preview (slider) | mouse wheel up  |  go back 1 min |
   | preview | ->  |  advance 1 frame |
   | preview | <-  |  go back 5 frames |
-  | file | ctrl + s  | save  |
   | timeline | ctrl + p  | process output  |
   
   <h3>Timeline Help</h3>

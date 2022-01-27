@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
 
+from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.utils.enums import IncDec
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
@@ -55,16 +56,16 @@ class TimelineWindow(QMainWindow):
         self.inner_widget.resize_timeline_widget()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Escape:
-            QApplication.exit(0)
-        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
+        common_event_handling(event, self.signals, self.state)
+
+        if is_key_with_modifiers(event, Qt.Key_P, ctrl=True):
             self.__process()
         elif event.key() == Qt.Key_Delete:
             if self.state.timeline.selected_clip_index >= 0:
                 self.signals.timeline_delete_selected_clip_slot.emit()
-        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+        elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.INC)
-        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+        elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)

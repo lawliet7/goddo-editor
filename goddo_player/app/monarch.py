@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.utils.enums import IncDec
-from goddo_player.file_list_window import FileList
+from goddo_player.file_list_window import FileListWindow
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window import PreviewWindow
@@ -21,11 +21,11 @@ class MonarchSystem(QObject):
         self.app = app
         self.state = StateStore()
 
-        self.file_list = FileList()
-        self.file_list.show()
+        self.file_list_window = FileListWindow()
+        self.file_list_window.show()
 
-        left = self.file_list.geometry().right()
-        top = self.file_list.geometry().top() + 20
+        left = self.file_list_window.geometry().right()
+        top = self.file_list_window.geometry().top() + 20
 
         self.preview_window = PreviewWindow()
         self.preview_window.show()
@@ -47,26 +47,33 @@ class MonarchSystem(QObject):
         self.signals.add_file_slot.connect(self.__on_add_file)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
-        self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
-        self.signals.preview_window_output.in_frame_slot.connect(self.__on_preview_video_in_frame_slot)
-        self.signals.preview_window.out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
-        self.signals.preview_window_output.out_frame_slot.connect(self.__on_preview_video_out_frame_slot)
-        self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
-        self.signals.preview_window_output.play_cmd_slot.connect(self.__on_preview_window_play_cmd_slot)
-        self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip_slot)
-        self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek_slot)
-        self.signals.preview_window_output.seek_slot.connect(self.__on_preview_window_seek_slot)
-        self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed_slot)
-        self.signals.preview_window_output.switch_speed_slot.connect(self.__on_switch_speed_slot)
-        self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
-        self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip_slot)
-        self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip_slot)
-        self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min_slot)
-        self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
-        self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
-        self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
+        self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame)
+        self.signals.preview_window_output.in_frame_slot.connect(self.__on_preview_video_in_frame)
+        self.signals.preview_window.out_frame_slot.connect(self.__on_preview_video_out_frame)
+        self.signals.preview_window_output.out_frame_slot.connect(self.__on_preview_video_out_frame)
+        self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
+        self.signals.preview_window_output.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
+        self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip)
+        self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek)
+        self.signals.preview_window_output.seek_slot.connect(self.__on_preview_window_seek)
+        self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed)
+        self.signals.preview_window_output.switch_speed_slot.connect(self.__on_switch_speed)
+        self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip)
+        self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip)
+        self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip)
+        self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min)
+        self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click)
+        self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset)
+        self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
+        self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
 
-    def __on_preview_window_reset_slot(self):
+    def __on_activate_all_windows(self):
+        self.file_list_window.activateWindow()
+        self.preview_window.activateWindow()
+        self.preview_window_output.activateWindow()
+        self.timeline_window.activateWindow()
+
+    def __on_preview_window_reset(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
 
         self.sender().switch_video_slot.emit(QUrl(), False)
@@ -74,7 +81,7 @@ class MonarchSystem(QObject):
         self.timeline_window.update()
         preview_window.update()
 
-    def __on_timeline_clip_double_click_slot(self, idx, clip, _):
+    def __on_timeline_clip_double_click(self, idx, clip, _):
         self.state.timeline.opened_clip_index = idx
 
         if idx > -1:
@@ -125,7 +132,7 @@ class MonarchSystem(QObject):
         else:
             self.signals.preview_window_output.reset_slot.emit()
 
-    def __on_timeline_update_width_of_one_min_slot(self, inc_dec: IncDec):
+    def __on_timeline_update_width_of_one_min(self, inc_dec: IncDec):
         if inc_dec is IncDec.INC:
             self.state.timeline.width_of_one_min = min(self.state.timeline.width_of_one_min + 6,
                                                        PlayerConfigs.timeline_max_width_of_one_min)
@@ -142,7 +149,7 @@ class MonarchSystem(QObject):
 
         self.timeline_window.update()
 
-    def __on_preview_window_update_skip_slot(self, skip_type: IncDec):
+    def __on_preview_window_update_skip(self, skip_type: IncDec):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         cur_skip = preview_window_state.time_skip_multiplier
         if skip_type is IncDec.INC:
@@ -151,7 +158,7 @@ class MonarchSystem(QObject):
             preview_window_state.time_skip_multiplier = max(cur_skip - 1, 1)
         self.get_preview_window_from_signal(self.sender()).update()
 
-    def __on_timeline_delete_selected_clip_slot(self):
+    def __on_timeline_delete_selected_clip(self):
         selected_idx = self.state.timeline.selected_clip_index
         opened_idx = self.state.timeline.opened_clip_index
         self.state.timeline.clips = [x for i, x in enumerate(self.state.timeline.clips) if i != selected_idx]
@@ -166,7 +173,7 @@ class MonarchSystem(QObject):
             self.timeline_window.update()
             self.preview_window_output.update()
 
-    def __on_switch_speed_slot(self):
+    def __on_switch_speed(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         is_playing = preview_window.is_playing()
@@ -178,7 +185,7 @@ class MonarchSystem(QObject):
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
-    def __on_preview_window_seek_slot(self, frame_no: int, pos_type: PositionType):
+    def __on_preview_window_seek(self, frame_no: int, pos_type: PositionType):
         preview_window = self.get_preview_window_from_signal(self.sender())
         is_playing = preview_window.is_playing()
         if is_playing:
@@ -187,7 +194,7 @@ class MonarchSystem(QObject):
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
-    def __on_add_timeline_clip_slot(self, clip: TimelineClip):
+    def __on_add_timeline_clip(self, clip: TimelineClip):
         logging.info('monarch on add timeline clip')
         self.state.timeline.clips.append(clip)
         self.timeline_window.add_rect_for_new_clip(clip)
@@ -233,7 +240,7 @@ class MonarchSystem(QObject):
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)
         self.state.file_list.add_file_item(item)
-        self.file_list.add_video(item.name)
+        self.file_list_window.add_video(item.name)
 
     def __on_save_file(self, url: QUrl):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -294,7 +301,7 @@ class MonarchSystem(QObject):
 
         self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 
-    def __on_preview_video_in_frame_slot(self, pos: int):
+    def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
@@ -311,7 +318,7 @@ class MonarchSystem(QObject):
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
-    def __on_preview_video_out_frame_slot(self, pos: int):
+    def __on_preview_video_out_frame(self, pos: int):
         logging.info(f'update out frame to {pos}')
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(pos)
@@ -327,5 +334,5 @@ class MonarchSystem(QObject):
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
-    def __on_preview_window_play_cmd_slot(self, play_cmd: PlayCommand):
+    def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):
         self.get_preview_window_from_signal(self.sender()).toggle_play_pause(play_cmd)

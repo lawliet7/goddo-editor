@@ -7,6 +7,7 @@ from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, Q
     QResizeEvent, QWheelEvent
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
+from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.click_slider import ClickSlider
 from goddo_player.utils.enums import IncDec
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
@@ -126,25 +127,22 @@ class PreviewWindow(QWidget):
         self.preview_widget.exec_play_cmd(cmd)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Escape:
-            QApplication.exit(0)
-        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
-            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
-            self.signals.save_slot.emit(url)
-        elif event.key() == Qt.Key_Space:
+        common_event_handling(event, self.signals, self.state)
+
+        if event.key() == Qt.Key_Space:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
             self.signals.preview_window.switch_speed_slot.emit()
         elif event.key() == Qt.Key_I:
             self.signals.preview_window.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_window.slider_update_slot.emit()
-        elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_I:
+        elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
             self.signals.preview_window.in_frame_slot.emit(None)
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
             self.signals.preview_window.out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_window.slider_update_slot.emit()
-        elif event.modifiers() == Qt.ShiftModifier and event.key() == Qt.Key_O:
+        elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
             self.signals.preview_window.out_frame_slot.emit(None)
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
@@ -165,9 +163,9 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
-        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Plus:
+        elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
-        elif event.modifiers() == Qt.KeypadModifier and event.key() == Qt.Key_Minus:
+        elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.DEC)
         else:
             super().keyPressEvent(event)

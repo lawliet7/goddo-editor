@@ -10,6 +10,7 @@ from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QStyle)
 
+from goddo_player.app.event_helper import common_event_handling
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.utils.message_box_utils import show_error_box
@@ -147,7 +148,7 @@ class SceenshotThread(QRunnable):
         self.signal.emit(pixmap, self.item)
 
 
-class FileList(QWidget):
+class FileListWindow(QWidget):
     update_screenshot_slot = pyqtSignal(QPixmap, QListWidgetItem)
 
     def __init__(self):
@@ -198,10 +199,6 @@ class FileList(QWidget):
         self.state_signals.preview_window.switch_video_slot.emit(item_widget.url, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Escape:
-            QApplication.exit(0)
-        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
-            url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', 'saves', 'a.json')))
-            self.state_signals.save_slot.emit(url)
-        else:
-            super().keyPressEvent(event)
+        common_event_handling(event, self.signals, self.state)
+
+        super().keyPressEvent(event)

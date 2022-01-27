@@ -65,6 +65,13 @@ class MonarchSystem(QObject):
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click_slot)
         self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset_slot)
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset_slot)
+        self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows_slot)
+
+    def __on_activate_all_windows_slot(self):
+        self.file_list.activateWindow()
+        self.preview_window.activateWindow()
+        self.preview_window_output.activateWindow()
+        self.timeline_window.activateWindow()
 
     def __on_preview_window_reset_slot(self):
         preview_window = self.get_preview_window_from_signal(self.sender())

@@ -58,7 +58,7 @@ class TimelineWindow(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)
 
-        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_P:
+        if is_key_with_modifiers(event, Qt.Key_P, ctrl=True):
             self.__process()
         elif event.key() == Qt.Key_Delete:
             if self.state.timeline.selected_clip_index >= 0:

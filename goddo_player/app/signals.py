@@ -39,7 +39,7 @@ class PreviewWindowSignals(QObject):
 class StateStoreSignals(QObject):
     preview_window = PreviewWindowSignals(WINDOW_NAME_SOURCE)
     preview_window_output = PreviewWindowSignals(WINDOW_NAME_OUTPUT)
-    add_timeline_clip_slot = pyqtSignal(TimelineClip)
+    add_timeline_clip_slot = pyqtSignal(TimelineClip, int)
     add_file_slot = pyqtSignal(QUrl)
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)

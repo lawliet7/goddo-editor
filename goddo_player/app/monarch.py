@@ -194,10 +194,15 @@ class MonarchSystem(QObject):
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
-    def __on_add_timeline_clip(self, clip: TimelineClip):
+    def __on_add_timeline_clip(self, clip: TimelineClip, idx: int):
         logging.info('monarch on add timeline clip')
-        self.state.timeline.clips.append(clip)
-        self.timeline_window.add_rect_for_new_clip(clip)
+
+        if idx == -1 or idx == len(self.state.timeline.clips) - 1:
+            self.state.timeline.clips.append(clip)
+        else:
+            self.state.timeline.clips = self.state.timeline.clips[:idx] + clip + self.state.timeline.clips[idx+1:]
+        # self.timeline_window.add_rect_for_new_clip(clip)
+        self.timeline_window.recalculate_clip_rects()
         self.timeline_window.activateWindow()
         self.timeline_window.update()
 
@@ -286,7 +291,7 @@ class MonarchSystem(QObject):
 
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:
-                StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict))
+                StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict), -1)
 
             if 'width_of_one_min' in timeline_dict:
                 width_of_one_min = timeline_dict['width_of_one_min']

@@ -120,6 +120,7 @@ class TimelineState:
     width_of_one_min: int = field(default=PlayerConfigs.timeline_initial_width_of_one_min)
     selected_clip_index: int = field(default=-1)
     opened_clip_index: int = field(default=-1)
+    clipboard_clip: TimelineClip = field(default=None)
 
     def as_dict(self):
         return {

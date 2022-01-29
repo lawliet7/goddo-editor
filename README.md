@@ -54,6 +54,7 @@
   | preview | ->  |  advance 1 frame |
   | preview | <-  |  go back 5 frames |
   | timeline | ctrl + p  | process output  |
+  | timeline | ctrl + c  | copy clip |
   | timeline | ctrl + x  | cut clip |
   | timeline | ctrl + v  | paste clip |
   

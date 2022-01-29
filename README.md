@@ -54,6 +54,8 @@
   | preview | ->  |  advance 1 frame |
   | preview | <-  |  go back 5 frames |
   | timeline | ctrl + p  | process output  |
+  | timeline | ctrl + x  | cut clip |
+  | timeline | ctrl + v  | paste clip |
   
   <h3>Timeline Help</h3>
   - once clips are in the timeline, in order to update them:

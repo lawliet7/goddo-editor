@@ -195,13 +195,14 @@ class MonarchSystem(QObject):
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_add_timeline_clip(self, clip: TimelineClip, idx: int):
-        logging.info('monarch on add timeline clip')
+        logging.info(f'monarch on add timeline clip for idx {idx}')
 
-        if idx == -1 or idx == len(self.state.timeline.clips) - 1:
+        if idx == -1 or idx == len(self.state.timeline.clips):
             self.state.timeline.clips.append(clip)
         else:
-            self.state.timeline.clips = self.state.timeline.clips[:idx] + clip + self.state.timeline.clips[idx+1:]
-        # self.timeline_window.add_rect_for_new_clip(clip)
+            clips_clone = self.state.timeline.clips[:]
+            clips_clone.insert(idx, clip)
+            self.state.timeline.clips = clips_clone
         self.timeline_window.recalculate_clip_rects()
         self.timeline_window.activateWindow()
         self.timeline_window.update()

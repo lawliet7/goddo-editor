@@ -67,6 +67,13 @@ class TimelineWindow(QMainWindow):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
+        elif is_key_with_modifiers(event, Qt.Key_X, ctrl=True):
+            if self.state.timeline.selected_clip_index > -1:
+                self.state.timeline.clipboard_clip = self.state.timeline.clips[self.state.timeline.selected_clip_index]
+                self.signals.timeline_delete_selected_clip_slot.emit()
+        elif is_key_with_modifiers(event, Qt.Key_V, ctrl=True):
+            if self.state.timeline.selected_clip_index > -1 and self.state.timeline.clipboard_clip:
+                self.signals.add_timeline_clip_slot.emit(self.state.timeline.clipboard_clip, self.state.timeline.selected_clip_index)
         else:
             super().keyPressEvent(event)
 
@@ -83,6 +90,7 @@ class TimelineWindow(QMainWindow):
             x += rect.width()
 
         self.inner_widget.clip_rects = new_clip_rects
+        self.resize_timeline_widget()
 
     def __process(self):
         import os

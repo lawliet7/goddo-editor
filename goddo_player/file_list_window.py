@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QStyle)
+                             QScrollArea, QStyle, QFrame, QPushButton, QSizePolicy)
 
 from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
@@ -17,6 +17,7 @@ from goddo_player.app.state_store import StateStore
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.flow import FlowLayout
+from goddo_player.widgets.tag import TagWidget
 
 
 class ClipItemWidget(QWidget):
@@ -44,6 +45,16 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
+        tag = TagWidget('you suck')
+        # tag.clicked.connect(self.delete_tag)
+        self.flow_layout.addWidget(tag)
+        tag2 = TagWidget('you suck again')
+        # tag2.clicked.connect(self.delete_tag)
+        self.flow_layout.addWidget(tag2)
+        tag3 = TagWidget('why do u suck')
+        # tag3.clicked.connect(self.delete_tag)
+        self.flow_layout.addWidget(tag3)
+
         scroll = FileScrollArea(self.list_widget)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -59,8 +70,9 @@ class ClipItemWidget(QWidget):
         self.setLayout(h_layout)
 
     def delete_tag(self):
-        logging.debug(f'{self.sender()}')
-        self.flow_layout.removeWidget(self.sender())
+        # logging.debug(f'{self.sender()}')
+        # self.flow_layout.removeWidget(self.sender())
+        print('delete me!')
 
 
 class FileScrollArea(QScrollArea):

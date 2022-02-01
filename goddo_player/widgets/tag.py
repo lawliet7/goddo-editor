@@ -3,6 +3,8 @@ from PyQt5.QtCore import QRect, Qt, QPoint, QLine, QLineF
 from PyQt5.QtGui import QPaintEvent, QPainter, QColor, QPen
 from PyQt5.QtWidgets import QLabel, QFrame
 
+from goddo_player.utils.draw_utils import draw_lines, set_pen_brush_before_paint
+
 
 class TagWidget(QLabel):
     def __init__(self, text, delete_cb=None, tag_widget_height=25):
@@ -27,7 +29,6 @@ class TagWidget(QLabel):
         if self.is_mouse_over:
             painter = QPainter(self)
 
-            # margin = 1
             length = 10
             right_margin = 3
 
@@ -38,17 +39,13 @@ class TagWidget(QLabel):
 
             painter.fillRect(QRect(left, top, length, length), self.baseTagColor)
 
-            orig_pen = painter.pen()
-            painter.setPen(self.pen_for_x)
-            painter.drawLines([
-                QLineF(QLine(QPoint(left, top), QPoint(right, bottom))),
-                QLineF(QLine(QPoint(left, bottom), QPoint(right, top)))
-            ])
-            painter.setPen(orig_pen)
+            lines_tuple = [
+                (left, top, right, bottom),
+                (left, bottom, right, top)
+            ]
+            draw_lines(painter, lines_tuple, pen=self.pen_for_x)
 
             painter.end()
-
-        print(self.rect())
 
     def enterEvent(self, a0: QtCore.QEvent) -> None:
         super().enterEvent(a0)

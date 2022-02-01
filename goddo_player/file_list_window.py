@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QStyle, QFrame, QPushButton, QSizePolicy, QMessageBox, QDialog, QInputDialog)
+                             QScrollArea, QStyle, QInputDialog)
 
 from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
@@ -45,14 +45,11 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
-        tag = TagWidget('you suck')
-        # tag.clicked.connect(self.delete_tag)
+        tag = TagWidget('you suck', self.delete_tag)
         self.flow_layout.addWidget(tag)
-        tag2 = TagWidget('you suck again')
-        # tag2.clicked.connect(self.delete_tag)
+        tag2 = TagWidget('you suck again', self.delete_tag)
         self.flow_layout.addWidget(tag2)
-        tag3 = TagWidget('why do u suck')
-        # tag3.clicked.connect(self.delete_tag)
+        tag3 = TagWidget('why do u suck', self.delete_tag)
         self.flow_layout.addWidget(tag3)
 
         scroll = FileScrollArea(self)

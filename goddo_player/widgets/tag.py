@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import QRect, Qt, QEvent
+from PyQt5.QtCore import QRect, Qt, QEvent, QPoint
 from PyQt5.QtGui import QPaintEvent, QPainter, QColor, QPen, QMouseEvent
 from PyQt5.QtWidgets import QLabel, QFrame
 
@@ -26,6 +26,8 @@ class TagWidget(QLabel):
         self.is_mouse_over = False
 
         self.rect_coor = _RectCoordinate(self.width(), self.height(), 10, 3)
+
+        self.delete_cb = delete_cb
 
     def initPainter(self, painter: QtGui.QPainter) -> None:
         super().initPainter(painter)
@@ -59,7 +61,10 @@ class TagWidget(QLabel):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)
 
-        print(event.pos())
+        print(f'{event.pos()}, is in rect {self.rect_coor.is_in_rect(event.pos())}')
+
+        if self.rect_coor.is_in_rect(event.pos()):
+            self.delete_cb()
 
 
 @dataclass
@@ -84,6 +89,6 @@ class _RectCoordinate:
             (self.left, self.bottom, self.right, self.top)
         ]
 
-
-
+    def is_in_rect(self, pt: QPoint):
+        return self.left <= pt.x() <= self.right and self.top <= pt.y() <= self.bottom
 

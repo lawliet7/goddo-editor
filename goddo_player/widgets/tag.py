@@ -61,8 +61,6 @@ class TagWidget(QLabel):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)
 
-        print(f'{event.pos()}, is in rect {self.rect_coor.is_in_rect(event.pos())}')
-
         if self.rect_coor.is_in_rect(event.pos()):
             self.delete_cb(self)
 

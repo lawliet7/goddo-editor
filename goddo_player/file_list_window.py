@@ -60,16 +60,12 @@ class ClipItemWidget(QWidget):
         self.setLayout(h_layout)
 
     def delete_tag(self, tag_widget):
-        logging.info(f'{tag_widget}')
+        logging.info(f'delete tag {tag_widget.text()}')
         self.flow_layout.removeWidget(tag_widget)
-        # self.flow_layout.update()
 
-        # child = self.flow_layout.takeAt(0)
         if tag_widget:
             tag_widget.close()
             tag_widget.deleteLater()
-
-        print('delete me!')
 
 
 class FileScrollArea(QScrollArea):

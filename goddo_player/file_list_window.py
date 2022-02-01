@@ -45,13 +45,6 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
-        tag = TagWidget('you suck', self.delete_tag)
-        self.flow_layout.addWidget(tag)
-        tag2 = TagWidget('you suck again', self.delete_tag)
-        self.flow_layout.addWidget(tag2)
-        tag3 = TagWidget('why do u suck', self.delete_tag)
-        self.flow_layout.addWidget(tag3)
-
         scroll = FileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -66,9 +59,16 @@ class ClipItemWidget(QWidget):
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
 
-    def delete_tag(self):
-        # logging.debug(f'{self.sender()}')
-        # self.flow_layout.removeWidget(self.sender())
+    def delete_tag(self, tag_widget):
+        logging.info(f'{tag_widget}')
+        self.flow_layout.removeWidget(tag_widget)
+        # self.flow_layout.update()
+
+        # child = self.flow_layout.takeAt(0)
+        if tag_widget:
+            tag_widget.close()
+            tag_widget.deleteLater()
+
         print('delete me!')
 
 
@@ -83,7 +83,7 @@ class FileScrollArea(QScrollArea):
         text, ok = QInputDialog.getText(self, 'Input Dialog',
                                         'Tag:')
         if ok:
-            self.item_widget.flow_layout.addWidget(TagWidget(text))
+            self.item_widget.flow_layout.addWidget(TagWidget(text, self.item_widget.delete_tag))
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:

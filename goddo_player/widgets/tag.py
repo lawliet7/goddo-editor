@@ -64,7 +64,7 @@ class TagWidget(QLabel):
         print(f'{event.pos()}, is in rect {self.rect_coor.is_in_rect(event.pos())}')
 
         if self.rect_coor.is_in_rect(event.pos()):
-            self.delete_cb()
+            self.delete_cb(self)
 
 
 @dataclass

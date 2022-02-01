@@ -58,6 +58,9 @@
   | timeline | ctrl + x  | cut clip |
   | timeline | ctrl + v  | paste clip |
   
+  <h3>File List Help</h3>
+  - to add tags, double click tag area (box under the name of the file)
+
   <h3>Timeline Help</h3>
   - once clips are in the timeline, in order to update them:
     1. first double click the clip to open in output window

@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QStyle)
+                             QScrollArea, QStyle, QInputDialog)
 
 from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
@@ -17,6 +17,7 @@ from goddo_player.app.state_store import StateStore
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.flow import FlowLayout
+from goddo_player.widgets.tag import TagWidget
 
 
 class ClipItemWidget(QWidget):
@@ -44,7 +45,7 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
-        scroll = FileScrollArea(self.list_widget)
+        scroll = FileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
@@ -58,26 +59,34 @@ class ClipItemWidget(QWidget):
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
 
-    def delete_tag(self):
-        logging.debug(f'{self.sender()}')
-        self.flow_layout.removeWidget(self.sender())
+    def delete_tag(self, tag_widget):
+        logging.info(f'delete tag {tag_widget.text()}')
+        self.flow_layout.removeWidget(tag_widget)
+
+        if tag_widget:
+            tag_widget.close()
+            tag_widget.deleteLater()
 
 
 class FileScrollArea(QScrollArea):
-    def __init__(self, list_widget: 'QListWidget', parent=None):
+    def __init__(self, item_widget: 'ClipItemWidget', parent=None):
         super().__init__(parent)
-        self.list_widget = list_widget
+        self.item_widget = item_widget
 
     def mouseDoubleClickEvent(self, a0: QtGui.QMouseEvent) -> None:
         logging.info('double click')
-        super().mouseDoubleClickEvent(a0)
+
+        text, ok = QInputDialog.getText(self, 'Input Dialog',
+                                        'Tag:')
+        if ok:
+            self.item_widget.flow_layout.addWidget(TagWidget(text, self.item_widget.delete_tag))
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
-            self.list_widget.blockSignals(True)
+            self.item_widget.list_widget.blockSignals(True)
             return True
         elif event.type() == QMouseEvent.Leave:
-            self.list_widget.blockSignals(False)
+            self.item_widget.list_widget.blockSignals(False)
             return True
         return super().eventFilter(obj, event)
 

@@ -1,9 +1,11 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import QRect, Qt, QPoint, QLine, QLineF
-from PyQt5.QtGui import QPaintEvent, QPainter, QColor, QPen
+from dataclasses import dataclass
+
+from PyQt5 import QtGui
+from PyQt5.QtCore import QRect, Qt, QEvent
+from PyQt5.QtGui import QPaintEvent, QPainter, QColor, QPen, QMouseEvent
 from PyQt5.QtWidgets import QLabel, QFrame
 
-from goddo_player.utils.draw_utils import draw_lines, set_pen_brush_before_paint
+from goddo_player.utils.draw_utils import draw_lines
 
 
 class TagWidget(QLabel):
@@ -23,42 +25,64 @@ class TagWidget(QLabel):
 
         self.is_mouse_over = False
 
+        self.rect_coor = _RectCoordinate(self.width(), self.height(), 10, 3)
+
+    def initPainter(self, painter: QtGui.QPainter) -> None:
+        super().initPainter(painter)
+
+        # it gets resized after displaying text only, the one in init is completely wrong
+        self.rect_coor = _RectCoordinate(self.width(), self.height(), 10, 3)
+
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
 
         if self.is_mouse_over:
             painter = QPainter(self)
 
-            length = 10
-            right_margin = 3
-
-            left = self.width() - right_margin - length
-            right = self.width() - right_margin
-            top = self.height() / 2 - length / 2
-            bottom = self.height() / 2 + length / 2
-
-            painter.fillRect(QRect(left, top, length, length), self.baseTagColor)
-
-            lines_tuple = [
-                (left, top, right, bottom),
-                (left, bottom, right, top)
-            ]
-            draw_lines(painter, lines_tuple, pen=self.pen_for_x)
+            painter.fillRect(self.rect_coor.to_rect(), self.baseTagColor)
+            draw_lines(painter, self.rect_coor.get_lines(), pen=self.pen_for_x)
 
             painter.end()
 
-    def enterEvent(self, a0: QtCore.QEvent) -> None:
-        super().enterEvent(a0)
+    def enterEvent(self, event: QEvent) -> None:
+        super().enterEvent(event)
 
         self.is_mouse_over = True
         self.update()
 
-    def leaveEvent(self, a0: QtCore.QEvent) -> None:
-        super().leaveEvent(a0)
+    def leaveEvent(self, event: QEvent) -> None:
+        super().leaveEvent(event)
 
         self.is_mouse_over = False
         self.update()
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+
+        print(event.pos())
+
+
+@dataclass
+class _RectCoordinate:
+    tag_widget_width: int
+    tag_widget_height: int
+    length: int
+    right_margin: int
+
+    def __post_init__(self):
+        self.left = self.tag_widget_width - self.right_margin - self.length
+        self.right = self.tag_widget_width - self.right_margin
+        self.top = self.tag_widget_height / 2 - self.length / 2
+        self.bottom = self.tag_widget_height / 2 + self.length / 2
+
+    def to_rect(self):
+        return QRect(self.left, self.top, self.length, self.length)
+
+    def get_lines(self):
+        return [
+            (self.left, self.top, self.right, self.bottom),
+            (self.left, self.bottom, self.right, self.top)
+        ]
 
 
 

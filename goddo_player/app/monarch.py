@@ -55,6 +55,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
         self.signals.preview_window_output.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip)
+        self.signals.remove_video_tag_slot.connect(self.__on_remove_video_tag)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek)
         self.signals.preview_window_output.seek_slot.connect(self.__on_preview_window_seek)
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed)
@@ -68,7 +69,12 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
 
+    def __on_remove_video_tag(self, url: QUrl, tag: str):
+        self.state.file_list.files_dict[url.path()].delete_tag(tag)
+        self.file_list_window.clip_list_dict[url.path()].delete_tag(tag)
+
     def __on_add_video_tag(self, url: QUrl, tag: str):
+        self.state.file_list.files_dict[url.path()].add_tag(tag)
         self.file_list_window.clip_list_dict[url.path()].add_tag(tag)
 
     def __on_activate_all_windows(self):

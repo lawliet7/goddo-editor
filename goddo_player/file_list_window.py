@@ -28,6 +28,8 @@ class ClipItemWidget(QWidget):
         self.list_widget = list_widget
         self.url = url
 
+        self.signals: StateStoreSignals = StateStoreSignals()
+
         lbl = QLabel()
         lbl.setObjectName('screenshot')
         lbl.setFixedHeight(default_pixmap.height())
@@ -60,16 +62,22 @@ class ClipItemWidget(QWidget):
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
 
+    def __add_tag_callback(self, tag):
+        self.signals.remove_video_tag_slot.emit(self.url, tag)
+
     def add_tag(self, tag: str):
-        self.flow_layout.addWidget(TagWidget(tag, self.delete_tag))
+        self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
 
-    def delete_tag(self, tag_widget: TagWidget):
-        logging.info(f'delete tag {tag_widget.text()}')
-        self.flow_layout.removeWidget(tag_widget)
+    def delete_tag(self, tag: str):
+        for i in range(self.flow_layout.count()):
+            tag_widget = self.flow_layout.itemAt(i).widget()
+            if tag_widget.text() == tag:
+                logging.info(f'delete tag {tag_widget} with tag {tag_widget.text()}')
+                self.flow_layout.removeWidget(tag_widget)
 
-        if tag_widget:
-            tag_widget.close()
-            tag_widget.deleteLater()
+                if tag_widget:
+                    tag_widget.close()
+                    tag_widget.deleteLater()
 
 
 class FileScrollArea(QScrollArea):

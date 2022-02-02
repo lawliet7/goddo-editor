@@ -1,10 +1,10 @@
 import logging
 
 from PyQt5.QtCore import QObject, QUrl
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 
 from goddo_player.utils.enums import IncDec
-from goddo_player.file_list_window import FileListWindow
+from goddo_player.file_list_window import FileListWindow, ClipItemWidget
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window import PreviewWindow
@@ -45,6 +45,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window.update_file_details_slot.connect(self.__on_update_file_details)
         self.signals.preview_window_output.update_file_details_slot.connect(self.__on_update_file_details)
         self.signals.add_file_slot.connect(self.__on_add_file)
+        self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
         self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame)
@@ -66,6 +67,9 @@ class MonarchSystem(QObject):
         self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
+
+    def __on_add_video_tag(self, url: QUrl, tag: str):
+        self.file_list_window.clip_list_dict[url.path()].add_tag(tag)
 
     def __on_activate_all_windows(self):
         self.file_list_window.activateWindow()

@@ -66,15 +66,17 @@ class AppConfig:
 @dataclass
 class FileListStateItem:
     name: QUrl
+    tags: List[str] = field(default_factory=lambda: [])
 
     def as_dict(self):
         return {
-            "name": self.name.path()
+            "name": self.name.path(),
+            "tags": self.tags,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name']))
+        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name'], json_dict['tags']))
 
 
 @dataclass

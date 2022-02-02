@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Dict
 
 import cv2
 import imutils
@@ -26,6 +27,8 @@ class ClipItemWidget(QWidget):
         self.v_margin = 6
         self.list_widget = list_widget
         self.url = url
+
+        self.signals: StateStoreSignals = StateStoreSignals()
 
         lbl = QLabel()
         lbl.setObjectName('screenshot')
@@ -59,13 +62,23 @@ class ClipItemWidget(QWidget):
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
 
-    def delete_tag(self, tag_widget):
-        logging.info(f'delete tag {tag_widget.text()}')
-        self.flow_layout.removeWidget(tag_widget)
+    def __add_tag_callback(self, tag):
+        self.signals.remove_video_tag_slot.emit(self.url, tag)
 
-        if tag_widget:
-            tag_widget.close()
-            tag_widget.deleteLater()
+    def add_tag(self, tag: str):
+        self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
+
+    def delete_tag(self, tag: str):
+        for i in range(self.flow_layout.count()):
+            tag_widget = self.flow_layout.itemAt(i).widget()
+            if tag_widget.text() == tag:
+                logging.info(f'delete tag {tag_widget} with tag {tag_widget.text()}')
+                self.flow_layout.removeWidget(tag_widget)
+
+                if tag_widget:
+                    tag_widget.close()
+                    tag_widget.deleteLater()
+                break
 
 
 class FileScrollArea(QScrollArea):
@@ -73,13 +86,14 @@ class FileScrollArea(QScrollArea):
         super().__init__(parent)
         self.item_widget = item_widget
 
-    def mouseDoubleClickEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.signals = StateStoreSignals()
+
+    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info('double click')
 
-        text, ok = QInputDialog.getText(self, 'Input Dialog',
-                                        'Tag:')
+        text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
         if ok:
-            self.item_widget.flow_layout.addWidget(TagWidget(text, self.item_widget.delete_tag))
+            self.signals.add_video_tag_slot.emit(self.item_widget.url, text)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
@@ -137,7 +151,7 @@ class FileListWidget(QListWidget):
             self.signals.add_file_slot.emit(url)
 
 
-class SceenshotThread(QRunnable):
+class ScreenshotThread(QRunnable):
     def __init__(self, url: QUrl, signal, item: QListWidgetItem):
         super().__init__()
         self.url = url
@@ -182,6 +196,8 @@ class FileListWindow(QWidget):
 
         self.update_screenshot_slot.connect(self.update_screenshot_on_item)
 
+        self.clip_list_dict: Dict[str, ClipItemWidget] = {}
+
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         child = item_widget.findChild(QLabel, 'screenshot')
@@ -201,8 +217,10 @@ class FileListWindow(QWidget):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = SceenshotThread(url, self.update_screenshot_slot, item)
+        th = ScreenshotThread(url, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
+
+        self.clip_list_dict[url.path()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)

@@ -2,10 +2,10 @@ from enum import Enum, auto, unique
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
-from goddo_player.utils.enums import PositionType, IncDec
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
-from goddo_player.utils.singleton_meta import singleton
 from goddo_player.app.state_store import TimelineClip
+from goddo_player.utils.enums import PositionType, IncDec
+from goddo_player.utils.singleton_meta import singleton
 
 
 @unique
@@ -41,6 +41,8 @@ class StateStoreSignals(QObject):
     preview_window_output = PreviewWindowSignals(WINDOW_NAME_OUTPUT)
     add_timeline_clip_slot = pyqtSignal(TimelineClip, int)
     add_file_slot = pyqtSignal(QUrl)
+    add_video_tag_slot = pyqtSignal(QUrl, str)
+    remove_video_tag_slot = pyqtSignal(QUrl, str)
     save_slot = pyqtSignal(QUrl)
     load_slot = pyqtSignal(QUrl)
     timeline_delete_selected_clip_slot = pyqtSignal()

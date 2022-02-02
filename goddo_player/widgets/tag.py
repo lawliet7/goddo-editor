@@ -62,7 +62,7 @@ class TagWidget(QLabel):
         super().mousePressEvent(event)
 
         if self.rect_coor.is_in_rect(event.pos()):
-            self.delete_cb(self)
+            self.delete_cb(self.text())
 
 
 @dataclass

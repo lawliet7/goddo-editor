@@ -265,7 +265,13 @@ class MonarchSystem(QObject):
 
     def __on_load_file(self, url: QUrl):
         def handle_file_fn(file_dict):
-            StateStoreSignals().add_file_slot.emit(QUrl.fromLocalFile(file_dict['name']))
+            signals = StateStoreSignals()
+
+            my_url = QUrl.fromLocalFile(file_dict['name'])
+            signals.add_file_slot.emit(my_url)
+
+            for tag in file_dict['tags']:
+                signals.add_video_tag_slot.emit(my_url, tag)
 
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window

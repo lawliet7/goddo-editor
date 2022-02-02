@@ -78,6 +78,7 @@ class ClipItemWidget(QWidget):
                 if tag_widget:
                     tag_widget.close()
                     tag_widget.deleteLater()
+                break
 
 
 class FileScrollArea(QScrollArea):

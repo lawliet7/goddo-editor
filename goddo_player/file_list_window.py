@@ -8,8 +8,8 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
-from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QStyle, QInputDialog)
+from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
+                             QScrollArea, QInputDialog)
 
 from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
@@ -177,10 +177,10 @@ class FileListWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
-
-        self.setGeometry(0, title_bar_height, 500, 1000)
-        self.setWindowTitle('中毒美女捜査官')
+        # title_bar_height = QApplication.style().pixelMetric(QStyle.PM_TitleBarHeight)
+        #
+        # self.setGeometry(0, title_bar_height, 500, 1000)
+        # self.setWindowTitle('中毒美女捜査官')
         self.signals: StateStoreSignals = StateStoreSignals()
         self.state = StateStore()
 

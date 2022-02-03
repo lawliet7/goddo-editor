@@ -1,17 +1,17 @@
 import logging
 
 from PyQt5.QtCore import QObject, QUrl
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication
 
-from goddo_player.utils.enums import IncDec
-from goddo_player.file_list_window import FileListWindow, ClipItemWidget
-from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.preview_window import PreviewWindow
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, TimelineClip
-from goddo_player.timeline_window import TimelineWindow
+from goddo_player.frame_in_out import FrameInOut
+from goddo_player.preview_window import PreviewWindow
 from goddo_player.preview_window_output import PreviewWindowOutput
+from goddo_player.tabbed_list_window import TabbedListWindow
+from goddo_player.timeline_window import TimelineWindow
+from goddo_player.utils.enums import IncDec
 
 
 class MonarchSystem(QObject):
@@ -21,11 +21,13 @@ class MonarchSystem(QObject):
         self.app = app
         self.state = StateStore()
 
-        self.file_list_window = FileListWindow()
-        self.file_list_window.show()
+        self.tabbed_list_window = TabbedListWindow()
+        self.tabbed_list_window.show()
+        # self.file_list_window = FileListWindow()
+        # self.file_list_window.show()
 
-        left = self.file_list_window.geometry().right()
-        top = self.file_list_window.geometry().top() + 20
+        left = self.tabbed_list_window.geometry().right()
+        top = self.tabbed_list_window.geometry().top() + 20
 
         self.preview_window = PreviewWindow()
         self.preview_window.show()
@@ -71,14 +73,14 @@ class MonarchSystem(QObject):
 
     def __on_remove_video_tag(self, url: QUrl, tag: str):
         self.state.file_list.files_dict[url.path()].delete_tag(tag)
-        self.file_list_window.clip_list_dict[url.path()].delete_tag(tag)
+        self.tabbed_list_window.videos_tab.clip_list_dict[url.path()].delete_tag(tag)
 
     def __on_add_video_tag(self, url: QUrl, tag: str):
         self.state.file_list.files_dict[url.path()].add_tag(tag)
-        self.file_list_window.clip_list_dict[url.path()].add_tag(tag)
+        self.tabbed_list_window.videos_tab.clip_list_dict[url.path()].add_tag(tag)
 
     def __on_activate_all_windows(self):
-        self.file_list_window.activateWindow()
+        self.tabbed_list_window.activateWindow()
         self.preview_window.activateWindow()
         self.preview_window_output.activateWindow()
         self.timeline_window.activateWindow()
@@ -256,7 +258,7 @@ class MonarchSystem(QObject):
     def __on_add_file(self, url: 'QUrl'):
         item = self.state.file_list.create_file_item(url)
         self.state.file_list.add_file_item(item)
-        self.file_list_window.add_video(item.name)
+        self.tabbed_list_window.videos_tab.add_video(item.name)
 
     def __on_save_file(self, url: QUrl):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)

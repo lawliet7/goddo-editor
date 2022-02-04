@@ -150,7 +150,7 @@ class FileListWidget(QListWidget):
             self.signals.add_file_slot.emit(url)
 
 
-class FileListWindow(QWidget):
+class ClipListWindow(QWidget):
     update_screenshot_slot = pyqtSignal(QPixmap, QListWidgetItem)
 
     def __init__(self):

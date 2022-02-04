@@ -23,8 +23,6 @@ class MonarchSystem(QObject):
 
         self.tabbed_list_window = TabbedListWindow()
         self.tabbed_list_window.show()
-        # self.file_list_window = FileListWindow()
-        # self.file_list_window.show()
 
         left = self.tabbed_list_window.geometry().right()
         top = self.tabbed_list_window.geometry().top() + 20

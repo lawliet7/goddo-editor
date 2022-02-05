@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QL
                              QScrollArea, QStyle)
 
 from goddo_player.app.event_helper import common_event_handling
+from goddo_player.app.state_store import StateStore
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.utils.message_box_utils import show_error_box
@@ -136,7 +137,7 @@ class SceenshotThread(QRunnable):
 
     @pyqtSlot()
     def run(self):
-        logging.info("started thread to get screenshot")
+        logging.debug("started thread to get screenshot")
 
         cap = cv2.VideoCapture(self.url.path())
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
@@ -144,7 +145,7 @@ class SceenshotThread(QRunnable):
         frame = imutils.resize(frame, height=108)
         pixmap = numpy_to_pixmap(frame)
 
-        logging.info(f'emitting pixmap back to file list')
+        logging.debug(f'emitting pixmap back to file list')
         self.signal.emit(pixmap, self.item)
 
 
@@ -157,7 +158,8 @@ class FileListWindow(QWidget):
 
         self.setGeometry(0, title_bar_height, 500, 1000)
         self.setWindowTitle('中毒美女捜査官')
-        self.state_signals: StateStoreSignals = StateStoreSignals()
+        self.signals: StateStoreSignals = StateStoreSignals()
+        self.state = StateStore()
 
         vbox = QVBoxLayout(self)
         self.listWidget = FileListWidget()
@@ -196,7 +198,7 @@ class FileListWindow(QWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         logging.info(f'playing {item_widget.url}')
-        self.state_signals.preview_window.switch_video_slot.emit(item_widget.url, True)
+        self.signals.preview_window.switch_video_slot.emit(item_widget.url, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)

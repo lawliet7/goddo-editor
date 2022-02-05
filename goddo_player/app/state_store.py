@@ -167,6 +167,9 @@ class StateStore(QObject):
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.timeline = TimelineState()
+        self.cur_save_file = QUrl.fromLocalFile(str(PlayerConfigs.default_save_file))
+
+        print(self.cur_save_file)
 
     def save_file(self, url: QUrl):
 
@@ -203,7 +206,7 @@ class StateStore(QObject):
             os.remove(tmp_save_file_name)
 
     def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
-
+        print('loading')
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
@@ -236,6 +239,8 @@ class StateStore(QObject):
         logging.info(f'finished loading {url.path()}')
         logging.info(f'preview {self.preview_window}')
         logging.info(f'files {self.file_list}')
+
+        self.cur_save_file = url.path()
 
     def get_preview_window(self, window_name):
         return self.preview_window if window_name == self.preview_window.name else self.preview_window_output

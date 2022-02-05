@@ -10,8 +10,7 @@ def common_event_handling(event, signals, state):
     elif event.key() == Qt.Key_F2:
         signals.activate_all_windows_slot.emit()
     elif is_key_with_modifiers(event, Qt.Key_S, ctrl=True):
-        url = QUrl.fromLocalFile(os.path.abspath(os.path.join('..', '..', 'saves', 'a.json')))
-        signals.save_slot.emit(url)
+        signals.save_slot.emit(state.cur_save_file)
 
 
 def is_key_with_modifiers(event, key, ctrl=False, shift=False, numpad=False):

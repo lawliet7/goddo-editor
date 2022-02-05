@@ -38,7 +38,7 @@ def main():
 
     _ = MonarchSystem(app)
 
-    local_save_path = os.path.abspath(os.path.join('..', 'saves', 'a.json'))
+    local_save_path = os.path.abspath(os.path.join('..', '..', 'saves', 'a.json'))
     if pathlib.Path(local_save_path).resolve().exists():
         url = QUrl.fromLocalFile(local_save_path)
         StateStoreSignals().load_slot.emit(url)

@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Dict
 
 import cv2
 import imutils
@@ -8,13 +9,18 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QStyle)
+                             QScrollArea, QStyle, QInputDialog)
 
 from goddo_player.app.event_helper import common_event_handling
+from goddo_player.app.state_store import StateStore
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.widgets.flow import FlowLayout
+from goddo_player.widgets.tag import TagWidget
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 
@@ -25,6 +31,8 @@ class ClipItemWidget(QWidget):
         self.v_margin = 6
         self.list_widget = list_widget
         self.url = url
+
+        self.signals: StateStoreSignals = StateStoreSignals()
 
         lbl = QLabel()
         lbl.setObjectName('screenshot')
@@ -44,7 +52,7 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
-        scroll = FileScrollArea(self.list_widget)
+        scroll = FileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
@@ -58,26 +66,45 @@ class ClipItemWidget(QWidget):
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
 
-    def delete_tag(self):
-        logging.debug(f'{self.sender()}')
-        self.flow_layout.removeWidget(self.sender())
+    def __add_tag_callback(self, tag):
+        self.signals.remove_video_tag_slot.emit(self.url, tag)
+
+    def add_tag(self, tag: str):
+        self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
+
+    def delete_tag(self, tag: str):
+        for i in range(self.flow_layout.count()):
+            tag_widget = self.flow_layout.itemAt(i).widget()
+            if tag_widget.text() == tag:
+                logging.info(f'delete tag {tag_widget} with tag {tag_widget.text()}')
+                self.flow_layout.removeWidget(tag_widget)
+
+                if tag_widget:
+                    tag_widget.close()
+                    tag_widget.deleteLater()
+                break
 
 
 class FileScrollArea(QScrollArea):
-    def __init__(self, list_widget: 'QListWidget', parent=None):
+    def __init__(self, item_widget: 'ClipItemWidget', parent=None):
         super().__init__(parent)
-        self.list_widget = list_widget
+        self.item_widget = item_widget
 
-    def mouseDoubleClickEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.signals = StateStoreSignals()
+
+    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info('double click')
-        super().mouseDoubleClickEvent(a0)
+
+        text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
+        if ok:
+            self.signals.add_video_tag_slot.emit(self.item_widget.url, text)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
-            self.list_widget.blockSignals(True)
+            self.item_widget.list_widget.blockSignals(True)
             return True
         elif event.type() == QMouseEvent.Leave:
-            self.list_widget.blockSignals(False)
+            self.item_widget.list_widget.blockSignals(False)
             return True
         return super().eventFilter(obj, event)
 
@@ -128,7 +155,7 @@ class FileListWidget(QListWidget):
             self.signals.add_file_slot.emit(url)
 
 
-class SceenshotThread(QRunnable):
+class ScreenshotThread(QRunnable):
     def __init__(self, url: QUrl, signal, item: QListWidgetItem):
         super().__init__()
         self.url = url
@@ -173,6 +200,8 @@ class FileListWindow(QWidget):
 
         self.update_screenshot_slot.connect(self.update_screenshot_on_item)
 
+        self.clip_list_dict: Dict[str, ClipItemWidget] = {}
+
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         child = item_widget.findChild(QLabel, 'screenshot')
@@ -192,8 +221,10 @@ class FileListWindow(QWidget):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = SceenshotThread(url, self.update_screenshot_slot, item)
+        th = ScreenshotThread(url, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
+
+        self.clip_list_dict[url.path()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)

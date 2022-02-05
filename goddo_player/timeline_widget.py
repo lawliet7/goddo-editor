@@ -94,7 +94,7 @@ class TimelineWidget(QWidget):
             final_out_frame = c.frame_in_out.out_frame if c.frame_in_out.out_frame is not None else c.total_frames
             required_total_secs += (final_out_frame - final_in_frame) / c.fps
         cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
-        logging.info(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
+        logging.debug(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
         if required_total_secs + 60 > cur_total_secs:
             x = (required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min
             self.resize(x, self.height())

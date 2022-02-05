@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 from dataclasses import dataclass, field, asdict
-from typing import List
+from typing import List, Dict
 
 from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
@@ -66,20 +66,36 @@ class AppConfig:
 @dataclass
 class FileListStateItem:
     name: QUrl
+    tags: List[str] = field(default_factory=list)
 
     def as_dict(self):
         return {
-            "name": self.name.path()
+            "name": self.name.path(),
+            "tags": self.tags,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name']))
+        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name'], json_dict['tags']))
+
+    def add_tag(self, tag: str):
+        new_tags = self.tags[:]
+        new_tags.append(tag)
+        self.tags = new_tags
+
+    def delete_tag(self, tag: str):
+        if tag in self.tags:
+            idx = self.tags.index(tag)
+            self.tags = [tag for i, tag in enumerate(self.tags) if i != idx]
+            return idx
+        else:
+            return -1
 
 
 @dataclass
 class FileListState:
     files: List[FileListStateItem] = field(default_factory=list)
+    files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
 
     @staticmethod
     def create_file_item(url: 'QUrl'):
@@ -90,6 +106,7 @@ class FileListState:
     def add_file_item(self, item: FileListStateItem):
         logging.debug(f'before adding {self.files}')
         self.files.append(item)
+        self.files_dict[item.name.path()] = item
         logging.debug(f'after adding {self.files}')
 
 
@@ -120,6 +137,7 @@ class TimelineState:
     width_of_one_min: int = field(default=PlayerConfigs.timeline_initial_width_of_one_min)
     selected_clip_index: int = field(default=-1)
     opened_clip_index: int = field(default=-1)
+    clipboard_clip: TimelineClip = field(default=None)
 
     def as_dict(self):
         return {

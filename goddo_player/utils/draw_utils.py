@@ -1,7 +1,7 @@
 import math
 from typing import List, Tuple, Callable
 
-from PyQt5.QtCore import Qt, QPoint, QRect
+from PyQt5.QtCore import Qt, QPoint, QRect, QLineF, QLine
 from PyQt5.QtGui import QImage, QPixmap, QPen, QPainter, QPolygonF, QPaintDevice, QBrush, QColor
 
 from goddo_player.utils.number_utils import convert_to_int
@@ -68,6 +68,28 @@ def draw_circle(painter: QPainter, coor: Tuple[int, int], radius: int, pen=None,
         painter.setPen(pen)
 
     painter.drawEllipse(*coor, radius, radius)
+
+
+def set_pen_brush_before_paint(painter: QPainter, draw_fn: Callable[[QPainter], None], pen=None, brush=None):
+    if pen:
+        orig_pen = painter.pen()
+        painter.setPen(pen)
+
+    if brush:
+        orig_brush = painter.brush()
+        painter.setBrush(brush)
+
+    draw_fn(painter)
+
+    if pen:
+        painter.setPen(orig_pen)
+
+    if brush:
+        painter.setBrush(orig_brush)
+
+
+def draw_lines(painter: QPainter, lines: List[Tuple[float, float, float, float]], pen=None, brush=None):
+    set_pen_brush_before_paint(painter, lambda p: p.drawLines([QLineF(*x) for x in lines]), pen=pen, brush=brush)
 
 
 def draw_circle(painter: QPainter, rect: QRect, pen=None, brush=None, pct_of_rect=1):

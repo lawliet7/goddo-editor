@@ -6,14 +6,14 @@ import time
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QApplication, QScrollArea, QMainWindow, QSizePolicy
+from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
-from goddo_player.utils.enums import IncDec
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore, TimelineClip
 from goddo_player.timeline_widget import TimelineWidget
+from goddo_player.utils.enums import IncDec
 
 
 class TimelineWindow(QMainWindow):
@@ -67,6 +67,18 @@ class TimelineWindow(QMainWindow):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
+        elif is_key_with_modifiers(event, Qt.Key_C, ctrl=True):
+            if self.state.timeline.selected_clip_index > -1:
+                self.state.timeline.clipboard_clip = self.state.timeline.clips[self.state.timeline.selected_clip_index]
+        elif is_key_with_modifiers(event, Qt.Key_X, ctrl=True):
+            if self.state.timeline.selected_clip_index > -1:
+                self.state.timeline.clipboard_clip = self.state.timeline.clips[self.state.timeline.selected_clip_index]
+                self.signals.timeline_delete_selected_clip_slot.emit()
+        elif is_key_with_modifiers(event, Qt.Key_V, ctrl=True):
+            selected_clip_index = self.state.timeline.selected_clip_index
+            clipboard_clip = self.state.timeline.clipboard_clip
+            if selected_clip_index > -1 and clipboard_clip:
+                self.signals.add_timeline_clip_slot.emit(clipboard_clip, selected_clip_index)
         else:
             super().keyPressEvent(event)
 
@@ -83,6 +95,7 @@ class TimelineWindow(QMainWindow):
             x += rect.width()
 
         self.inner_widget.clip_rects = new_clip_rects
+        self.resize_timeline_widget()
 
     def __process(self):
         import os
@@ -125,4 +138,4 @@ class TimelineWindow(QMainWindow):
         pw_state = self.state.preview_window
         clip = TimelineClip(pw_state.video_url, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
 
-        self.signals.add_timeline_clip_slot.emit(clip)
+        self.signals.add_timeline_clip_slot.emit(clip, -1)

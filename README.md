@@ -13,7 +13,7 @@
   - conda install -c conda-forge tinydb
 
   <h6>Below are my package versions:</h6>
-   | package |  version |
+  | package |  version |
   | --- | ------------ |
   | pyqt | 5.9.2  |
   | opencv | 4.0.1  |

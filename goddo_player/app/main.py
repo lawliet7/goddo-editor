@@ -1,8 +1,8 @@
 import argparse
 import logging
+import pathlib
 import sys
 
-from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
@@ -34,7 +34,7 @@ def main():
                         level=log_level)
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon('icon.jpg'))
+    app.setWindowIcon(QIcon(str(pathlib.Path(__file__).parent.joinpath('icon.jpg').resolve())))
 
     m = MonarchSystem(app)
 

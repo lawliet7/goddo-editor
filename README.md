@@ -11,7 +11,16 @@
   - conda install -c conda-forge imutils
   - conda install -c anaconda pyaudio
   - conda install -c conda-forge tinydb
-  
+
+  <h6>Below are my package versions:</h6>
+   | package |  version |
+  | --- | ------------ |
+  | pyqt | 5.9.2  |
+  | opencv | 4.0.1  |
+  | imutils | 0.5.4  |
+  | pyaudio | 19.6.0  |
+  | tinydb | 4.5.2  |
+
   **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
   
   **NOTE: conda forge unfortunately don't have pyqt6 so we are stuck with pyqt 5 for now

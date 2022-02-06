@@ -6,11 +6,15 @@
   
   <h5>Environment - Use Conda</h5>
   - python 3.8
-  - conda install pyqt
+  - conda install -c conda-forge pyqt
   - conda install -c conda-forge opencv
   - conda install -c conda-forge imutils
   - conda install -c anaconda pyaudio
   - conda install -c conda-forge tinydb
+
+  <h6>Testing only</h6>
+  - conda install -c conda-forge pytest-qt
+  - conda install -c conda-forge pytest-order
 
   <h6>Below are my package versions:</h6>
 
@@ -19,8 +23,10 @@
   | pyqt | 5.9.2  |
   | opencv | 4.0.1  |
   | imutils | 0.5.4  |
-  | pyaudio | 19.6.0  |
+  | pyaudio | 0.2.11  |
   | tinydb | 4.5.2  |
+  | pytest-qt | 4.0.2  |
+  | pytest-order | 1.0.1  |
 
   **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
   

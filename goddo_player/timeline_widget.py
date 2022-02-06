@@ -120,7 +120,7 @@ class TimelineWidget(QWidget):
             for j in range(6):
                 tick_x = int(x - length_of_one_min / 6 * (j+1))
                 tick_length = length_of_tick if j == 2 else int(length_of_tick / 2)
-                painter.drawLine(tick_x, self.height_of_line, tick_x, self.height_of_line + tick_length)
+                painter.drawLine(tick_x, self.height_of_line, tick_x, int(self.height_of_line + tick_length))
 
         painter.drawLine(0, self.height_of_line, self.width(), self.height_of_line)
 

@@ -206,7 +206,6 @@ class StateStore(QObject):
             os.remove(tmp_save_file_name)
 
     def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
-        print('loading')
         logging.info(f'loading {url}')
         # todo msg box to select save file
 

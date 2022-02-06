@@ -264,7 +264,6 @@ class MonarchSystem(QObject):
         self.state.save_file(url)
 
     def __on_load_file(self, url: QUrl):
-        print('on load file')
         def handle_file_fn(file_dict):
             signals = StateStoreSignals()
 

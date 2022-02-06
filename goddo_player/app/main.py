@@ -1,15 +1,14 @@
 import argparse
 import logging
-import os
 import pathlib
 import sys
 
-from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
 from goddo_player.app.monarch import MonarchSystem
-from goddo_player.app.signals import StateStoreSignals
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.utils.url_utils import file_to_url
 
 
 def convert_to_log_level(log_level_str: str):
@@ -22,6 +21,7 @@ def convert_to_log_level(log_level_str: str):
 def main():
     parser = argparse.ArgumentParser(description="Goddo Serenade's video editor")
     parser.add_argument('--log-level', help='FATAL,ERROR,WARN,INFO,DEBUG, default is INFO')
+    parser.add_argument('--save-file', help='Optional save file location')
 
     args = parser.parse_args()
     print(args)
@@ -34,14 +34,12 @@ def main():
                         level=log_level)
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon('icon.jpg'))
+    app.setWindowIcon(QIcon(str(pathlib.Path(__file__).parent.joinpath('icon.jpg').resolve())))
 
-    _ = MonarchSystem(app)
+    m = MonarchSystem(app)
 
-    local_save_path = os.path.abspath(os.path.join('..', '..', 'saves', 'a.json'))
-    if pathlib.Path(local_save_path).resolve().exists():
-        url = QUrl.fromLocalFile(local_save_path)
-        StateStoreSignals().load_slot.emit(url)
+    url = file_to_url(args.save_file) if args.save_file else file_to_url(PlayerConfigs.default_save_file)
+    m.signals.load_slot.emit(url)
 
     sys.exit(app.exec())
 

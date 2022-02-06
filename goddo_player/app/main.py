@@ -1,7 +1,5 @@
 import argparse
 import logging
-import os
-import pathlib
 import sys
 
 from PyQt5.QtCore import QUrl
@@ -10,8 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import StateStoreSignals
-from goddo_player.app.state_store import StateStore
+from goddo_player.utils.url_utils import file_to_url
 
 
 def convert_to_log_level(log_level_str: str):
@@ -28,14 +25,6 @@ def main():
 
     args = parser.parse_args()
     print(args)
-    # print(args.save_file)
-    # print(QUrl.fromLocalFile(args.save_file))
-    # path = pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('a.json').resolve()
-    # print(QUrl.fromLocalFile(str(path)))
-
-    # print(pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('a.json').resolve())
-    # print(PlayerConfigs.default_save_file)
-    # C:\Users\William\PycharmProjects\maya_player\saves\a.json
 
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
@@ -49,7 +38,7 @@ def main():
 
     m = MonarchSystem(app)
 
-    url = QUrl.fromLocalFile(args.save_file) if args.save_file else QUrl.fromLocalFile(str(PlayerConfigs.default_save_file))
+    url = file_to_url(args.save_file) if args.save_file else file_to_url(PlayerConfigs.default_save_file)
     m.signals.load_slot.emit(url)
 
     sys.exit(app.exec())

@@ -84,15 +84,14 @@ def cmp_image(img1, img2):
     return max_val
 
 
-def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
+def grab_all_window_imgs(windows_tuple):
     screen = QApplication.primaryScreen()
     screen_img = screen.grabWindow(0).toImage()
+    return [screen_img.copy(x.geometry()) for x in windows_tuple]
 
-    # img_base_file = screen_img.copy(file_window.geometry())
-    # img_base_preview = screen_img.copy(preview_window.geometry())
-    # img_base_output = screen_img.copy(output_window.geometry())
-    # img_base_timeline = screen_img.copy(timeline_window.geometry())
-    img_base_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+
+def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
+    img_base_windows = grab_all_window_imgs(windows_tuple)
 
     w = QWidget()
     w.showMaximized()
@@ -101,8 +100,7 @@ def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
 
     windows_tuple[idx].activateWindow()
 
-    screen_img = screen.grabWindow(0).toImage()
-    img_new_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+    img_new_windows = grab_all_window_imgs(windows_tuple)
 
     for i in range(len(windows_tuple)):
         if i == idx:
@@ -112,8 +110,7 @@ def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
 
     qtbot.keyPress(windows_tuple[idx], Qt.Key_F2)
 
-    screen_img = screen.grabWindow(0).toImage()
-    img_new_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+    img_new_windows = grab_all_window_imgs(windows_tuple)
 
     for i in range(len(windows_tuple)):
         assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold

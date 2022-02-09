@@ -1,10 +1,10 @@
 import sys
-import time
 from unittest import mock
 
+import numpy as np
 import pytest
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 
 from goddo_player.app.monarch import MonarchSystem
 
@@ -63,34 +63,79 @@ def test_quit_with_escape_btn(qtbot, file_window, preview_window, output_window,
         assert QApplication.exit.call_count == 4
 
 
+def qimg_to_arr(img):
+    num_of_channels = 4
+    h = img.height()
+    w = img.width()
+
+    b = img.bits()
+    b.setsize(h * w * num_of_channels)
+
+    arr = np.frombuffer(b, np.uint8).reshape((h, w, num_of_channels))
+
+    return arr
+
+
+def cmp_image(img1, img2):
+    import cv2
+    res = cv2.matchTemplate(qimg_to_arr(img1), qimg_to_arr(img2), cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    print('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
+    return max_val
+
+
+def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
+    screen = QApplication.primaryScreen()
+    screen_img = screen.grabWindow(0).toImage()
+
+    # img_base_file = screen_img.copy(file_window.geometry())
+    # img_base_preview = screen_img.copy(preview_window.geometry())
+    # img_base_output = screen_img.copy(output_window.geometry())
+    # img_base_timeline = screen_img.copy(timeline_window.geometry())
+    img_base_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+
+    w = QWidget()
+    w.showMaximized()
+    w.show()
+    qtbot.waitForWindowShown(w)
+
+    windows_tuple[idx].activateWindow()
+
+    screen_img = screen.grabWindow(0).toImage()
+    img_new_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+
+    for i in range(len(windows_tuple)):
+        if i == idx:
+            assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
+        else:
+            assert cmp_image(img_new_windows[i], img_base_windows[i]) < comparison_threshold
+
+    qtbot.keyPress(windows_tuple[idx], Qt.Key_F2)
+
+    screen_img = screen.grabWindow(0).toImage()
+    img_new_windows = [screen_img.copy(x.geometry()) for x in windows_tuple]
+
+    for i in range(len(windows_tuple)):
+        assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
+
+    w.close()
+
+
 @pytest.mark.order(2)
 def test_file_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
-    assert not file_window.isMinimized()
-    assert not preview_window.isMinimized()
-    assert not output_window.isMinimized()
-    assert not timeline_window.isMinimized()
-
-    time.sleep(3)
-
-    # file_window.showMinimized()
-    preview_window.showMinimized()
-    output_window.showMinimized()
-    timeline_window.showMinimized()
-
-    time.sleep(3)
-
-    assert not file_window.isMinimized()
-    assert preview_window.isMinimized()
-    assert output_window.isMinimized()
-    assert timeline_window.isMinimized()
-
-    qtbot.keyPress(file_window, Qt.Key_F2)
-
-    time.sleep(3)
-
-    assert not file_window.isMinimized()
-    assert not preview_window.isMinimized()
-    assert not output_window.isMinimized()
-    assert not timeline_window.isMinimized()
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 0)
 
 
+@pytest.mark.order(2)
+def test_preview_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 1)
+
+
+@pytest.mark.order(2)
+def test_output_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 2)
+
+
+@pytest.mark.order(2)
+def test_timeline_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 3)

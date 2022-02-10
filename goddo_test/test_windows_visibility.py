@@ -1,4 +1,5 @@
 import sys
+import time
 from unittest import mock
 
 import numpy as np
@@ -18,26 +19,21 @@ def app():
 def monarch(app):
     return MonarchSystem(app)
 
-
 @pytest.fixture(scope='module')
 def file_window(monarch):
     return monarch.file_list_window
-
 
 @pytest.fixture(scope='module')
 def preview_window(monarch):
     return monarch.preview_window
 
-
 @pytest.fixture(scope='module')
 def output_window(monarch):
     return monarch.preview_window_output
 
-
 @pytest.fixture(scope='module')
 def timeline_window(monarch):
     return monarch.timeline_window
-
 
 @pytest.mark.order(1)
 def test_all_visible(qtbot, file_window, preview_window, output_window, timeline_window):
@@ -45,7 +41,6 @@ def test_all_visible(qtbot, file_window, preview_window, output_window, timeline
     assert preview_window.isVisible()
     assert output_window.isVisible()
     assert timeline_window.isVisible()
-
 
 @pytest.mark.order(1)
 def test_quit_with_escape_btn(qtbot, file_window, preview_window, output_window, timeline_window):
@@ -62,7 +57,6 @@ def test_quit_with_escape_btn(qtbot, file_window, preview_window, output_window,
         qtbot.keyPress(timeline_window, Qt.Key_Escape)
         assert QApplication.exit.call_count == 4
 
-
 def qimg_to_arr(img):
     num_of_channels = 4
     h = img.height()
@@ -75,7 +69,6 @@ def qimg_to_arr(img):
 
     return arr
 
-
 def cmp_image(img1, img2):
     import cv2
     res = cv2.matchTemplate(qimg_to_arr(img1), qimg_to_arr(img2), cv2.TM_CCOEFF_NORMED)
@@ -83,12 +76,10 @@ def cmp_image(img1, img2):
     print('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
     return max_val
 
-
 def grab_all_window_imgs(windows_tuple):
     screen = QApplication.primaryScreen()
     screen_img = screen.grabWindow(0).toImage()
     return [screen_img.copy(x.geometry()) for x in windows_tuple]
-
 
 def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
     img_base_windows = grab_all_window_imgs(windows_tuple)
@@ -99,6 +90,9 @@ def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
     qtbot.waitForWindowShown(w)
 
     windows_tuple[idx].activateWindow()
+
+    # test can fail if activate window isn't fast enough
+    time.sleep(0.2)
 
     img_new_windows = grab_all_window_imgs(windows_tuple)
 
@@ -117,22 +111,59 @@ def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
 
     w.close()
 
-
 @pytest.mark.order(2)
 def test_file_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
     base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 0)
 
-
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 def test_preview_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
     base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 1)
 
-
-@pytest.mark.order(2)
+@pytest.mark.order(4)
 def test_output_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
     base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 2)
 
-
-@pytest.mark.order(2)
+@pytest.mark.order(5)
 def test_timeline_window_show_all_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 3)
+
+def base_test_minimized_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
+    img_base_windows = grab_all_window_imgs(windows_tuple)
+
+    for i in range(len(windows_tuple)):
+        if idx != i:
+            windows_tuple[idx].showMinimized()
+
+    # test can fail if restoring window isn't fast enough
+    time.sleep(0.2)
+
+    img_new_windows = grab_all_window_imgs(windows_tuple)
+
+    for i in range(len(windows_tuple)):
+        if i == idx:
+            assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
+        else:
+            assert cmp_image(img_new_windows[i], img_base_windows[i]) < comparison_threshold
+
+    qtbot.keyPress(windows_tuple[idx], Qt.Key_F2)
+
+    img_new_windows = grab_all_window_imgs(windows_tuple)
+
+    for i in range(len(windows_tuple)):
+        assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
+
+@pytest.mark.order(6)
+def test_file_window_minimize_and_restore_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 0)
+
+@pytest.mark.order(7)
+def test_preview_window_minimize_and_restore_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 1)
+
+@pytest.mark.order(8)
+def test_output_window_minimize_and_restore_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
+    base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 2)
+
+@pytest.mark.order(9)
+def test_timeline_window_minimize_and_restore_win_with_F2(qtbot, file_window, preview_window, output_window, timeline_window):
     base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 3)

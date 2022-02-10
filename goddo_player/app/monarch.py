@@ -12,6 +12,7 @@ from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionTyp
 from goddo_player.app.state_store import StateStore, TimelineClip
 from goddo_player.timeline_window import TimelineWindow
 from goddo_player.preview_window_output import PreviewWindowOutput
+from goddo_player.utils.window_util import activate_window
 
 
 class MonarchSystem(QObject):
@@ -78,10 +79,10 @@ class MonarchSystem(QObject):
         self.file_list_window.clip_list_dict[url.path()].add_tag(tag)
 
     def __on_activate_all_windows(self):
-        self.file_list_window.activateWindow()
-        self.preview_window.activateWindow()
-        self.preview_window_output.activateWindow()
-        self.timeline_window.activateWindow()
+        activate_window(self.file_list_window)
+        activate_window(self.preview_window)
+        activate_window(self.preview_window_output)
+        activate_window(self.timeline_window)
 
     def __on_preview_window_reset(self):
         preview_window = self.get_preview_window_from_signal(self.sender())

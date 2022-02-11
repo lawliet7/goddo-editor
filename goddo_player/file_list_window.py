@@ -17,6 +17,7 @@ from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.utils.url_utils import get_file_name_from_url
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.widgets.tag import TagWidget
 
@@ -54,10 +55,11 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        file_name = url.fileName().split(os.sep)[-1]
+        label = QLabel(get_file_name_from_url(url))
+        label.setObjectName("name")
 
         v_layout = QVBoxLayout()
-        v_layout.addWidget(QLabel(file_name))
+        v_layout.addWidget(label)
         v_layout.addWidget(scroll)
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
@@ -149,6 +151,9 @@ class FileListWidget(QListWidget):
                 break
 
             self.signals.add_file_slot.emit(url)
+
+    def get_all_items(self):
+        return self.findItems('*', Qt.MatchWildcard)
 
 
 class ScreenshotThread(QRunnable):

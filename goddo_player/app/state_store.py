@@ -13,6 +13,7 @@ from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.utils.singleton_meta import singleton
+from goddo_player.utils.url_utils import file_to_url
 
 
 @dataclass
@@ -46,7 +47,7 @@ class PreviewWindowState:
     @staticmethod
     def from_dict(json_dict):
         prev_wind_state = PreviewWindowState(json_dict['name'])
-        prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
+        prev_wind_state.video_url = file_to_url(json_dict['video_url'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
         prev_wind_state.current_frame_no = json_dict['current_frame_no']
@@ -76,7 +77,7 @@ class FileListStateItem:
 
     @staticmethod
     def from_dict(json_dict):
-        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name'], json_dict['tags']))
+        return FileListStateItem(name=file_to_url(json_dict['name'], json_dict['tags']))
 
     def add_tag(self, tag: str):
         new_tags = self.tags[:]
@@ -127,7 +128,7 @@ class TimelineClip:
 
     @staticmethod
     def from_dict(json_dict):
-        return TimelineClip(QUrl.fromLocalFile(json_dict['video_url']), json_dict['fps'],
+        return TimelineClip(file_to_url(json_dict['video_url']), json_dict['fps'],
                             json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
 
 
@@ -167,7 +168,7 @@ class StateStore(QObject):
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.timeline = TimelineState()
-        self.cur_save_file = QUrl.fromLocalFile(str(PlayerConfigs.default_save_file))
+        self.cur_save_file = file_to_url(PlayerConfigs.default_save_file)
 
         print(self.cur_save_file)
 

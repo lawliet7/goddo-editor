@@ -54,7 +54,7 @@ def qimg_to_arr(img):
     return arr
 
 
-def list_widget_to_test_drag_and_drop():
+def list_widget_to_test_drag_and_drop(show=True):
     list_widget = QListWidget()
 
     def on_item_clicked(item):
@@ -67,5 +67,8 @@ def list_widget_to_test_drag_and_drop():
         drag.exec()
 
     list_widget.itemPressed.connect(on_item_clicked)
+
+    if show:
+        list_widget.show()
 
     return list_widget

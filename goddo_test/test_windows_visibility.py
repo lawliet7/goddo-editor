@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QListWidget, QListWidgetItem
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.utils.url_utils import file_to_url
+from goddo_test.assert_utils import assert_new_file_item_state
 from goddo_test.path_util import *
 from goddo_test.test_utils import *
 
@@ -154,15 +155,13 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
     file_list_state = file_window.state.file_list
     cur_num_of_items = len(file_list_state.files)
 
-    path = supported_video_folder_path().resolve()
-
     list_widget = list_widget_to_test_drag_and_drop()
-    list_widget.show()
     qtbot.addWidget(list_widget)
     qtbot.waitExposed(list_widget)
 
     # ffmpeg -i test_vid.mp4 -q:v 0 -q:a 0 test_vid.mpg
 
+    path = supported_video_folder_path().resolve()
     for file_path in path.iterdir():
         file_path_str = str(file_path)
         print(file_path.name)
@@ -193,37 +192,10 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
         # wait for screenshot to finish loading
         wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
 
-        screenshot_file_name = f"drop-screenshot-{file_path.name[:file_path.name.find('.')]}.png"
-        save_screenshot(screenshot_file_name)
+        save_screenshot(f"drop-screenshot-{file_path.name[:file_path.name.find('.')]}.png")
 
         # https://www.youtube.com/watch?v=EKVwYkhOTeo
 
-        expected_num_of_items = cur_num_of_items + 1
-
-        file_path_url = file_to_url(file_path_str)
-
-        # assert on state
-        file_item = file_list_state.files[-1]
-        assert len(file_list_state.files) == expected_num_of_items
-        assert len(file_list_state.files_dict) == expected_num_of_items
-        assert file_item.name == file_path_url
-        assert len(file_item.tags) == 0
-        assert file_path_url.path() in file_list_state.files_dict
-        assert file_list_state.files_dict[file_path_url.path()] == file_item
-
-        # assert on widget
-        assert file_window.listWidget.count() == expected_num_of_items
-
-        item = file_window.listWidget.item(file_window.listWidget.count() - 1)
-        item_widget = file_window.listWidget.itemWidget(item)
-        item_label = item_widget.findChildren(QLabel, "name")[0].text()
-        assert item_label == file_path_url.fileName()
-
-        # wait for screenshot to finish loading
-        wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
-
-        screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
-        pixmap = screenshot_label.pixmap()
-        assert pixmap != file_window.black_pixmap
+        assert_new_file_item_state(qtbot, file_window, file_to_url(file_path_str), cur_num_of_items + 1)
 
         cur_num_of_items = file_window.listWidget.count()

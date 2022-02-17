@@ -1,21 +1,17 @@
-import pyautogui
-import os
-import pathlib
 import sys
 import time
-import typing
 from unittest import mock
 
-import numpy as np
+import pyautogui
 import pytest
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QPoint, QPointF, QMimeData, QUrl
-from PyQt5.QtGui import QDropEvent, QDrag
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QListWidget, QListWidgetItem
+from PyQt5.QtCore import Qt, QMimeData
+from PyQt5.QtGui import QDrag
+from PyQt5.QtWidgets import QWidget, QLabel, QListWidget, QListWidgetItem
 
 from goddo_player.app.monarch import MonarchSystem
-from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.utils.url_utils import get_file_name_from_url, file_to_url
+from goddo_player.utils.url_utils import file_to_url
+from goddo_test.path_util import *
+from goddo_test.test_utils import *
 
 
 @pytest.fixture(scope='module')
@@ -46,13 +42,6 @@ def timeline_window(monarch):
 @pytest.mark.order(1)
 def test_all_visible(qtbot, file_window, preview_window, output_window, timeline_window):
 
-    # qtbot.addWidget(file_window)
-    # qtbot.addWidget(preview_window)
-    # qtbot.addWidget(output_window)
-    # qtbot.addWidget(timeline_window)
-    #
-    # qtbot.wait(2000)
-
     assert file_window.isVisible()
     assert preview_window.isVisible()
     assert output_window.isVisible()
@@ -72,30 +61,6 @@ def test_quit_with_escape_btn(qtbot, file_window, preview_window, output_window,
 
         qtbot.keyPress(timeline_window, Qt.Key_Escape)
         assert QApplication.exit.call_count == 4
-
-def qimg_to_arr(img):
-    num_of_channels = 4
-    h = img.height()
-    w = img.width()
-
-    b = img.bits()
-    b.setsize(h * w * num_of_channels)
-
-    arr = np.frombuffer(b, np.uint8).reshape((h, w, num_of_channels))
-
-    return arr
-
-def cmp_image(img1, img2):
-    import cv2
-    res = cv2.matchTemplate(qimg_to_arr(img1), qimg_to_arr(img2), cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    print('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
-    return max_val
-
-def grab_all_window_imgs(windows_tuple):
-    screen = QApplication.primaryScreen()
-    screen_img = screen.grabWindow(0).toImage()
-    return [screen_img.copy(x.geometry()) for x in windows_tuple]
 
 def base_test_F2(qtbot, windows_tuple, idx, comparison_threshold=0.9):
     img_base_windows = grab_all_window_imgs(windows_tuple)
@@ -189,25 +154,11 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
     file_list_state = file_window.state.file_list
     cur_num_of_items = len(file_list_state.files)
 
-    path = pathlib.Path(__file__).parent.joinpath("assets").joinpath("videos").joinpath('supported').resolve()
+    path = supported_video_folder_path().resolve()
 
-    # list_widget = TestListWidgetForDragNDrop(path)
-    list_widget = QListWidget()
-
-    def on_item_clicked(item):
-        path = list_widget.itemWidget(item).text()
-
-        drag = QDrag(list_widget)
-        mime_data = QMimeData()
-        mime_data.setUrls([file_to_url(path)])
-        drag.setMimeData(mime_data)
-        drag.exec()
-
-    list_widget.itemPressed.connect(on_item_clicked)
-
+    list_widget = list_widget_to_test_drag_and_drop()
     list_widget.show()
     qtbot.addWidget(list_widget)
-
     qtbot.waitExposed(list_widget)
 
     # ffmpeg -i test_vid.mp4 -q:v 0 -q:a 0 test_vid.mpg
@@ -240,16 +191,10 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
         qtbot.wait(1)
 
         # wait for screenshot to finish loading
-        def check_no_more_threads_running():
-            assert file_window.thread_pool.activeThreadCount() == 0
-
-        qtbot.waitUntil(check_no_more_threads_running, timeout=10000)
+        wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
 
         screenshot_file_name = f"drop-screenshot-{file_path.name[:file_path.name.find('.')]}.png"
-        screenshot_name = str(pathlib.Path(__file__).parent.joinpath("assets").joinpath("output").joinpath(screenshot_file_name).resolve())
-        screen = QApplication.primaryScreen()
-        screen_img = screen.grabWindow(0).toImage()
-        screen_img.save(screenshot_name)
+        save_screenshot(screenshot_file_name)
 
         # https://www.youtube.com/watch?v=EKVwYkhOTeo
 
@@ -275,10 +220,7 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
         assert item_label == file_path_url.fileName()
 
         # wait for screenshot to finish loading
-        def check_no_more_threads_running():
-            assert file_window.thread_pool.activeThreadCount() == 0
-
-        qtbot.waitUntil(check_no_more_threads_running, timeout=10000)
+        wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
 
         screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
         pixmap = screenshot_label.pixmap()

@@ -1,14 +1,20 @@
+import pyautogui
+import os
+import pathlib
 import sys
 import time
+import typing
 from unittest import mock
 
 import numpy as np
 import pytest
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QPoint, QPointF, QMimeData, QUrl
-from PyQt5.QtGui import QDropEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
+from PyQt5.QtGui import QDropEvent, QDrag
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QListWidget, QListWidgetItem
 
 from goddo_player.app.monarch import MonarchSystem
+from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.utils.url_utils import get_file_name_from_url, file_to_url
 
 
@@ -180,47 +186,102 @@ def test_timeline_window_minimize_and_restore_win_with_F2(qtbot, file_window, pr
 
 @pytest.mark.order(3)
 def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
-    url = file_to_url(r'C:\Users\William\dev\ayumi.mp4')
-    file_name = get_file_name_from_url(url)
-
-    mime_data = QMimeData()
-    mime_data.setUrls([url])
-    event = QDropEvent(QPoint(0,0), Qt.CopyAction, mime_data, Qt.LeftButton, Qt.NoModifier)
-
     file_list_state = file_window.state.file_list
     cur_num_of_items = len(file_list_state.files)
-    expected_num_of_items = cur_num_of_items + 1
 
-    # there's no support for drag and drop in pytest-qt so we have to fake this
-    file_window.listWidget.dropEvent(event)
+    path = pathlib.Path(__file__).parent.joinpath("assets").joinpath("videos").joinpath('supported').resolve()
 
-    file_item = file_list_state.files[-1]
-    assert len(file_list_state.files) == expected_num_of_items
-    assert len(file_list_state.files_dict) == expected_num_of_items
-    assert file_item.name == url
-    assert len(file_item.tags) == 0
-    assert url.path() in file_list_state.files_dict
-    assert file_list_state.files_dict[url.path()] == file_item
+    # list_widget = TestListWidgetForDragNDrop(path)
+    list_widget = QListWidget()
 
-    assert file_window.listWidget.count() == expected_num_of_items
+    def on_item_clicked(item):
+        path = list_widget.itemWidget(item).text()
 
-    items = file_window.listWidget.get_all_items()
-    for item in items:
+        drag = QDrag(list_widget)
+        mime_data = QMimeData()
+        mime_data.setUrls([file_to_url(path)])
+        drag.setMimeData(mime_data)
+        drag.exec()
+
+    list_widget.itemPressed.connect(on_item_clicked)
+
+    list_widget.show()
+    qtbot.addWidget(list_widget)
+
+    qtbot.waitExposed(list_widget)
+
+    # ffmpeg -i test_vid.mp4 -q:v 0 -q:a 0 test_vid.mpg
+
+    for file_path in path.iterdir():
+        file_path_str = str(file_path)
+        print(file_path.name)
+
+        item = QListWidgetItem(list_widget)
+        item_widget = QLabel(file_path_str)
+        list_widget.setItemWidget(item, item_widget)
+
+        if list_widget.count() > 1:
+            def check_item_widget_y_not_0():
+                assert item_widget.pos().y() != 0
+            qtbot.waitUntil(check_item_widget_y_not_0)
+
+        top_left_corner_pt1 = file_window.listWidget.mapToGlobal(file_window.listWidget.pos())
+        # item_widget = list_widget.itemWidget(list_widget.item(list_widget.count() - 1))
+        top_left_corner_pt2 = list_widget.mapToGlobal(item_widget.pos())
+
+        # gui doesn't update with drop item without waiting
+        qtbot.wait(1)
+
+        pyautogui.mouseDown(top_left_corner_pt2.x() + 10, top_left_corner_pt2.y() + 5, duration=1)
+        pyautogui.dragTo(top_left_corner_pt1.x() + 100, top_left_corner_pt1.y() + 50, duration=1)
+        pyautogui.mouseUp()
+
+        # gui doesn't update with drop item without waiting
+        qtbot.wait(1)
+
+        # wait for screenshot to finish loading
+        def check_no_more_threads_running():
+            assert file_window.thread_pool.activeThreadCount() == 0
+
+        qtbot.waitUntil(check_no_more_threads_running, timeout=10000)
+
+        screenshot_file_name = f"drop-screenshot-{file_path.name[:file_path.name.find('.')]}.png"
+        screenshot_name = str(pathlib.Path(__file__).parent.joinpath("assets").joinpath("output").joinpath(screenshot_file_name).resolve())
+        screen = QApplication.primaryScreen()
+        screen_img = screen.grabWindow(0).toImage()
+        screen_img.save(screenshot_name)
+
+        # https://www.youtube.com/watch?v=EKVwYkhOTeo
+
+        expected_num_of_items = cur_num_of_items + 1
+
+        file_path_url = file_to_url(file_path_str)
+
+        # assert on state
+        file_item = file_list_state.files[-1]
+        assert len(file_list_state.files) == expected_num_of_items
+        assert len(file_list_state.files_dict) == expected_num_of_items
+        assert file_item.name == file_path_url
+        assert len(file_item.tags) == 0
+        assert file_path_url.path() in file_list_state.files_dict
+        assert file_list_state.files_dict[file_path_url.path()] == file_item
+
+        # assert on widget
+        assert file_window.listWidget.count() == expected_num_of_items
+
+        item = file_window.listWidget.item(file_window.listWidget.count() - 1)
         item_widget = file_window.listWidget.itemWidget(item)
-        name = item_widget.findChildren(QLabel, "name")[0].text()
-        if file_name == name:
-            file_item2 = item_widget
-            break
+        item_label = item_widget.findChildren(QLabel, "name")[0].text()
+        assert item_label == file_path_url.fileName()
 
-    assert file_item2
+        # wait for screenshot to finish loading
+        def check_no_more_threads_running():
+            assert file_window.thread_pool.activeThreadCount() == 0
 
-    # wait for screenshot to finish loading
-    def check_no_more_threads_running():
-        assert file_window.thread_pool.activeThreadCount() == 0
+        qtbot.waitUntil(check_no_more_threads_running, timeout=10000)
 
-    qtbot.waitUntil(check_no_more_threads_running, timeout=10000)
+        screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
+        pixmap = screenshot_label.pixmap()
+        assert pixmap != file_window.black_pixmap
 
-    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
-    pixmap = screenshot_label.pixmap()
-    assert pixmap != file_window.black_pixmap
-
+        cur_num_of_items = file_window.listWidget.count()

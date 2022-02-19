@@ -1,3 +1,4 @@
+import copy
 import sys
 import time
 from unittest import mock
@@ -6,6 +7,7 @@ import pyautogui
 import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QLabel, QListWidgetItem
+from testfixtures import compare
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_test.path_util import *
@@ -148,7 +150,7 @@ def test_timeline_window_minimize_and_restore_win_with_F2(qtbot, file_window, pr
     base_test_F2(qtbot, (file_window, preview_window, output_window, timeline_window), 3)
 
 @pytest.mark.order(3)
-def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
+def test_drop_supported_video_into_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
     file_list_state = file_window.state.file_list
     cur_num_of_items = len(file_list_state.files)
 
@@ -158,7 +160,7 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
 
     # ffmpeg -i test_vid.mp4 -q:v 0 -q:a 0 test_vid.mpg
 
-    path = supported_video_folder_path().resolve()
+    path = video_folder_path().joinpath('unsupported').resolve()
     for file_path in path.iterdir():
         file_path_str = str(file_path)
         print(file_path.name)
@@ -196,6 +198,55 @@ def test_drop_video_into_file_window(qtbot, file_window, preview_window, output_
         assert_new_file_item_state(qtbot, file_window, file_to_url(file_path_str), cur_num_of_items + 1)
 
         cur_num_of_items = file_window.listWidget.count()
+
+@pytest.mark.order(3)
+def test_drop_unsupported_video_into_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
+    file_list_state = file_window.state.file_list
+    copy_of_state = copy.deepcopy(file_list_state)
+
+    list_widget = list_widget_to_test_drag_and_drop()
+    qtbot.addWidget(list_widget)
+    qtbot.waitExposed(list_widget)
+
+    # ffmpeg -i test_vid.mp4 -q:v 0 -q:a 0 test_vid.mpg
+
+    path = video_folder_path().joinpath('unsupported').resolve()
+    for file_path in path.iterdir():
+        file_path_str = str(file_path)
+        print(file_path.name)
+
+        item = QListWidgetItem(list_widget)
+        item_widget = QLabel(file_path_str)
+        list_widget.setItemWidget(item, item_widget)
+
+        if list_widget.count() > 1:
+            def check_item_widget_y_not_0():
+                assert item_widget.pos().y() != 0
+            qtbot.waitUntil(check_item_widget_y_not_0)
+
+        top_left_corner_pt1 = file_window.listWidget.mapToGlobal(file_window.listWidget.pos())
+        # item_widget = list_widget.itemWidget(list_widget.item(list_widget.count() - 1))
+        top_left_corner_pt2 = list_widget.mapToGlobal(item_widget.pos())
+
+        # gui doesn't update with drop item without waiting
+        qtbot.wait(1)
+
+        pyautogui.mouseDown(top_left_corner_pt2.x() + 10, top_left_corner_pt2.y() + 5, duration=1)
+        pyautogui.dragTo(top_left_corner_pt1.x() + 100, top_left_corner_pt1.y() + 50, duration=1)
+        pyautogui.mouseUp()
+
+        # gui doesn't update with drop item without waiting
+        qtbot.wait(1)
+
+        save_screenshot(f"drop-screenshot-{file_path.name}.png")
+
+        compare(copy_of_state, file_list_state)
+
+    # gui doesn't update with drop item without waiting
+    qtbot.wait(1)
+
+    # wait for screenshot to finish loading
+    wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
 
 
 def assert_new_file_item_state(qtbot, file_window, new_file_url_added, new_total_count_expected):

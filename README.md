@@ -19,6 +19,7 @@
   - conda install -c conda-forge pytest-qt
   - conda install -c conda-forge pytest-order
   - conda install -c conda-forge pyautogui
+  - conda install -c conda-forge testfixtures
 
   <h6>Below are my package versions:</h6>
 
@@ -32,6 +33,7 @@
   | pytest-qt | 4.0.2  |
   | pytest-order | 1.0.1  |
   | pyautogui | 0.9.53  |
+  | testfixtures | 6.18.3  |
 
   **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
   

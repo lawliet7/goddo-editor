@@ -13,8 +13,8 @@ def assets_folder_path() -> pathlib.Path:
     return goddo_test_folder_path().joinpath('assets')
 
 
-def supported_video_folder_path() -> pathlib.Path:
-    return assets_folder_path().joinpath('videos').joinpath('supported')
+def video_folder_path() -> pathlib.Path:
+    return assets_folder_path().joinpath('videos')
 
 
 def path_to_str(path: pathlib.Path):

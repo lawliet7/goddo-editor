@@ -5,8 +5,8 @@ from unittest import mock
 
 import pyautogui
 import pytest
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QLabel, QListWidgetItem
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QWidget, QLabel, QListWidgetItem, QMessageBox
 from testfixtures import compare
 
 from goddo_player.app.monarch import MonarchSystem
@@ -41,6 +41,11 @@ def timeline_window(monarch):
 
 @pytest.mark.order(1)
 def test_all_visible(qtbot, file_window, preview_window, output_window, timeline_window):
+
+    qtbot.waitExposed(file_window)
+    qtbot.waitExposed(preview_window)
+    qtbot.waitExposed(output_window)
+    qtbot.waitExposed(timeline_window)
 
     assert file_window.isVisible()
     assert preview_window.isVisible()
@@ -203,8 +208,8 @@ def test_drop_supported_video_into_file_window(qtbot, file_window, preview_windo
 def test_drop_unsupported_video_into_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
     file_list_state = file_window.state.file_list
     # copy_of_state = copy.deepcopy(file_list_state)
-    copy_of_state_dict = file_list_state.asdict()
-    print(copy_of_state_dict)
+    # copy_of_state_dict = file_list_state.asdict()
+    # print(copy_of_state_dict)
 
     list_widget = list_widget_to_test_drag_and_drop()
     qtbot.addWidget(list_widget)
@@ -233,6 +238,22 @@ def test_drop_unsupported_video_into_file_window(qtbot, file_window, preview_win
         # gui doesn't update with drop item without waiting
         qtbot.wait(1)
 
+        # qtbot.waitUtil doesn't work properly inside the timer
+        timer = QTimer()
+
+        def handle_dialog():
+            print('timer')
+            # since it's a modal window, msg box should be on top
+            if isinstance(QApplication.activeWindow(), QMessageBox):
+                msg_box = QApplication.activeWindow()
+                btn = msg_box.defaultButton()
+                qtbot.mouseClick(btn, Qt.LeftButton)
+                timer.stop()
+                timer.deleteLater()
+
+        timer.timeout.connect(handle_dialog)
+        timer.start(500)
+
         pyautogui.mouseDown(top_left_corner_pt2.x() + 10, top_left_corner_pt2.y() + 5, duration=1)
         pyautogui.dragTo(top_left_corner_pt1.x() + 100, top_left_corner_pt1.y() + 50, duration=1)
         pyautogui.mouseUp()
@@ -254,11 +275,13 @@ def test_drop_unsupported_video_into_file_window(qtbot, file_window, preview_win
 def assert_new_file_item_state(qtbot, file_window, new_file_url_added, new_total_count_expected):
     file_list_state = file_window.state.file_list
 
+
     # assert on state
-    file_item = file_list_state.files[-1]
     print(f'{len(file_list_state.files)} - {new_total_count_expected}')
     assert len(file_list_state.files) == new_total_count_expected
     assert len(file_list_state.files_dict) == new_total_count_expected
+
+    file_item = file_list_state.files[-1]
     assert file_item.name == new_file_url_added
     assert len(file_item.tags) == 0
     assert new_file_url_added.path() in file_list_state.files_dict

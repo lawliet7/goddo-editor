@@ -2,7 +2,10 @@
   Goddo Serenade's Video Editor  (** WIP **)
   
   <h5>Supported Video Formats:</h5>
-  *.avi, *.mp4, *.wmv, *.webm, *.mov, *.flv, *.mkv
+  *.mp4, *.wmv, *.mkv, *.webm, *.avi, *.mov, *.ts, *.m2ts', *.flv
+
+  <h6>Unsupported Video Formats:</h6>
+  *.asf
   
   <h5>Environment - Use Conda</h5>
   - python 3.8
@@ -15,6 +18,8 @@
   <h6>Testing only</h6>
   - conda install -c conda-forge pytest-qt
   - conda install -c conda-forge pytest-order
+  - conda install -c conda-forge pyautogui
+  - conda install -c conda-forge testfixtures
 
   <h6>Below are my package versions:</h6>
 
@@ -27,6 +32,8 @@
   | tinydb | 4.5.2  |
   | pytest-qt | 4.0.2  |
   | pytest-order | 1.0.1  |
+  | pyautogui | 0.9.53  |
+  | testfixtures | 6.18.3  |
 
   **use conda as installing pyaudio is otherwise very painful, disadvantage is obviously we can't use pyqt6
   
@@ -84,7 +91,7 @@
     3. whenever we change the in / out, it will immediately affect the clip on the timeline
 
   <h3>Credits:</h3>
-  <b>ClickSlider</b> class modified based on answer from this post: [stackoverflow link](https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011)
+  <p style="text-align: center;"><span style="font-weight: 400;"><strong>ClickSlider</strong> class modified based on answer from this </span><a href="https://stackoverflow.com/questions/52689047/moving-qslider-to-mouse-click-position/52690011#52690011" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">Stackoverflow post</span></a><span style="font-weight: 400;">, by </span><a href="https://stackoverflow.com/users/6622587/eyllanesc" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">eyllanesc</span></a><span style="font-weight: 400;">, licensed under </span><a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">CC BY 4.0</span></a></p>
+  <p style="text-align: center;"><span style="font-weight: 400;"><b>FlowLayout</b> class based on answer from this </span><a href="https://stackoverflow.com/questions/46681266/qscrollarea-with-flowlayout-widgets-not-resizing-properly/46727466#46727466" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">Stackoverflow post</span></a><span style="font-weight: 400;">, by </span><a href="https://stackoverflow.com/users/3564517/stefan-scherfke" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">Stefan Scherfke</span></a><span style="font-weight: 400;">, licensed under </span><a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">CC BY 3.0</span></a></p>
+  <p style="text-align: center;"><span style="font-weight: 400;">Test videos are converted from this Youtube video </span><a href="https://www.youtube.com/watch?v=PcAGFgycZ3s" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">SNSD Girls Generation - Mr. Taxi - Live Mix</span></a><span style="font-weight: 400;">, by </span><a href="https://www.youtube.com/channel/UC5IWFlw9Idtd0F_mS2cJ8kw" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">Vadim Anokhin</span></a><span style="font-weight: 400;">, licensed under </span><a href="https://www.youtube.com/t/creative_commons" target="_blank" rel="noopener noreferrer"><span style="font-weight: 400;">Creative Commons</span></a></p>
   
-  
-  <b>FlowLayout</b> class based on answer from this post: [stackoverlow link](https://stackoverflow.com/q/46681266)

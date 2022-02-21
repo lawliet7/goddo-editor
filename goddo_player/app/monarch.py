@@ -1,5 +1,6 @@
 import logging
 
+import cv2
 from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication, QWidget
 
@@ -12,6 +13,8 @@ from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionTyp
 from goddo_player.app.state_store import StateStore, TimelineClip
 from goddo_player.timeline_window import TimelineWindow
 from goddo_player.preview_window_output import PreviewWindowOutput
+from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import activate_window
 
 
@@ -255,9 +258,17 @@ class MonarchSystem(QObject):
         preview_window_state.cur_end_frame = total_frames
 
     def __on_add_file(self, url: 'QUrl'):
-        item = self.state.file_list.create_file_item(url)
-        self.state.file_list.add_file_item(item)
-        self.file_list_window.add_video(item.name)
+        cap = cv2.VideoCapture(url.path())
+        fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        cap.release()
+
+        if fps > 0:
+            item = self.state.file_list.create_file_item(url)
+            self.state.file_list.add_file_item(item)
+            self.file_list_window.add_video(item.name)
+        else:
+            show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
+
 
     def __on_save_file(self, url: QUrl):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -268,7 +279,7 @@ class MonarchSystem(QObject):
         def handle_file_fn(file_dict):
             signals = StateStoreSignals()
 
-            my_url = QUrl.fromLocalFile(file_dict['name'])
+            my_url = file_to_url(file_dict['name'])
             signals.add_file_slot.emit(my_url)
 
             for tag in file_dict['tags']:
@@ -277,7 +288,7 @@ class MonarchSystem(QObject):
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
 
-            pw_signals.switch_video_slot.emit(QUrl.fromLocalFile(prev_wind_dict['video_url']), False)
+            pw_signals.switch_video_slot.emit(file_to_url(prev_wind_dict['video_url']), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']

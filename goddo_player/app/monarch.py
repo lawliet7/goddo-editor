@@ -4,6 +4,7 @@ import cv2
 from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication, QWidget
 
+from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.enums import IncDec
 from goddo_player.file_list_window import FileListWindow, ClipItemWidget
 from goddo_player.frame_in_out import FrameInOut
@@ -258,7 +259,8 @@ class MonarchSystem(QObject):
         preview_window_state.cur_end_frame = total_frames
 
     def __on_add_file(self, url: 'QUrl'):
-        cap = cv2.VideoCapture(url.path())
+        vid_path = VideoPath(url)
+        cap = cv2.VideoCapture(vid_path.path())
         fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         cap.release()
 

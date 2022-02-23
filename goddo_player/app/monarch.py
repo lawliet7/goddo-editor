@@ -258,19 +258,17 @@ class MonarchSystem(QObject):
         preview_window_state.cur_start_frame = 0
         preview_window_state.cur_end_frame = total_frames
 
-    def __on_add_file(self, url: 'QUrl'):
-        vid_path = VideoPath(url)
+    def __on_add_file(self, vid_path: VideoPath):
         cap = cv2.VideoCapture(vid_path.path())
         fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         cap.release()
 
         if fps > 0:
-            item = self.state.file_list.create_file_item(url)
+            item = self.state.file_list.create_file_item(vid_path.url())
             self.state.file_list.add_file_item(item)
             self.file_list_window.add_video(item.name)
         else:
             show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
-
 
     def __on_save_file(self, url: QUrl):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -282,7 +280,7 @@ class MonarchSystem(QObject):
             signals = StateStoreSignals()
 
             my_url = file_to_url(file_dict['name'])
-            signals.add_file_slot.emit(my_url)
+            signals.add_file_slot.emit(VideoPath(my_url))
 
             for tag in file_dict['tags']:
                 signals.add_video_tag_slot.emit(my_url, tag)

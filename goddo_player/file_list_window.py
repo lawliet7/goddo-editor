@@ -15,6 +15,7 @@ from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
+from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import get_file_name_from_url
@@ -150,7 +151,7 @@ class FileListWidget(QListWidget):
                 show_error_box(self, "sorry unicode file names are not support!")
                 break
 
-            self.signals.add_file_slot.emit(url)
+            self.signals.add_file_slot.emit(VideoPath(url))
 
     def get_all_items(self):
         return self.findItems('*', Qt.MatchWildcard)

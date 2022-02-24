@@ -168,7 +168,7 @@ class ScreenshotThread(QRunnable):
     def run(self):
         logging.debug("started thread to get screenshot")
 
-        cap = cv2.VideoCapture(self.url.path())
+        cap = cv2.VideoCapture(VideoPath(self.url).str())
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
         _, frame = cap.read()
         frame = imutils.resize(frame, height=108)

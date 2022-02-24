@@ -259,7 +259,7 @@ class MonarchSystem(QObject):
         preview_window_state.cur_end_frame = total_frames
 
     def __on_add_file(self, vid_path: VideoPath):
-        cap = cv2.VideoCapture(vid_path.path())
+        cap = cv2.VideoCapture(vid_path.str())
         fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         cap.release()
 

@@ -158,9 +158,9 @@ class FileListWidget(QListWidget):
 
 
 class ScreenshotThread(QRunnable):
-    def __init__(self, url: QUrl, signal, item: QListWidgetItem):
+    def __init__(self, vid_path: VideoPath, signal, item: QListWidgetItem):
         super().__init__()
-        self.url = url
+        self.vid_path = vid_path
         self.signal = signal
         self.item = item
 
@@ -168,7 +168,7 @@ class ScreenshotThread(QRunnable):
     def run(self):
         logging.debug("started thread to get screenshot")
 
-        cap = cv2.VideoCapture(VideoPath(self.url).str())
+        cap = cv2.VideoCapture(self.vid_path.str())
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
         _, frame = cap.read()
         frame = imutils.resize(frame, height=108)
@@ -213,20 +213,22 @@ class FileListWindow(QWidget):
     def add_video(self, url: 'QUrl'):
         logging.info(f'adding video {url}')
 
+        vid_path = VideoPath(url)
+
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(url, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(vid_path.url(), self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = ScreenshotThread(url, self.update_screenshot_slot, item)
+        th = ScreenshotThread(vid_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[url.path()] = row
+        self.clip_list_dict[vid_path.str()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)

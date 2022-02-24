@@ -266,7 +266,7 @@ class MonarchSystem(QObject):
         if fps > 0:
             item = self.state.file_list.create_file_item(vid_path.url())
             self.state.file_list.add_file_item(item)
-            self.file_list_window.add_video(item.name)
+            self.file_list_window.add_video(vid_path)
         else:
             show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
 

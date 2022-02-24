@@ -210,10 +210,8 @@ class FileListWindow(QWidget):
         logging.debug(f'found child {child}')
         child.setPixmap(pixmap)
 
-    def add_video(self, url: 'QUrl'):
-        logging.info(f'adding video {url}')
-
-        vid_path = VideoPath(url)
+    def add_video(self, vid_path: VideoPath):
+        logging.info(f'adding video {vid_path}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)

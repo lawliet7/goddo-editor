@@ -1,12 +1,11 @@
 import logging
-import os
 from typing import Dict
 
 import cv2
 import imutils
 import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QApplication, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QStyle, QInputDialog)
@@ -18,17 +17,16 @@ from goddo_player.app.state_store import StateStore
 from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
-from goddo_player.utils.url_utils import get_file_name_from_url
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.widgets.tag import TagWidget
 
 
 class ClipItemWidget(QWidget):
-    def __init__(self, url: QUrl, list_widget, default_pixmap: QPixmap):
+    def __init__(self, vid_path: VideoPath, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
-        self.url = url
+        self.vid_path = vid_path
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -56,7 +54,7 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        label = QLabel(get_file_name_from_url(url))
+        label = QLabel(vid_path.file_name())
         label.setObjectName("name")
 
         v_layout = QVBoxLayout()
@@ -125,9 +123,8 @@ class FileListWidget(QListWidget):
         self.signals: StateStoreSignals = StateStoreSignals()
 
     @staticmethod
-    def __should_accept_drop(url: 'QUrl'):
-        _, ext = os.path.splitext(url.fileName())
-        if ext.lower() in PlayerConfigs.supported_video_exts:
+    def __should_accept_drop(vid_path: VideoPath):
+        if vid_path.ext().lower() in PlayerConfigs.supported_video_exts:
             return True
         else:
             return False
@@ -137,7 +134,7 @@ class FileListWidget(QListWidget):
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             for url in mime_data.urls():
-                if not self.__should_accept_drop(url):
+                if not self.__should_accept_drop(VideoPath(url)):
                     return
             event.accept()
 
@@ -217,7 +214,7 @@ class FileListWindow(QWidget):
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(vid_path.url(), self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(vid_path, self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)

@@ -15,3 +15,9 @@ def move_window(window_instance, x, y):
         window_instance.setY(y+get_title_bar_height())
     else:
         raise Exception("Invalid window type")
+
+
+def activate_window(window, restore_minimized=True):
+    if restore_minimized and window.isMinimized():
+        window.showNormal()
+    window.activateWindow()

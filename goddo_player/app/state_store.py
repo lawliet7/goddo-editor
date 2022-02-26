@@ -13,6 +13,7 @@ from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.utils.singleton_meta import singleton
+from goddo_player.utils.url_utils import file_to_url
 
 
 @dataclass
@@ -46,7 +47,7 @@ class PreviewWindowState:
     @staticmethod
     def from_dict(json_dict):
         prev_wind_state = PreviewWindowState(json_dict['name'])
-        prev_wind_state.video_url = QUrl.fromLocalFile(json_dict['video_url'])
+        prev_wind_state.video_url = file_to_url(json_dict['video_url'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
         frame_in_out_dict = json_dict['frame_in_out']
@@ -78,7 +79,7 @@ class FileListStateItem:
 
     @staticmethod
     def from_dict(json_dict):
-        return FileListStateItem(name=QUrl.fromLocalFile(json_dict['name'], json_dict['tags']))
+        return FileListStateItem(name=file_to_url(json_dict['name'], json_dict['tags']))
 
     def add_tag(self, tag: str):
         new_tags = self.tags[:]
@@ -183,7 +184,7 @@ class TimelineClip:
 
     @staticmethod
     def from_dict(json_dict):
-        return TimelineClip(QUrl.fromLocalFile(json_dict['video_url']), json_dict['fps'],
+        return TimelineClip(file_to_url(json_dict['video_url']), json_dict['fps'],
                             json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
 
 
@@ -224,6 +225,9 @@ class StateStore(QObject):
         self.file_list = FileListState()
         self.clip_list = ClipListState()
         self.timeline = TimelineState()
+        self.cur_save_file = file_to_url(PlayerConfigs.default_save_file)
+
+        print(self.cur_save_file)
 
     def save_file(self, url: QUrl):
 
@@ -260,7 +264,6 @@ class StateStore(QObject):
             os.remove(tmp_save_file_name)
 
     def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
-
         logging.info(f'loading {url}')
         # todo msg box to select save file
 
@@ -293,6 +296,8 @@ class StateStore(QObject):
         logging.info(f'finished loading {url.path()}')
         logging.info(f'preview {self.preview_window}')
         logging.info(f'files {self.file_list}')
+
+        self.cur_save_file = url.path()
 
     def get_preview_window(self, window_name):
         return self.preview_window if window_name == self.preview_window.name else self.preview_window_output

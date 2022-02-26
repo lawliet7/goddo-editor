@@ -8,6 +8,7 @@ from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, Q
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.app.video_path import VideoPath
 from goddo_player.click_slider import ClickSlider
 from goddo_player.utils.enums import IncDec
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
@@ -117,11 +118,10 @@ class PreviewWindow(QWidget):
                       f'total_frames={self.state.preview_window.total_frames}')
         self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
-    def switch_video(self, url: 'QUrl'):
-        self.preview_widget.switch_video(url)
+    def switch_video(self, vid_path: VideoPath):
+        self.preview_widget.switch_video(vid_path)
 
-        name, _ = os.path.splitext(url.fileName())
-        self.setWindowTitle(self.base_title + ' - ' + name)
+        self.setWindowTitle(self.base_title + ' - ' + vid_path.file_name(include_ext=False))
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)

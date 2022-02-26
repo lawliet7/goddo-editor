@@ -1,10 +1,9 @@
 import logging
-import os
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QUrl, QThreadPool, pyqtSignal
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QInputDialog)
@@ -13,6 +12,7 @@ from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
+from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.flow import FlowLayout
@@ -21,11 +21,11 @@ from screenshot_thread import ScreenshotThread
 
 
 class ClipItemWidget(QWidget):
-    def __init__(self, url: QUrl, list_widget, default_pixmap: QPixmap):
+    def __init__(self, vid_path: VideoPath, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
-        self.url = url
+        self.vid_path = vid_path
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -53,10 +53,11 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        file_name = url.fileName().split(os.sep)[-1]
+        label = QLabel(vid_path.file_name())
+        label.setObjectName("name")
 
         v_layout = QVBoxLayout()
-        v_layout.addWidget(QLabel(file_name))
+        v_layout.addWidget(label)
         v_layout.addWidget(scroll)
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
@@ -88,7 +89,7 @@ class FileScrollArea(QScrollArea):
         self.signals = StateStoreSignals()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        logging.info('double click')
+        logging.info(f'double click @ {event.pos()}')
 
         text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
         if ok:
@@ -121,9 +122,8 @@ class FileListWidget(QListWidget):
         self.signals: StateStoreSignals = StateStoreSignals()
 
     @staticmethod
-    def __should_accept_drop(url: 'QUrl'):
-        _, ext = os.path.splitext(url.fileName())
-        if ext.lower() in PlayerConfigs.supported_video_exts:
+    def __should_accept_drop(vid_path: VideoPath):
+        if vid_path.ext().lower() in PlayerConfigs.supported_video_exts:
             return True
         else:
             return False
@@ -133,7 +133,7 @@ class FileListWidget(QListWidget):
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             for url in mime_data.urls():
-                if not self.__should_accept_drop(url):
+                if not self.__should_accept_drop(VideoPath(url)):
                     return
             event.accept()
 
@@ -147,7 +147,31 @@ class FileListWidget(QListWidget):
                 show_error_box(self, "sorry unicode file names are not support!")
                 break
 
-            self.signals.add_file_slot.emit(url)
+            self.signals.add_file_slot.emit(VideoPath(url))
+
+    def get_all_items(self) -> List[QListWidgetItem]:
+        return self.findItems('*', Qt.MatchWildcard)
+
+
+class ScreenshotThread(QRunnable):
+    def __init__(self, vid_path: VideoPath, signal, item: QListWidgetItem):
+        super().__init__()
+        self.vid_path = vid_path
+        self.signal = signal
+        self.item = item
+
+    @pyqtSlot()
+    def run(self):
+        logging.debug("started thread to get screenshot")
+
+        cap = cv2.VideoCapture(self.vid_path.str())
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
+        _, frame = cap.read()
+        frame = imutils.resize(frame, height=108)
+        pixmap = numpy_to_pixmap(frame)
+
+        logging.debug(f'emitting pixmap back to file list')
+        self.signal.emit(pixmap, self.item)
 
 
 class FileListWindow(QWidget):
@@ -182,28 +206,28 @@ class FileListWindow(QWidget):
         logging.debug(f'found child {child}')
         child.setPixmap(pixmap)
 
-    def add_video(self, url: 'QUrl'):
-        logging.info(f'adding video {url}')
+    def add_video(self, vid_path: VideoPath):
+        logging.info(f'adding video {vid_path}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(url, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(vid_path, self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = ScreenshotThread(url, self.update_screenshot_slot, item)
+        th = ScreenshotThread(vid_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[url.path()] = row
+        self.clip_list_dict[vid_path.str()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
-        logging.info(f'playing {item_widget.url}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.url, True)
+        logging.info(f'playing {item_widget.vid_path}')
+        self.signals.preview_window.switch_video_slot.emit(item_widget.vid_path, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)

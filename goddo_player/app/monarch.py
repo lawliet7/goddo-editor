@@ -4,22 +4,19 @@ import cv2
 from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtWidgets import QApplication
 
-from goddo_player.app.video_path import VideoPath
-from goddo_player.utils.enums import IncDec
-from goddo_player.file_list_window import FileListWindow, ClipItemWidget
-from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, TimelineClip
+from goddo_player.app.video_path import VideoPath
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.preview_window import PreviewWindow
 from goddo_player.preview_window_output import PreviewWindowOutput
-from goddo_player.utils.message_box_utils import show_error_box
-from goddo_player.utils.url_utils import file_to_url
-from goddo_player.utils.window_util import activate_window
 from goddo_player.tabbed_list_window import TabbedListWindow
 from goddo_player.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
+from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.utils.url_utils import file_to_url
+from goddo_player.utils.window_util import activate_window
 
 
 class MonarchSystem(QObject):
@@ -269,7 +266,7 @@ class MonarchSystem(QObject):
         if fps > 0:
             item = self.state.file_list.create_file_item(vid_path.url())
             self.state.file_list.add_file_item(item)
-            self.tabbed_list_window.add_video(vid_path)
+            self.tabbed_list_window.videos_tab.add_video(vid_path)
         else:
             show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
 

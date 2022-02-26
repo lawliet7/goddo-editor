@@ -1,6 +1,8 @@
 import logging
 from typing import Dict, List
 
+import cv2
+import imutils
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal

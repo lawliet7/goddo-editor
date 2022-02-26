@@ -8,6 +8,7 @@ from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
+from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand
@@ -60,13 +61,13 @@ class PreviewWidget(QWidget):
         logging.info(f'drop {event.mimeData().urls()}')
 
         preview_window_signals = self.signals.get_preview_window(self.window_name)
-        preview_window_signals.switch_video_slot.emit(event.mimeData().urls()[0], True)
+        preview_window_signals.switch_video_slot.emit(VideoPath(event.mimeData().urls()[0]), True)
 
-    def switch_video(self, url: 'QUrl'):
+    def switch_video(self, vid_path: VideoPath):
         preview_window_signals = self.signals.get_preview_window(self.window_name)
 
-        if not url.isEmpty():
-            self.cap = cv2.VideoCapture(url.path())
+        if not vid_path.url().isEmpty():
+            self.cap = cv2.VideoCapture(vid_path.str())
 
             fps = self.cap.get(cv2.CAP_PROP_FPS)
             total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))

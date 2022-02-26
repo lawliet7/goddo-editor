@@ -272,6 +272,18 @@ def test_drop_unsupported_video_into_file_window(qtbot, file_window, preview_win
     wait_for_threadpool_to_complete(qtbot, file_window.thread_pool)
 
 
+@pytest.mark.order(4)
+def test_open_video_in_file_window(qtbot, file_window, preview_window, output_window, timeline_window):
+
+    list_widget = file_window.listWidget
+    for item in list_widget.get_all_items():
+        item_widget = list_widget.itemWidget(item)
+        qtbot.mouseDClick(item_widget, Qt.LeftButton)
+
+        qtbot.wait(5000)
+        break
+
+
 def assert_new_file_item_state(qtbot, file_window, new_file_url_added, new_total_count_expected):
     file_list_state = file_window.state.file_list
 

@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 import cv2
 import imutils
@@ -90,7 +90,7 @@ class FileScrollArea(QScrollArea):
         self.signals = StateStoreSignals()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        logging.info('double click')
+        logging.info(f'double click @ {event.pos()}')
 
         text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
         if ok:
@@ -150,7 +150,7 @@ class FileListWidget(QListWidget):
 
             self.signals.add_file_slot.emit(VideoPath(url))
 
-    def get_all_items(self):
+    def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)
 
 
@@ -227,8 +227,8 @@ class FileListWindow(QWidget):
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
-        logging.info(f'playing {item_widget.url}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.url, True)
+        logging.info(f'playing {item_widget.vid_path}')
+        self.signals.preview_window.switch_video_slot.emit(item_widget.vid_path, True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)

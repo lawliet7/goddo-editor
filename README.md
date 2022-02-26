@@ -2,10 +2,10 @@
   Goddo Serenade's Video Editor  (** WIP **)
   
   <h5>Supported Video Formats:</h5>
-  *.mp4, *.wmv, *.mkv, *.webm, *.avi, *.mov, *.ts, *.m2ts', *.flv
+  *.mp4, *.wmv, *.mkv, *.webm, *.avi, *.mov, *.ts, *.m2ts', *.flv, *.asf
 
   <h6>Unsupported Video Formats:</h6>
-  *.asf
+  none found so far
   
   <h5>Environment - Use Conda</h5>
   - python 3.8

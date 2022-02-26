@@ -21,7 +21,7 @@ class PreviewWindowSignals(QObject):
         super().__init__()
         self.setObjectName(name)
 
-    switch_video_slot = pyqtSignal(QUrl, bool)
+    switch_video_slot = pyqtSignal(VideoPath, bool)
     switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
     out_frame_slot = pyqtSignal(int)

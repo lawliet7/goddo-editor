@@ -91,7 +91,7 @@ class MonarchSystem(QObject):
     def __on_preview_window_reset(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
 
-        self.sender().switch_video_slot.emit(QUrl(), False)
+        self.sender().switch_video_slot.emit(VideoPath(QUrl()), False)
 
         self.timeline_window.update()
         preview_window.update()
@@ -103,7 +103,7 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(clip.video_url, False)
+            pw_signals.switch_video_slot.emit(VideoPath(clip.video_url), False)
 
             if clip.frame_in_out.in_frame is not None:
                 pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
@@ -238,14 +238,14 @@ class MonarchSystem(QObject):
         else:
             return None
 
-    def __on_update_preview_file(self, url: 'QUrl', should_play: bool):
+    def __on_update_preview_file(self, vid_path: VideoPath, should_play: bool):
         logging.info(f'update preview file')
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
 
-        preview_window_state.video_url = url
+        preview_window_state.video_url = vid_path.url()
         preview_window_state.frame_in_out = FrameInOut()
-        preview_window.switch_video(preview_window_state.video_url)
+        preview_window.switch_video(vid_path)
         if should_play:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
         preview_window.activateWindow()
@@ -288,7 +288,7 @@ class MonarchSystem(QObject):
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
 
-            pw_signals.switch_video_slot.emit(file_to_url(prev_wind_dict['video_url']), False)
+            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_url'])), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']

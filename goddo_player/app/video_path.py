@@ -35,10 +35,12 @@ class VideoPath:
     def __repr__(self) -> str:
         return self.str()
 
-    def file_name(self):
-        return self.url().fileName()
+    def file_name(self, include_ext=True):
+        if include_ext:
+            return self.url().fileName()
+        else:
+            return os.path.splitext(self.file_name())[0]
 
     def ext(self):
-        _, ext = os.path.splitext(self.file_name())
-        return ext
+        return os.path.splitext(self.file_name())[1]
 

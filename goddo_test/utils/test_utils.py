@@ -1,3 +1,7 @@
+import math
+import time
+from typing import Callable
+
 import cv2
 import numpy as np
 from PyQt5.QtCore import QMimeData
@@ -75,3 +79,19 @@ def list_widget_to_test_drag_and_drop(show=True):
         list_widget.show()
 
     return list_widget
+
+
+def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10):
+    itr = int(math.ceil(timeout_secs / check_interval_secs))
+
+    for i in range(itr):
+        ret_val = func()
+        print(f'got val {ret_val}')
+        if ret_val:
+            print('wait complete')
+            return
+        else:
+            print(f'still waiting')
+            time.sleep(check_interval_secs)
+            
+    raise Exception(f'wait timed out in {timeout_secs} secs')

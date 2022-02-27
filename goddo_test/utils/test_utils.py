@@ -1,10 +1,11 @@
+import cv2
 import numpy as np
 from PyQt5.QtCore import QMimeData
-from PyQt5.QtGui import QDrag
+from PyQt5.QtGui import QDrag, QImage
 from PyQt5.QtWidgets import QApplication, QListWidget
 
 from goddo_player.utils.url_utils import file_to_url
-from goddo_test.path_util import path_to_str, assets_folder_path
+from goddo_test.utils.path_util import path_to_str, assets_folder_path
 
 
 def grab_screenshot():
@@ -12,11 +13,14 @@ def grab_screenshot():
     return screen.grabWindow(0).toImage()
 
 
-def save_screenshot(file_name):
+def save_screenshot(file_name: str, img: QImage = None):
+
+    if img is None:
+        screen = QApplication.primaryScreen()
+        img = screen.grabWindow(0).toImage()
+
     screenshot_name = path_to_str(assets_folder_path().joinpath(".output").joinpath(file_name))
-    screen = QApplication.primaryScreen()
-    screen_img = screen.grabWindow(0).toImage()
-    screen_img.save(screenshot_name)
+    img.save(screenshot_name)
 
 
 # wait for screenshot to finish loading
@@ -34,7 +38,6 @@ def grab_all_window_imgs(windows_tuple):
 
 
 def cmp_image(img1, img2):
-    import cv2
     res = cv2.matchTemplate(qimg_to_arr(img1), qimg_to_arr(img2), cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     print('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))

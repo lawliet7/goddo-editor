@@ -10,7 +10,7 @@ def goddo_test_folder_path() -> pathlib.Path:
 
 
 def assets_folder_path() -> pathlib.Path:
-    return goddo_test_folder_path().joinpath('assets')
+    return goddo_test_folder_path().joinpath('../assets')
 
 
 def video_folder_path() -> pathlib.Path:

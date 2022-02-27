@@ -17,6 +17,7 @@ from goddo_player.app.state_store import StateStore
 from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.widgets.base_qwidget import BaseQWidget
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.widgets.tag import TagWidget
 from screenshot_thread import ScreenshotThread
@@ -176,7 +177,7 @@ class ScreenshotThread(QRunnable):
         self.signal.emit(pixmap, self.item)
 
 
-class FileListWindow(QWidget):
+class FileListWindow(BaseQWidget):
     update_screenshot_slot = pyqtSignal(QPixmap, QListWidgetItem)
 
     def __init__(self):
@@ -230,8 +231,3 @@ class FileListWindow(QWidget):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         logging.info(f'playing {item_widget.vid_path}')
         self.signals.preview_window.switch_video_slot.emit(item_widget.vid_path, True)
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        common_event_handling(event, self.signals, self.state)
-
-        super().keyPressEvent(event)

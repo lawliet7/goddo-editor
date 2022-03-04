@@ -38,6 +38,9 @@ def main():
 
     m = MonarchSystem(app)
 
+    m.tabbed_list_window.close()
+    m.tabbed_list_window.show()
+
     url = file_to_url(args.save_file) if args.save_file else file_to_url(PlayerConfigs.default_save_file)
     m.signals.load_slot.emit(url)
 

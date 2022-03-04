@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QWindow
 from PyQt5.QtWidgets import QApplication, QStyle, QWidget
 
@@ -21,3 +22,7 @@ def activate_window(window, restore_minimized=True):
     if restore_minimized and window.isMinimized():
         window.showNormal()
     window.activateWindow()
+
+
+def clone_rect(rect: QRect) -> QRect:
+    return QRect(rect.topLeft(), rect.bottomRight())

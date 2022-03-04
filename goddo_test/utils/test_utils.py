@@ -1,3 +1,4 @@
+import logging
 import math
 import time
 from typing import Callable
@@ -44,7 +45,7 @@ def grab_all_window_imgs(windows_tuple):
 def cmp_image(img1, img2):
     res = cv2.matchTemplate(qimg_to_arr(img1), qimg_to_arr(img2), cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    print('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
+    logging.info('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
     return max_val
 
 
@@ -86,12 +87,12 @@ def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=1
 
     for i in range(itr):
         ret_val = func()
-        print(f'got val {ret_val}')
+        logging.info(f'got val {ret_val}')
         if ret_val:
-            print('wait complete')
+            logging.info('wait complete')
             return
         else:
-            print(f'still waiting')
+            logging.info(f'still waiting')
             time.sleep(check_interval_secs)
             
     raise Exception(f'wait timed out in {timeout_secs} secs')

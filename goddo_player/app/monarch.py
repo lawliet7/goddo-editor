@@ -1,8 +1,8 @@
 import logging
 
 import cv2
-from PyQt5.QtCore import QObject, QUrl
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QObject, QUrl, QTimer
+from PyQt5.QtWidgets import QApplication, QWidget
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType

@@ -2,7 +2,7 @@ import time
 
 import pyautogui
 import pytest
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QApplication
 
 from goddo_test.utils.QtAppThread import QtAppThread
 from goddo_test.utils.command_widget import Command
@@ -29,7 +29,19 @@ def test_show_all_file_window_main(app_thread):
     windows_tuple = (app_thread.mon.tabbed_list_window, app_thread.mon.preview_window,
                      app_thread.mon.preview_window_output, app_thread.mon.timeline_window)
 
+    # time.sleep(2)
+
+    screen = QApplication.primaryScreen()
+    screen_img = screen.grabWindow(0).toImage()
+    save_screenshot(f'screen.png', screen_img)
+
+    # time.sleep(2)
+
+
     img_base_windows = grab_all_window_imgs(windows_tuple)
+
+    for i, img in enumerate(img_base_windows):
+        save_screenshot(f'visibility_cmp_win_{i}_new.png', img)
 
     submit_cmd(Command.SHOW_MAX_WINDOW)
     submit_cmd(Command.ACTIVATE_FILE_WINDOW)
@@ -39,6 +51,8 @@ def test_show_all_file_window_main(app_thread):
     img_new_windows = grab_all_window_imgs(windows_tuple)
 
     for i in range(len(windows_tuple)):
+        save_screenshot(f'visibility_cmp_win_{i}_new.png', img_new_windows[i])
+        save_screenshot(f'visibility_cmp_win_{i}_base.png', img_base_windows[i])
         if i == idx:
             assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
         else:
@@ -50,7 +64,7 @@ def test_show_all_file_window_main(app_thread):
 
     for i in range(len(windows_tuple)):
         save_screenshot(f'visibility_win_{i}_new.png', img_new_windows[i])
-        save_screenshot(f'visibility_win_{i}_base.png', img_new_windows[i])
+        save_screenshot(f'visibility_win_{i}_base.png', img_base_windows[i])
         assert cmp_image(img_new_windows[i], img_base_windows[i]) > comparison_threshold
 
 

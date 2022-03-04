@@ -4,6 +4,7 @@ import pytest
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_test.utils.QtAppThread import QtAppThread
+from goddo_test.utils.command_widget import Command
 from goddo_test.utils.test_utils import wait_until
 
 
@@ -23,3 +24,9 @@ def app_thread():
     logging.info('stopping thread')
     t.stop()
     logging.info('stop')
+
+
+@pytest.fixture(autouse=True)
+def ui_reset(app_thread):
+    yield
+    app_thread.cmd.submit_cmd(Command.RESET)

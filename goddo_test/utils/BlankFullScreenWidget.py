@@ -5,10 +5,10 @@ class BlankFullScreenWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.showMaximized()
-        self.close()
+        self.hide()
 
     def reset(self):
         self.showMaximized()
-        self.close()
+        self.hide()
 
 

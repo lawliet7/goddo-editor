@@ -37,3 +37,7 @@ def list_files(path: pathlib.Path, filter_func=None):
             else:
                 output_list.append(path_as_str)
     return output_list
+
+
+def str_to_path(str_path):
+    return pathlib.Path(str_path)

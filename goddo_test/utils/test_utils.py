@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 import time
 from copy import deepcopy
 from typing import Callable
@@ -8,8 +9,8 @@ import cv2
 import numpy as np
 import pyautogui
 from PyQt5.QtCore import QMimeData
-from PyQt5.QtGui import QDrag, QImage
-from PyQt5.QtWidgets import QApplication, QListWidget
+from PyQt5.QtGui import QDrag
+from PyQt5.QtWidgets import QListWidget
 
 from goddo_player.utils.url_utils import file_to_url
 from goddo_test.utils.path_util import path_to_str, output_screenshot_folder_path
@@ -24,11 +25,19 @@ def grab_screenshot(region_tuple=None):
 
 # img is a pil image in windows
 def save_screenshot(file_name: str, img=None):
+    ext = os.path.splitext(file_name)[1]
+    if ext not in ['.png', '.jpg']:
+        raise Exception(f"sorry we don't support {ext} we only support png and jpg for screenshot format")
+
     if img is None:
         img = pil_img_to_arr(pyautogui.screenshot())
 
     screenshot_name = path_to_str(output_screenshot_folder_path().joinpath(file_name))
     cv2.imwrite(screenshot_name, img)
+    logging.info(f'created screenshot {screenshot_name}')
+
+    if not os.path.exists(screenshot_name):
+        raise Exception(f'failed to create screenshot {screenshot_name}')
 
 
 # wait for screenshot to finish loading

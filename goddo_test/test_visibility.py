@@ -1,7 +1,7 @@
 import pyautogui
 import pytest
 
-from goddo_test.utils.command_widget import Command
+from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.test_utils import wait_until, cmp_image, pil_img_to_arr
 
 
@@ -27,8 +27,8 @@ def test_show_all_file_window_main(app_thread, windows_dict, test_win_key, compa
     # save_screenshot(f'screen_{test_win_key}_base.png', img_base)
     # del img_base
 
-    submit_cmd(Command.SHOW_MAX_WINDOW)
-    submit_cmd(getattr(Command, f'ACTIVATE_{test_win_key}'))
+    submit_cmd(Command(CommandType.SHOW_MAX_WINDOW))
+    submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key}')))
 
     wait_until(lambda: windows_dict[test_win_key].isActiveWindow())
 

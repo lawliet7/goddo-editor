@@ -5,7 +5,7 @@ import pytest
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_test.utils.QtAppThread import QtAppThread
-from goddo_test.utils.command_widget import Command
+from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import output_screenshot_folder_path, list_files
 from goddo_test.utils.test_utils import wait_until
 
@@ -42,7 +42,7 @@ def windows_dict(app_thread):
 @pytest.fixture(autouse=True)
 def ui_reset(app_thread):
     yield
-    app_thread.cmd.submit_cmd(Command.RESET)
+    app_thread.cmd.submit_cmd(Command(CommandType.RESET))
 
 
 @pytest.fixture(autouse=True, scope='session')

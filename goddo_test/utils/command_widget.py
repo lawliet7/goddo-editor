@@ -1,31 +1,42 @@
 import logging
 from enum import Enum, auto
 from queue import Queue, Empty
+from typing import List
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app.monarch import MonarchSystem
-from goddo_player.utils.window_util import clone_rect
+from goddo_player.utils.window_util import clone_rect, activate_window
 from goddo_test.utils.BlankFullScreenWidget import BlankFullScreenWidget
+from goddo_test.utils.list_widget_for_dnd import ListWidgetForDnd
 from goddo_test.utils.test_utils import wait_until
 
 
-class Command(Enum):
+class CommandType(Enum):
     SHOW_MAX_WINDOW = auto()
-    CLOSE_MAX_WINDOW = auto()
+    HIDE_MAX_WINDOW = auto()
     RESET = auto()
     ACTIVATE_TABBED_LIST_WINDOW = auto()
     ACTIVATE_PREVIEW_WINDOW = auto()
     ACTIVATE_OUTPUT_WINDOW = auto()
     ACTIVATE_TIMELINE_WINDOW = auto()
+    SHOW_DND_WINDOW = auto()
+    HIDE_DND_WINDOW = auto()
+    ADD_ITEM_DND_WINDOW = auto()
+
+
+class Command:
+    def __init__(self, cmd_type: CommandType, params: List = []):
+        self.cmd_type = cmd_type
+        self.params = params
 
 
 class CommandWidget(QWidget):
     def __init__(self, monarch: MonarchSystem):
         super().__init__()
 
-        self._q = Queue()
+        self._q: Queue[Command] = Queue()
         self._monarch = monarch
 
         self._list_window_geometry = clone_rect(self._monarch.tabbed_list_window.geometry())
@@ -39,33 +50,37 @@ class CommandWidget(QWidget):
 
         self._max_widget = BlankFullScreenWidget()
 
+        self.dnd_widget = ListWidgetForDnd()
+
     def _handler(self):
         try:
             cmd = self._q.get_nowait()
 
             logging.info(f'executing cmd {cmd}')
 
-            if cmd == Command.RESET:
+            if cmd.cmd_type == CommandType.RESET:
                 self._reset()
-            elif cmd == Command.SHOW_MAX_WINDOW:
+            elif cmd.cmd_type == CommandType.SHOW_MAX_WINDOW:
                 self._max_widget.show()
-            elif cmd == Command.CLOSE_MAX_WINDOW:
+            elif cmd.cmd_type == CommandType.HIDE_MAX_WINDOW:
                 self._max_widget.hide()
-            elif cmd == Command.ACTIVATE_TABBED_LIST_WINDOW:
-                self._activateWindow(self._monarch.tabbed_list_window)
-            elif cmd == Command.ACTIVATE_PREVIEW_WINDOW:
-                self._activateWindow(self._monarch.preview_window)
-            elif cmd == Command.ACTIVATE_OUTPUT_WINDOW:
-                self._activateWindow(self._monarch.preview_window_output)
-            elif cmd == Command.ACTIVATE_TIMELINE_WINDOW:
-                self._activateWindow(self._monarch.timeline_window)
+            elif cmd.cmd_type == CommandType.ACTIVATE_TABBED_LIST_WINDOW:
+                activate_window(self._monarch.tabbed_list_window)
+            elif cmd.cmd_type == CommandType.ACTIVATE_PREVIEW_WINDOW:
+                activate_window(self._monarch.preview_window)
+            elif cmd.cmd_type == CommandType.ACTIVATE_OUTPUT_WINDOW:
+                activate_window(self._monarch.preview_window_output)
+            elif cmd.cmd_type == CommandType.ACTIVATE_TIMELINE_WINDOW:
+                activate_window(self._monarch.timeline_window)
+            elif cmd.cmd_type == CommandType.SHOW_DND_WINDOW:
+                self.dnd_widget.show()
+            elif cmd.cmd_type == CommandType.HIDE_DND_WINDOW:
+                self.dnd_widget.hide()
+            elif cmd.cmd_type == CommandType.ADD_ITEM_DND_WINDOW:
+                self.dnd_widget.add_item_text(cmd.params[0])
             self._q.task_done()
         except Empty:
             pass
-
-    def _activateWindow(self, win):
-        win.activateWindow()
-        win.showNormal()
         
     def submit_cmd(self, cmd: Command):
         self._q.put(cmd, True)
@@ -83,7 +98,9 @@ class CommandWidget(QWidget):
 
     def _reset(self):
         logging.info('resetting windows')
-        self._max_widget.reset()
+        self._max_widget.reset_widget()
+
+        self.dnd_widget.reset_widget()
 
         self._reset_all_win_geometry()
 

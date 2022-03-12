@@ -25,8 +25,8 @@ def test_drop_vid_file(app_thread, windows_dict):
     src_pt_x = src_corner_pt.x() + 10
     src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
-    w = windows_dict['TABBED_LIST_WINDOW']
-    dest_corner_pt = w.videos_tab.mapToGlobal(w.videos_tab.listWidget.pos())
+    tabbed_list_window = windows_dict['TABBED_LIST_WINDOW']
+    dest_corner_pt = local_to_global_pos(tabbed_list_window.videos_tab.listWidget.pos(), tabbed_list_window.videos_tab)
     dest_pt_x = dest_corner_pt.x() + 10
     dest_pt_y = dest_corner_pt.y() + 10
 

@@ -13,7 +13,15 @@ from goddo_test.utils.path_util import video_folder_path
 from goddo_test.utils.test_utils import wait_until, drag_and_drop
 
 
-@pytest.mark.parametrize("test_file_ext", ['mp4'])
+def get_list_of_test_file_exts():
+    path = video_folder_path().joinpath('supported').resolve()
+    return [file_path.suffix[1:] for file_path in path.iterdir()]
+
+
+FILE_EXT_PARAMS = get_list_of_test_file_exts()
+
+
+@pytest.mark.parametrize("test_file_ext", FILE_EXT_PARAMS)
 def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 

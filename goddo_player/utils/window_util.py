@@ -26,3 +26,8 @@ def activate_window(window, restore_minimized=True):
 
 def clone_rect(rect: QRect) -> QRect:
     return QRect(rect.topLeft(), rect.bottomRight())
+
+
+def local_to_global_pos(widget, parent=None):
+    widget = parent if parent is not None else widget
+    return widget.mapToGlobal(widget.pos())

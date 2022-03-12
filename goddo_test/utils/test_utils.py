@@ -118,3 +118,10 @@ def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=1
             time.sleep(check_interval_secs)
 
     raise Exception(f'wait timed out in {timeout_secs} secs')
+
+
+def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):
+    pyautogui.moveTo(src_pt_x, src_pt_y)
+    pyautogui.mouseDown()
+    pyautogui.dragTo(dest_pt_x, dest_pt_y, duration=1)
+    pyautogui.mouseUp()

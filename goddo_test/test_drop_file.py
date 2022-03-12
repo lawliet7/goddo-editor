@@ -2,9 +2,10 @@ import time
 
 import pyautogui
 
+from goddo_player.utils.window_util import local_to_global_pos
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path
-from goddo_test.utils.test_utils import wait_until
+from goddo_test.utils.test_utils import wait_until, drag_and_drop
 
 
 def test_drop_vid_file(app_thread, windows_dict):
@@ -17,19 +18,19 @@ def test_drop_vid_file(app_thread, windows_dict):
 
     wait_until(lambda: app_thread.cmd.queue_is_empty())
 
-    list_widget = app_thread.cmd.dnd_widget
-    item_widget = list_widget.itemWidget(list_widget.item(list_widget.count() - 1))
-    top_left_corner_pt2 = list_widget.mapToGlobal(item_widget.pos())
+    item_idx = app_thread.cmd.dnd_widget.get_count() - 1
+    _, item_widget = app_thread.cmd.dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = app_thread.cmd.dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
     w = windows_dict['TABBED_LIST_WINDOW']
-    pt = w.videos_tab.mapToGlobal(w.videos_tab.listWidget.pos())
+    dest_corner_pt = w.videos_tab.mapToGlobal(w.videos_tab.listWidget.pos())
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
 
-    pyautogui.moveTo(top_left_corner_pt2.x() + 10, top_left_corner_pt2.y() + int(item_widget.size().height() / 2))
-    pyautogui.mouseDown()
-    pyautogui.dragTo(pt.x() + 10, pt.y() + 10, duration=1)
-    pyautogui.mouseUp()
-
-    # pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
 
     print('you got it')
     time.sleep(1)

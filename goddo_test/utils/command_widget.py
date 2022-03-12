@@ -77,7 +77,7 @@ class CommandWidget(QWidget):
             elif cmd.cmd_type == CommandType.HIDE_DND_WINDOW:
                 self.dnd_widget.hide()
             elif cmd.cmd_type == CommandType.ADD_ITEM_DND_WINDOW:
-                self.dnd_widget.add_item_text(cmd.params[0])
+                self.dnd_widget.add_item(cmd.params[0])
             self._q.task_done()
         except Empty:
             pass

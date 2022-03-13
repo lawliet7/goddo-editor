@@ -44,3 +44,6 @@ class VideoPath:
     def ext(self):
         return os.path.splitext(self.file_name())[1]
 
+    def is_empty(self):
+        return self.str() == ''
+

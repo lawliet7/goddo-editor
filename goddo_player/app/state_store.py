@@ -274,29 +274,30 @@ class StateStore(QObject):
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
-        load_file_name = video_path.str()
+        if not video_path.is_empty():
+            load_file_name = video_path.str()
 
-        db = TinyDB(load_file_name)
-        table_preview_windows: Table = db.table('preview_windows')
-        table_files: Table = db.table('files')
-        table_timelines: Table = db.table('timelines')
+            db = TinyDB(load_file_name)
+            table_preview_windows: Table = db.table('preview_windows')
+            table_files: Table = db.table('files')
+            table_timelines: Table = db.table('timelines')
 
-        all_files = table_files.all()
-        for file_dict in all_files:
-            handle_file_fn(file_dict)
+            all_files = table_files.all()
+            for file_dict in all_files:
+                handle_file_fn(file_dict)
 
-        for prev_wind_dict in table_preview_windows.all():
-            if prev_wind_dict['video_url']:
-                handle_prev_wind_fn(prev_wind_dict)
+            for prev_wind_dict in table_preview_windows.all():
+                if prev_wind_dict['video_url']:
+                    handle_prev_wind_fn(prev_wind_dict)
 
-        for timeline_dict in table_timelines:
-            handle_timeline_fn(timeline_dict)
+            for timeline_dict in table_timelines:
+                handle_timeline_fn(timeline_dict)
 
-        db.close()
+            db.close()
 
-        logging.info(f'finished loading {video_path}')
-        logging.info(f'preview {self.preview_window}')
-        logging.info(f'files {self.file_list}')
+            logging.info(f'finished loading {video_path}')
+            logging.info(f'preview {self.preview_window}')
+            logging.info(f'files {self.file_list}')
 
         self.cur_save_file = video_path
 

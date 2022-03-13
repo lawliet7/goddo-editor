@@ -193,14 +193,15 @@ class MonarchSystem(QObject):
     def __on_switch_speed(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
-        is_playing = preview_window.is_playing()
-        if is_playing:
-            self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
-        speed = preview_window.preview_widget.switch_speed()
-        preview_window_state.is_max_speed = (speed == 1)
-        preview_window.update()
-        if is_playing:
-            self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
+        if preview_window.preview_widget.cap is not None:
+            is_playing = preview_window.is_playing()
+            if is_playing:
+                self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
+            speed = preview_window.preview_widget.switch_speed()
+            preview_window_state.is_max_speed = (speed == 1)
+            preview_window.update()
+            if is_playing:
+                self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_preview_window_seek(self, frame_no: int, pos_type: PositionType):
         preview_window = self.get_preview_window_from_signal(self.sender())
@@ -279,8 +280,7 @@ class MonarchSystem(QObject):
 
     def __on_close_file(self):
         # load empty file so it resets the state
-        blank_file_path = pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('blank.json')
-        self.signals.load_slot.emit(VideoPath(file_to_url(blank_file_path)))
+        self.signals.load_slot.emit(VideoPath(QUrl()))
 
         self.tabbed_list_window.videos_tab.listWidget.clear()
         self.tabbed_list_window.clips_tab.listWidget.clear()

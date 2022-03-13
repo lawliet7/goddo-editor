@@ -74,13 +74,13 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
 
-    def __on_remove_video_tag(self, url: QUrl, tag: str):
-        self.state.file_list.files_dict[url.path()].delete_tag(tag)
-        self.tabbed_list_window.videos_tab.clip_list_dict[url.path()].delete_tag(tag)
+    def __on_remove_video_tag(self, video_path: VideoPath, tag: str):
+        self.state.file_list.files_dict[video_path.str()].delete_tag(tag)
+        self.tabbed_list_window.videos_tab.clip_list_dict[video_path.str()].delete_tag(tag)
 
-    def __on_add_video_tag(self, url: QUrl, tag: str):
-        self.state.file_list.files_dict[url.path()].add_tag(tag)
-        self.tabbed_list_window.videos_tab.clip_list_dict[url.path()].add_tag(tag)
+    def __on_add_video_tag(self, video_path: VideoPath, tag: str):
+        self.state.file_list.files_dict[video_path.str()].add_tag(tag)
+        self.tabbed_list_window.videos_tab.clip_list_dict[video_path.str()].add_tag(tag)
 
     def __on_activate_all_windows(self):
         activate_window(self.tabbed_list_window)
@@ -238,14 +238,14 @@ class MonarchSystem(QObject):
         else:
             return None
 
-    def __on_update_preview_file(self, vid_path: VideoPath, should_play: bool):
+    def __on_update_preview_file(self, video_path: VideoPath, should_play: bool):
         logging.info(f'update preview file')
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
 
-        preview_window_state.video_url = vid_path.url()
+        preview_window_state.video_url = video_path.url()
         preview_window_state.frame_in_out = FrameInOut()
-        preview_window.switch_video(vid_path)
+        preview_window.switch_video(video_path)
         if should_play:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
         preview_window.activateWindow()
@@ -258,15 +258,15 @@ class MonarchSystem(QObject):
         preview_window_state.cur_start_frame = 0
         preview_window_state.cur_end_frame = total_frames
 
-    def __on_add_file(self, vid_path: VideoPath):
-        cap = cv2.VideoCapture(vid_path.str())
+    def __on_add_file(self, video_path: VideoPath):
+        cap = cv2.VideoCapture(video_path.str())
         fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         cap.release()
 
         if fps > 0:
-            item = self.state.file_list.create_file_item(vid_path.url())
+            item = self.state.file_list.create_file_item(video_path)
             self.state.file_list.add_file_item(item)
-            self.tabbed_list_window.videos_tab.add_video(vid_path)
+            self.tabbed_list_window.videos_tab.add_video(video_path)
         else:
             show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
 
@@ -280,10 +280,11 @@ class MonarchSystem(QObject):
             signals = StateStoreSignals()
 
             my_url = file_to_url(file_dict['name'])
-            signals.add_file_slot.emit(VideoPath(my_url))
+            video_path = VideoPath(my_url)
+            signals.add_file_slot.emit(video_path)
 
             for tag in file_dict['tags']:
-                signals.add_video_tag_slot.emit(my_url, tag)
+                signals.add_video_tag_slot.emit(video_path, tag)
 
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window

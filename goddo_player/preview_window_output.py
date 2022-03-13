@@ -8,6 +8,7 @@ from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, Q
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
 
 from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.app.video_path import VideoPath
 from goddo_player.click_slider import ClickSlider
 from goddo_player.utils.enums import IncDec
 from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
@@ -129,14 +130,14 @@ class PreviewWindowOutput(QWidget):
         if not self.preview_widget.restrict_frame_interval or frame_in_out.contains_frame(frame_no):
             self.signals.preview_window_output.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
-    def switch_video(self, url: 'QUrl'):
-        self.preview_widget.switch_video(url)
+    def switch_video(self, video_path: VideoPath):
+        self.preview_widget.switch_video(video_path)
 
-        name, _ = os.path.splitext(url.fileName())
+        name = video_path.file_name(include_ext=False)
         clip_idx = self.state.timeline.opened_clip_index + 1
         self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
 
-        if url.isEmpty():
+        if video_path.url().isEmpty():
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)

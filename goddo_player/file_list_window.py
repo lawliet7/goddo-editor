@@ -6,11 +6,10 @@ import imutils
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
+from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QInputDialog)
 
-from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
@@ -24,11 +23,11 @@ from screenshot_thread import ScreenshotThread
 
 
 class ClipItemWidget(QWidget):
-    def __init__(self, vid_path: VideoPath, list_widget, default_pixmap: QPixmap):
+    def __init__(self, video_path: VideoPath, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
-        self.vid_path = vid_path
+        self.video_path = video_path
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -56,7 +55,7 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        label = QLabel(vid_path.file_name())
+        label = QLabel(video_path.file_name())
         label.setObjectName("name")
 
         v_layout = QVBoxLayout()
@@ -66,7 +65,7 @@ class ClipItemWidget(QWidget):
         self.setLayout(h_layout)
 
     def __add_tag_callback(self, tag):
-        self.signals.remove_video_tag_slot.emit(self.url, tag)
+        self.signals.remove_video_tag_slot.emit(self.video_path, tag)
 
     def add_tag(self, tag: str):
         self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
@@ -96,7 +95,7 @@ class FileScrollArea(QScrollArea):
 
         text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
         if ok:
-            self.signals.add_video_tag_slot.emit(self.item_widget.url, text)
+            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, text)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
@@ -125,8 +124,8 @@ class FileListWidget(QListWidget):
         self.signals: StateStoreSignals = StateStoreSignals()
 
     @staticmethod
-    def __should_accept_drop(vid_path: VideoPath):
-        if vid_path.ext().lower() in PlayerConfigs.supported_video_exts:
+    def __should_accept_drop(video_path: VideoPath):
+        if video_path.ext().lower() in PlayerConfigs.supported_video_exts:
             return True
         else:
             return False
@@ -157,9 +156,9 @@ class FileListWidget(QListWidget):
 
 
 class ScreenshotThread(QRunnable):
-    def __init__(self, vid_path: VideoPath, signal, item: QListWidgetItem):
+    def __init__(self, video_path: VideoPath, signal, item: QListWidgetItem):
         super().__init__()
-        self.vid_path = vid_path
+        self.video_path = video_path
         self.signal = signal
         self.item = item
 
@@ -167,7 +166,7 @@ class ScreenshotThread(QRunnable):
     def run(self):
         logging.debug("started thread to get screenshot")
 
-        cap = cv2.VideoCapture(self.vid_path.str())
+        cap = cv2.VideoCapture(self.video_path.str())
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
         _, frame = cap.read()
         frame = imutils.resize(frame, height=108)
@@ -209,25 +208,25 @@ class FileListWindow(BaseQWidget):
         logging.debug(f'found child {child}')
         child.setPixmap(pixmap)
 
-    def add_video(self, vid_path: VideoPath):
-        logging.info(f'adding video {vid_path}')
+    def add_video(self, video_path: VideoPath):
+        logging.info(f'adding video {video_path}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(vid_path, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(video_path, self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = ScreenshotThread(vid_path, self.update_screenshot_slot, item)
+        th = ScreenshotThread(video_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[vid_path.str()] = row
+        self.clip_list_dict[video_path.str()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
-        logging.info(f'playing {item_widget.vid_path}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.vid_path, True)
+        logging.info(f'playing {item_widget.video_path}')
+        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, True)

@@ -5,11 +5,10 @@ from typing import Dict
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QUrl, QThreadPool, pyqtSignal
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QKeyEvent, QPixmap
+from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QInputDialog)
 
-from goddo_player.app.event_helper import common_event_handling
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
@@ -23,11 +22,11 @@ from screenshot_thread import ScreenshotThread
 
 
 class ClipItemWidget(QWidget):
-    def __init__(self, url: QUrl, list_widget, default_pixmap: QPixmap):
+    def __init__(self, video_path: VideoPath, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
-        self.url = url
+        self.video_path = video_path
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -55,7 +54,7 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        file_name = url.fileName().split(os.sep)[-1]
+        file_name = video_path.fileName().split(os.sep)[-1]
 
         v_layout = QVBoxLayout()
         v_layout.addWidget(QLabel(file_name))
@@ -64,7 +63,7 @@ class ClipItemWidget(QWidget):
         self.setLayout(h_layout)
 
     def __add_tag_callback(self, tag):
-        self.signals.remove_video_tag_slot.emit(self.url, tag)
+        self.signals.remove_video_tag_slot.emit(self.video_path, tag)
 
     def add_tag(self, tag: str):
         self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
@@ -94,7 +93,7 @@ class FileScrollArea(QScrollArea):
 
         text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
         if ok:
-            self.signals.add_video_tag_slot.emit(self.item_widget.url, text)
+            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, text)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
@@ -184,23 +183,23 @@ class ClipListWindow(BaseQWidget):
         logging.debug(f'found child {child}')
         child.setPixmap(pixmap)
 
-    def add_video(self, url: 'QUrl'):
-        logging.info(f'adding video {url}')
+    def add_video(self, video_path: VideoPath):
+        logging.info(f'adding video {video_path}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.listWidget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(url, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(video_path, self.listWidget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, row)
 
-        th = ScreenshotThread(VideoPath(url), self.update_screenshot_slot, item)
+        th = ScreenshotThread(video_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[url.path()] = row
+        self.clip_list_dict[video_path.str()] = row
 
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)

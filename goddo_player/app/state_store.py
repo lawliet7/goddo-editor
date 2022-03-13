@@ -9,6 +9,7 @@ from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
+from goddo_player.app.video_path import VideoPath
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
@@ -68,12 +69,12 @@ class AppConfig:
 
 @dataclass
 class FileListStateItem:
-    name: QUrl
+    name: VideoPath
     tags: List[str] = field(default_factory=list)
 
     def as_dict(self):
         return {
-            "name": self.name.path(),
+            "name": self.name.str(),
             "tags": self.tags,
         }
 
@@ -155,15 +156,15 @@ class FileListState:
     files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
 
     @staticmethod
-    def create_file_item(url: 'QUrl'):
-        item = FileListStateItem(url)
+    def create_file_item(video_path: VideoPath):
+        item = FileListStateItem(video_path)
         # item.name = url
         return item
 
     def add_file_item(self, item: FileListStateItem):
         logging.debug(f'before adding {self.files}')
         self.files.append(item)
-        self.files_dict[item.name.path()] = item
+        self.files_dict[item.name.str()] = item
         logging.debug(f'after adding {self.files}')
 
 

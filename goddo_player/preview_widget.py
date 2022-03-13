@@ -3,16 +3,16 @@ import os
 
 import cv2
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import QRect, Qt, QTimer, QUrl
+from PyQt5.QtCore import QRect, Qt, QTimer
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
-from goddo_player.app.video_path import VideoPath
-from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand
 from goddo_player.app.state_store import StateStore
+from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
 
 
@@ -37,7 +37,7 @@ class PreviewWidget(QWidget):
         self.restrict_frame_interval = True if window_name == WINDOW_NAME_OUTPUT else False
 
     def get_cur_frame_no(self):
-        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else 0
 
     def get_next_frame(self, specific_frame=None):
         if specific_frame:
@@ -73,8 +73,10 @@ class PreviewWidget(QWidget):
             total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
             preview_window_signals.update_file_details_slot.emit(fps, total_frames)
 
-            self.timer.stop()
-            self.timer.deleteLater()
+            if self.timer:
+                self.timer.stop()
+                self.timer.deleteLater()
+
             self.timer = QTimer(self)
             self.timer.setInterval(fps_to_num_millis(fps))
             self.timer.setTimerType(QtCore.Qt.PreciseTimer)
@@ -86,7 +88,8 @@ class PreviewWidget(QWidget):
             self.frame_pixmap = None
 
             self.timer.stop()
-            self.timer.disconnect()
+            self.timer.deleteLater()
+            self.timer = None
 
     def switch_speed(self):
         preview_window_state = self.state.get_preview_window(self.window_name)

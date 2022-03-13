@@ -1,4 +1,5 @@
 import logging
+import pathlib
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
@@ -53,6 +54,7 @@ class MonarchSystem(QObject):
         self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
+        self.signals.close_file_slot.connect(self.__on_close_file)
         self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame)
         self.signals.preview_window_output.in_frame_slot.connect(self.__on_preview_video_in_frame)
         self.signals.preview_window.out_frame_slot.connect(self.__on_preview_video_out_frame)
@@ -274,6 +276,23 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
         self.state.save_file(url)
+
+    def __on_close_file(self):
+        # load empty file so it resets the state
+        blank_file_path = pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('blank.json')
+        self.signals.load_slot.emit(file_to_url(blank_file_path))
+
+        self.tabbed_list_window.videos_tab.listWidget.clear()
+        self.tabbed_list_window.clips_tab.listWidget.clear()
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+        self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), False)
+        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), False)
+
+        self.timeline_window.recalculate_clip_rects()
+        # self.timeline_window.activateWindow()
+        self.timeline_window.update()
+
 
     def __on_load_file(self, url: QUrl):
         def handle_file_fn(file_dict):

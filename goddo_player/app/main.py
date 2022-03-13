@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.url_utils import file_to_url
 
 
@@ -42,7 +43,7 @@ def main():
     m.tabbed_list_window.show()
 
     url = file_to_url(args.save_file) if args.save_file else file_to_url(PlayerConfigs.default_save_file)
-    m.signals.load_slot.emit(url)
+    m.signals.load_slot.emit(VideoPath(url))
 
     sys.exit(app.exec())
 

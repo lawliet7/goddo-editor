@@ -1,0 +1,84 @@
+import time
+
+import pyautogui
+import pytest
+from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QLabel
+
+from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.url_utils import file_to_url
+from goddo_player.utils.window_util import local_to_global_pos
+from goddo_test.utils.command_widget import Command, CommandType
+from goddo_test.utils.path_util import video_folder_path
+from goddo_test.utils.test_utils import wait_until, drag_and_drop
+
+
+def get_list_of_test_file_exts():
+    path = video_folder_path().joinpath('supported').resolve()
+    return [file_path.suffix[1:] for file_path in path.iterdir()]
+
+
+FILE_EXT_PARAMS = get_list_of_test_file_exts()
+
+
+@pytest.mark.parametrize("test_file_ext", FILE_EXT_PARAMS)
+def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.{test_file_ext}").resolve()
+    video_path = VideoPath(file_to_url(file_path))
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    wait_until(lambda: app_thread.cmd.queue_is_empty())
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    videos_tab = windows_dict['TABBED_LIST_WINDOW'].videos_tab
+    video_tab_list_widget = videos_tab.listWidget
+    dest_corner_pt = local_to_global_pos(video_tab_list_widget.pos(), videos_tab)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    cur_file_count = video_tab_list_widget.count()
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    new_total_count_expected = cur_file_count+1
+
+    wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.cmd.queue_is_empty())
+
+    file_list_state = app_thread.mon.state.file_list
+
+    # assert on state
+    print(f'{len(file_list_state.files)} - {new_total_count_expected}')
+    assert len(file_list_state.files) == new_total_count_expected
+    assert len(file_list_state.files_dict) == new_total_count_expected
+
+    file_item = file_list_state.files[-1]
+    assert file_item.name == video_path.url()
+    assert len(file_item.tags) == 0
+    assert video_path.url().path() in file_list_state.files_dict
+    assert file_list_state.files_dict[video_path.url().path()] == file_item
+
+    # assert on widget
+    assert video_tab_list_widget.count() == new_total_count_expected
+
+    item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
+    item_widget = video_tab_list_widget.itemWidget(item)
+    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    assert item_label == video_path.file_name()
+
+    # wait for screenshot to finish loading
+    wait_until(lambda: app_thread.cmd.queue_is_empty())
+
+    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
+    pixmap = screenshot_label.pixmap()
+    assert pixmap != videos_tab.black_pixmap

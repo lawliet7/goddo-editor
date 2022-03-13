@@ -1,0 +1,59 @@
+import logging
+import os
+
+import pytest
+
+from goddo_player.app.monarch import MonarchSystem
+from goddo_test.utils.QtAppThread import QtAppThread
+from goddo_test.utils.command_widget import Command, CommandType
+from goddo_test.utils.path_util import output_screenshot_folder_path, list_files
+from goddo_test.utils.test_utils import wait_until
+
+
+@pytest.fixture(scope='session')
+def app_thread():
+    t = QtAppThread()
+    t.start()
+
+    wait_until(lambda: t.mon is not None)
+
+    # t.mon.tabbed_list_window.activateWindow()
+    # t.mon.preview_window.activateWindow()
+    # t.mon.preview_window_output.activateWindow()
+    # t.mon.timeline_window.activateWindow()
+
+    yield t
+
+    logging.info('stopping thread')
+    t.stop()
+    logging.info('stop')
+
+
+@pytest.fixture(scope='session')
+def windows_dict(app_thread):
+    return {
+        'TABBED_LIST_WINDOW': app_thread.mon.tabbed_list_window,
+        'PREVIEW_WINDOW': app_thread.mon.preview_window,
+        'OUTPUT_WINDOW': app_thread.mon.preview_window_output,
+        'TIMELINE_WINDOW': app_thread.mon.timeline_window,
+    }
+
+
+@pytest.fixture(autouse=True)
+def ui_reset(app_thread):
+    yield
+    app_thread.cmd.submit_cmd(Command(CommandType.RESET))
+
+
+@pytest.fixture(autouse=True, scope='session')
+def image_folder():
+    output_screenshot_folder_path().mkdir(exist_ok=True)
+
+    png_files = list_files(output_screenshot_folder_path(), filter_func=lambda f: f.lower().endswith(".png"))
+    for p in png_files:
+        logging.info(f'deleting {p}')
+        os.remove(p)
+
+    return
+
+

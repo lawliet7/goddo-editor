@@ -118,10 +118,10 @@ class PreviewWindow(QWidget):
                       f'total_frames={self.state.preview_window.total_frames}')
         self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
-    def switch_video(self, vid_path: VideoPath):
-        self.preview_widget.switch_video(vid_path)
+    def switch_video(self, video_path: VideoPath):
+        self.preview_widget.switch_video(video_path)
 
-        self.setWindowTitle(self.base_title + ' - ' + vid_path.file_name(include_ext=False))
+        self.setWindowTitle(self.base_title + ' - ' + video_path.file_name(include_ext=False))
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         self.preview_widget.exec_play_cmd(cmd)

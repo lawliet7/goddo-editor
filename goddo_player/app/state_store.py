@@ -9,6 +9,7 @@ from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
+from goddo_player.app.video_path import VideoPath
 from goddo_player.frame_in_out import FrameInOut
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
@@ -50,6 +51,8 @@ class PreviewWindowState:
         prev_wind_state.video_url = file_to_url(json_dict['video_url'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
+        frame_in_out_dict = json_dict['frame_in_out']
+        prev_wind_state.frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
         prev_wind_state.current_frame_no = json_dict['current_frame_no']
         prev_wind_state.is_max_speed = json_dict['is_max_speed']
         prev_wind_state.time_skip_multiplier = json_dict['time_skip_multiplier']
@@ -66,12 +69,12 @@ class AppConfig:
 
 @dataclass
 class FileListStateItem:
-    name: QUrl
+    name: VideoPath
     tags: List[str] = field(default_factory=list)
 
     def as_dict(self):
         return {
-            "name": self.name.path(),
+            "name": self.name.str(),
             "tags": self.tags,
         }
 
@@ -94,20 +97,74 @@ class FileListStateItem:
 
 
 @dataclass
+class ClipListStateItem:
+    name: QUrl
+    frame_in_out: FrameInOut
+    tags: List[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame:
+            raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
+
+    def as_dict(self):
+        return {
+            "name": self.name.path(),
+            "frame_in_out": asdict(self.frame_in_out),
+            "tags": self.tags,
+        }
+
+    @staticmethod
+    def from_dict(json_dict):
+        frame_in_out_dict = json_dict['frame_in_out']
+        frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
+        return ClipListStateItem(name=QUrl.fromLocalFile(json_dict['name']),
+                                 frame_in_out=frame_in_out, tags=json_dict['tags'])
+
+    def add_tag(self, tag: str):
+        new_tags = self.tags[:]
+        new_tags.append(tag)
+        self.tags = new_tags
+
+    def delete_tag(self, tag: str):
+        if tag in self.tags:
+            idx = self.tags.index(tag)
+            self.tags = [tag for i, tag in enumerate(self.tags) if i != idx]
+            return idx
+        else:
+            return -1
+
+
+@dataclass
+class ClipListState:
+    clips: List[ClipListStateItem] = field(default_factory=list)
+    clips_dict: Dict[str, ClipListStateItem] = field(default_factory=dict)
+
+    @staticmethod
+    def create_file_item(url: QUrl, frame_in_out: FrameInOut):
+        return ClipListStateItem(url, frame_in_out)
+
+    def add_file_item(self, item: ClipListStateItem):
+        logging.debug(f'before adding {self.files}')
+        self.files.append(item)
+        self.files_dict[item.name.path()] = item
+        logging.debug(f'after adding {self.files}')
+
+
+@dataclass
 class FileListState:
     files: List[FileListStateItem] = field(default_factory=list)
     files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
 
     @staticmethod
-    def create_file_item(url: 'QUrl'):
-        item = FileListStateItem(url)
+    def create_file_item(video_path: VideoPath):
+        item = FileListStateItem(video_path)
         # item.name = url
         return item
 
     def add_file_item(self, item: FileListStateItem):
         logging.debug(f'before adding {self.files}')
         self.files.append(item)
-        self.files_dict[item.name.path()] = item
+        self.files_dict[item.name.str()] = item
         logging.debug(f'after adding {self.files}')
 
 
@@ -167,6 +224,7 @@ class StateStore(QObject):
         self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
+        self.clip_list = ClipListState()
         self.timeline = TimelineState()
         self.cur_save_file = file_to_url(PlayerConfigs.default_save_file)
 

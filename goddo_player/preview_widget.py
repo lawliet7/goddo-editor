@@ -87,9 +87,10 @@ class PreviewWidget(QWidget):
             preview_window_signals.update_file_details_slot.emit(0, 0)
             self.frame_pixmap = None
 
-            self.timer.stop()
-            self.timer.deleteLater()
-            self.timer = None
+            if self.timer:
+                self.timer.stop()
+                self.timer.deleteLater()
+                self.timer = None
 
     def switch_speed(self):
         preview_window_state = self.state.get_preview_window(self.window_name)

@@ -139,7 +139,8 @@ class PreviewWindow(QWidget):
             self.slider.setDisabled(False)
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
-        self.preview_widget.exec_play_cmd(cmd)
+        if self.preview_widget.cap:
+            self.preview_widget.exec_play_cmd(cmd)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)

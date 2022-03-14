@@ -122,5 +122,7 @@ class CommandWidget(QWidget):
         self._monarch.timeline_window.showMinimized()
         self._monarch.timeline_window.showNormal()
 
+        self._monarch.signals.close_file_slot.emit()
+
 
 

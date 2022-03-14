@@ -1,8 +1,6 @@
-import time
+import logging
 
-import pyautogui
 import pytest
-from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QLabel
 
 from goddo_player.app.video_path import VideoPath
@@ -29,8 +27,6 @@ def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
     video_path = VideoPath(file_to_url(file_path))
     app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
 
-    wait_until(lambda: app_thread.cmd.queue_is_empty())
-
     dnd_widget = app_thread.cmd.dnd_widget
 
     item_idx = dnd_widget.get_count() - 1
@@ -53,20 +49,20 @@ def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
     new_total_count_expected = cur_file_count+1
 
     wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
-    wait_until(lambda: app_thread.cmd.queue_is_empty())
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
     file_list_state = app_thread.mon.state.file_list
 
     # assert on state
-    print(f'{len(file_list_state.files)} - {new_total_count_expected}')
+    logging.info(f'{len(file_list_state.files)} - {new_total_count_expected}')
     assert len(file_list_state.files) == new_total_count_expected
     assert len(file_list_state.files_dict) == new_total_count_expected
 
     file_item = file_list_state.files[-1]
-    assert file_item.name == video_path.url()
+    assert file_item.name == video_path
     assert len(file_item.tags) == 0
-    assert video_path.url().path() in file_list_state.files_dict
-    assert file_list_state.files_dict[video_path.url().path()] == file_item
+    assert video_path.str() in file_list_state.files_dict
+    assert file_list_state.files_dict[video_path.str()] == file_item
 
     # assert on widget
     assert video_tab_list_widget.count() == new_total_count_expected

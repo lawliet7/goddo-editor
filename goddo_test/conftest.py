@@ -3,11 +3,11 @@ import os
 
 import pytest
 
-from goddo_player.app.monarch import MonarchSystem
 from goddo_test.utils.QtAppThread import QtAppThread
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import output_screenshot_folder_path, list_files
 from goddo_test.utils.test_utils import wait_until
+from goddo_test.utils.windows_container import WindowsContainer
 
 
 @pytest.fixture(scope='session')
@@ -30,13 +30,13 @@ def app_thread():
 
 
 @pytest.fixture(scope='session')
-def windows_dict(app_thread):
-    return {
-        'TABBED_LIST_WINDOW': app_thread.mon.tabbed_list_window,
-        'PREVIEW_WINDOW': app_thread.mon.preview_window,
-        'OUTPUT_WINDOW': app_thread.mon.preview_window_output,
-        'TIMELINE_WINDOW': app_thread.mon.timeline_window,
-    }
+def windows_container(app_thread):
+    return WindowsContainer(
+        app_thread.mon.tabbed_list_window,
+        app_thread.mon.preview_window,
+        app_thread.mon.preview_window_output,
+        app_thread.mon.timeline_window,
+    )
 
 
 @pytest.fixture(autouse=True)

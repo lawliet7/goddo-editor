@@ -20,7 +20,7 @@ FILE_EXT_PARAMS = get_list_of_test_file_exts()
 
 
 @pytest.mark.parametrize("test_file_ext", FILE_EXT_PARAMS)
-def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
+def test_drop_vid_file(app_thread, windows_container, test_file_ext):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 
     file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.{test_file_ext}").resolve()
@@ -36,7 +36,7 @@ def test_drop_vid_file(app_thread, windows_dict, test_file_ext):
     src_pt_x = src_corner_pt.x() + 10
     src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
-    videos_tab = windows_dict['TABBED_LIST_WINDOW'].videos_tab
+    videos_tab = windows_container.tabbed_list_window.videos_tab
     video_tab_list_widget = videos_tab.listWidget
     dest_corner_pt = local_to_global_pos(video_tab_list_widget.pos(), videos_tab)
     dest_pt_x = dest_corner_pt.x() + 10

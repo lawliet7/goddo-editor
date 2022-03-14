@@ -19,18 +19,21 @@ def test_all_visible(app_thread):
 # according to this stackoverflow, imwrite will keep some data cached so not saving screenshot seems to greatly reduce
 # chance of failure (ran it 10 times and haven't failed...yet)
 # https://stackoverflow.com/questions/50393741/opencv-python-how-to-avoid-cv2-imwrite-memory-leak-in-py3
-@pytest.mark.parametrize("test_win_key", ['TABBED_LIST_WINDOW', 'PREVIEW_WINDOW', 'OUTPUT_WINDOW', 'TIMELINE_WINDOW'])
-def test_show_all_file_window_main(app_thread, windows_dict, test_win_key, comparison_threshold=0.9):
+@pytest.mark.parametrize("test_win_key", ["tabbed_list_window", "preview_window",
+                                          "output_window", "timeline_window"])
+def test_show_all_file_window_main(app_thread, windows_container, test_win_key, comparison_threshold=0.9):
     submit_cmd = app_thread.cmd.submit_cmd
+
+    windows_dict = windows_container.__dict__
 
     img_base = pil_img_to_arr(pyautogui.screenshot())
     # save_screenshot(f'screen_{test_win_key}_base.png', img_base)
     # del img_base
 
     submit_cmd(Command(CommandType.SHOW_MAX_WINDOW))
-    submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key}')))
+    submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key.upper()}')))
 
-    wait_until(lambda: windows_dict[test_win_key].isActiveWindow())
+    wait_until(lambda: getattr(windows_container, test_win_key).isActiveWindow())
 
     img_new = pil_img_to_arr(pyautogui.screenshot())
     # save_screenshot(f'screen_{test_win_key}_new_before.png', img_new)

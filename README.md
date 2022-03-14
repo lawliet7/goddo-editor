@@ -62,6 +62,7 @@
   | all | esc  | quit  |
   | all | ctrl + s  | save  |
   | all | F2  | show all windows  |
+  | file window | ctrl + w  | close file and reset gui  |
   | preview | space  | play/pause  |
   | preview | i  | mark in  |
   | preview | o  | mark out  |
@@ -76,6 +77,7 @@
   | preview (slider) | mouse wheel up  |  go back 1 min |
   | preview | ->  |  advance 1 frame |
   | preview | <-  |  go back 5 frames |
+  | preview output | f  |  switch between being restricting play to be within clip in/out range or not |
   | timeline | ctrl + p  | process output  |
   | timeline | ctrl + c  | copy clip |
   | timeline | ctrl + x  | cut clip |

@@ -38,6 +38,7 @@ class PreviewWindow(QWidget):
         self.slider.setRange(0, 200)
         self.slider.valueChanged.connect(self.on_value_changed)
         self.slider.setFixedHeight(20)
+        self.slider.setDisabled(True)
 
         # p = self.palette()
         # p.setColor(self.backgroundRole(), Qt.black)
@@ -74,15 +75,16 @@ class PreviewWindow(QWidget):
         self.preview_widget.update_frame_pixmap(0)
 
     def go_to_frame(self, frame_no: int, pos_type: PositionType):
-        if pos_type is PositionType.ABSOLUTE:
-            target_frame_no = frame_no - 1
-        else:
-            target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
-        target_frame_no = min(max(0, target_frame_no), self.state.preview_window.total_frames - 1)
+        if self.preview_widget.cap:
+            if pos_type is PositionType.ABSOLUTE:
+                target_frame_no = frame_no - 1
+            else:
+                target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
+            target_frame_no = min(max(0, target_frame_no), self.state.preview_window.total_frames - 1)
 
-        self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
-        self.preview_widget.update_frame_pixmap(1)
-        self.update()
+            self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
+            self.preview_widget.update_frame_pixmap(1)
+            self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
         total_frames = self.state.preview_window.total_frames
@@ -94,16 +96,19 @@ class PreviewWindow(QWidget):
         self.update()
 
     def update_label_text(self):
-        total_frames = self.state.preview_window.total_frames
-        cur_frame_no = self.preview_widget.get_cur_frame_no()
+        if self.preview_widget.cap is not None:
+            total_frames = self.state.preview_window.total_frames
+            cur_frame_no = self.preview_widget.get_cur_frame_no()
 
-        fps = self.state.preview_window.fps
-        cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
-        total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
-        speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
-        skip_txt = self.__build_skip_label_txt()
+            fps = self.state.preview_window.fps
+            cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
+            total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
+            speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
+            skip_txt = self.__build_skip_label_txt()
 
-        self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+            self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+        else:
+            self.label.setText('you suck')
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
@@ -123,8 +128,19 @@ class PreviewWindow(QWidget):
 
         self.setWindowTitle(self.base_title + ' - ' + video_path.file_name(include_ext=False))
 
+        self.update()
+
+        if video_path.url().isEmpty():
+            self.slider.blockSignals(True)
+            self.slider.setValue(0)
+            self.slider.blockSignals(False)
+            self.slider.setDisabled(True)
+        else:
+            self.slider.setDisabled(False)
+
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
-        self.preview_widget.exec_play_cmd(cmd)
+        if self.preview_widget.cap:
+            self.preview_widget.exec_play_cmd(cmd)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)

@@ -35,6 +35,12 @@ class VideoPath:
     def __repr__(self) -> str:
         return self.str()
 
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, VideoPath):
+            return self.str() == o.str()
+
+        return False
+
     def file_name(self, include_ext=True):
         if include_ext:
             return self.url().fileName()
@@ -43,4 +49,7 @@ class VideoPath:
 
     def ext(self):
         return os.path.splitext(self.file_name())[1]
+
+    def is_empty(self):
+        return self.str() == ''
 

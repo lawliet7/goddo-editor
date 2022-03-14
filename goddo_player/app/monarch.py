@@ -1,4 +1,5 @@
 import logging
+import pathlib
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
@@ -53,6 +54,7 @@ class MonarchSystem(QObject):
         self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
+        self.signals.close_file_slot.connect(self.__on_close_file)
         self.signals.preview_window.in_frame_slot.connect(self.__on_preview_video_in_frame)
         self.signals.preview_window_output.in_frame_slot.connect(self.__on_preview_video_in_frame)
         self.signals.preview_window.out_frame_slot.connect(self.__on_preview_video_out_frame)
@@ -191,14 +193,15 @@ class MonarchSystem(QObject):
     def __on_switch_speed(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
-        is_playing = preview_window.is_playing()
-        if is_playing:
-            self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
-        speed = preview_window.preview_widget.switch_speed()
-        preview_window_state.is_max_speed = (speed == 1)
-        preview_window.update()
-        if is_playing:
-            self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
+        if preview_window.preview_widget.cap is not None:
+            is_playing = preview_window.is_playing()
+            if is_playing:
+                self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
+            speed = preview_window.preview_widget.switch_speed()
+            preview_window_state.is_max_speed = (speed == 1)
+            preview_window.update()
+            if is_playing:
+                self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_preview_window_seek(self, frame_no: int, pos_type: PositionType):
         preview_window = self.get_preview_window_from_signal(self.sender())
@@ -270,21 +273,36 @@ class MonarchSystem(QObject):
         else:
             show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
 
-    def __on_save_file(self, url: QUrl):
+    def __on_save_file(self, video_path: VideoPath):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
-        self.state.save_file(url)
+        self.state.save_file(video_path)
 
-    def __on_load_file(self, url: QUrl):
+    def __on_close_file(self):
+        # load empty file so it resets the state
+        self.signals.load_slot.emit(VideoPath(QUrl()))
+
+        self.tabbed_list_window.videos_tab.listWidget.clear()
+        self.tabbed_list_window.clips_tab.listWidget.clear()
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+        self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), False)
+        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), False)
+
+        self.timeline_window.recalculate_clip_rects()
+        # self.timeline_window.activateWindow()
+        self.timeline_window.update()
+
+    def __on_load_file(self, video_path: VideoPath):
         def handle_file_fn(file_dict):
             signals = StateStoreSignals()
 
             my_url = file_to_url(file_dict['name'])
-            video_path = VideoPath(my_url)
-            signals.add_file_slot.emit(video_path)
+            my_video_path = VideoPath(my_url)
+            signals.add_file_slot.emit(my_video_path)
 
             for tag in file_dict['tags']:
-                signals.add_video_tag_slot.emit(video_path, tag)
+                signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
@@ -334,7 +352,7 @@ class MonarchSystem(QObject):
                     for i in range(iterations):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
 
-        self.state.load_file(url, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
+        self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')

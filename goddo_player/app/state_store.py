@@ -226,16 +226,16 @@ class StateStore(QObject):
         self.file_list = FileListState()
         self.clip_list = ClipListState()
         self.timeline = TimelineState()
-        self.cur_save_file = file_to_url(PlayerConfigs.default_save_file)
+        self.cur_save_file = VideoPath(file_to_url(PlayerConfigs.default_save_file))
 
-        print(self.cur_save_file)
+        logging.info(f'cur save file: {self.cur_save_file}')
 
-    def save_file(self, url: QUrl):
+    def save_file(self, video_path: VideoPath):
 
-        logging.info(f'saving {url}')
+        logging.info(f'saving {video_path}')
         # todo msg box to select save file
 
-        save_file_name = url.path()[1:]
+        save_file_name = video_path.str()
         tmp_save_file_name = save_file_name + "_tmp"
         is_existing_file = pathlib.Path(save_file_name).resolve().exists()
         if is_existing_file:
@@ -264,8 +264,8 @@ class StateStore(QObject):
         if is_existing_file:
             os.remove(tmp_save_file_name)
 
-    def load_file(self, url: QUrl, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
-        logging.info(f'loading {url}')
+    def load_file(self, video_path: VideoPath, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn):
+        logging.info(f'loading {video_path}')
         # todo msg box to select save file
 
         self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
@@ -274,31 +274,32 @@ class StateStore(QObject):
         self.file_list = FileListState()
         self.timeline = TimelineState()
 
-        load_file_name = url.path()[1:]
+        if not video_path.is_empty():
+            load_file_name = video_path.str()
 
-        db = TinyDB(load_file_name)
-        table_preview_windows: Table = db.table('preview_windows')
-        table_files: Table = db.table('files')
-        table_timelines: Table = db.table('timelines')
+            db = TinyDB(load_file_name)
+            table_preview_windows: Table = db.table('preview_windows')
+            table_files: Table = db.table('files')
+            table_timelines: Table = db.table('timelines')
 
-        all_files = table_files.all()
-        for file_dict in all_files:
-            handle_file_fn(file_dict)
+            all_files = table_files.all()
+            for file_dict in all_files:
+                handle_file_fn(file_dict)
 
-        for prev_wind_dict in table_preview_windows.all():
-            if prev_wind_dict['video_url']:
-                handle_prev_wind_fn(prev_wind_dict)
+            for prev_wind_dict in table_preview_windows.all():
+                if prev_wind_dict['video_url']:
+                    handle_prev_wind_fn(prev_wind_dict)
 
-        for timeline_dict in table_timelines:
-            handle_timeline_fn(timeline_dict)
+            for timeline_dict in table_timelines:
+                handle_timeline_fn(timeline_dict)
 
-        db.close()
+            db.close()
 
-        logging.info(f'finished loading {url.path()}')
-        logging.info(f'preview {self.preview_window}')
-        logging.info(f'files {self.file_list}')
+            logging.info(f'finished loading {video_path}')
+            logging.info(f'preview {self.preview_window}')
+            logging.info(f'files {self.file_list}')
 
-        self.cur_save_file = url.path()
+        self.cur_save_file = video_path
 
     def get_preview_window(self, window_name):
         return self.preview_window if window_name == self.preview_window.name else self.preview_window_output

@@ -1,6 +1,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
+from goddo_player.utils.message_box_utils import show_error_box
+
 
 def common_event_handling(event, signals, state) -> bool:
     if event.key() == Qt.Key_Escape:
@@ -10,8 +12,11 @@ def common_event_handling(event, signals, state) -> bool:
         signals.activate_all_windows_slot.emit()
         event.accept()
     elif is_key_with_modifiers(event, Qt.Key_S, ctrl=True):
-        signals.save_slot.emit(state.cur_save_file)
-        event.accept()
+        if not state.cur_save_file.is_empty():
+            signals.save_slot.emit(state.cur_save_file)
+            event.accept()
+        else:
+            show_error_box(None, "There's no file loaded")
 
 
 def is_key_with_modifiers(event, key, ctrl=False, shift=False, numpad=False):

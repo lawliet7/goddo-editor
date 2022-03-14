@@ -6,10 +6,11 @@ import imutils
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap
+from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QInputDialog)
 
+from goddo_player.app.event_helper import is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
@@ -230,3 +231,10 @@ class FileListWindow(BaseQWidget):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
         self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, True)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if is_key_with_modifiers(event, Qt.Key_W, ctrl=True):
+            logging.info('closing file')
+            self.signals.close_file_slot.emit()
+
+        super().keyPressEvent(event)

@@ -1,20 +1,19 @@
 import logging
-import os
 
 import cv2
-from PyQt5.QtCore import QRect, Qt, QUrl, QMimeData
+from PyQt5.QtCore import QRect, Qt, QMimeData
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
     QResizeEvent, QWheelEvent
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
-from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
-from goddo_player.app.video_path import VideoPath
-from goddo_player.click_slider import ClickSlider
-from goddo_player.utils.enums import IncDec
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
-from goddo_player.preview_widget import PreviewWidget
+from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
+from goddo_player.app.video_path import VideoPath
+from goddo_player.click_slider import ClickSlider
+from goddo_player.preview_widget import PreviewWidget
+from goddo_player.utils.enums import IncDec
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 
 

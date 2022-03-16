@@ -29,5 +29,5 @@ def clone_rect(rect: QRect) -> QRect:
 
 
 def local_to_global_pos(widget, parent=None):
-    widget = parent if parent is not None else widget
-    return widget.mapToGlobal(widget.pos())
+    parent_widget = parent if parent is not None else widget
+    return parent_widget.mapToGlobal(widget.pos())

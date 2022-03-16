@@ -9,10 +9,10 @@ from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
+from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
+from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.video_path import VideoPath
 from goddo_player.frame_in_out import FrameInOut
-from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.utils.singleton_meta import singleton
 from goddo_player.utils.url_utils import file_to_url
 
@@ -20,7 +20,7 @@ from goddo_player.utils.url_utils import file_to_url
 @dataclass
 class PreviewWindowState:
     name: str
-    video_url: QUrl = None
+    video_path: VideoPath = None
     fps: float = field(default=0)
     total_frames: int = field(default=0)
     frame_in_out: FrameInOut = field(default_factory=FrameInOut)
@@ -33,7 +33,7 @@ class PreviewWindowState:
 
     def as_dict(self):
         return {
-            "video_url": self.video_url.path() if self.video_url is not None else None,
+            "video_path": self.video_path.str() if self.video_path is not None else None,
             "fps": self.fps,
             "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out),
@@ -48,7 +48,7 @@ class PreviewWindowState:
     @staticmethod
     def from_dict(json_dict):
         prev_wind_state = PreviewWindowState(json_dict['name'])
-        prev_wind_state.video_url = file_to_url(json_dict['video_url'])
+        prev_wind_state.video_path = file_to_url(json_dict['video_path'])
         prev_wind_state.fps = json_dict['fps']
         prev_wind_state.total_frames = json_dict['total_frames']
         frame_in_out_dict = json_dict['frame_in_out']
@@ -170,14 +170,14 @@ class FileListState:
 
 @dataclass(frozen=True)
 class TimelineClip:
-    video_url: QUrl
+    video_path: VideoPath
     fps: float
     total_frames: int
     frame_in_out: FrameInOut()
 
     def as_dict(self):
         return {
-            "video_url": self.video_url.path(),
+            "video_path": self.video_path.str(),
             "fps": self.fps,
             "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out)
@@ -185,7 +185,7 @@ class TimelineClip:
 
     @staticmethod
     def from_dict(json_dict):
-        return TimelineClip(file_to_url(json_dict['video_url']), json_dict['fps'],
+        return TimelineClip(VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
                             json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
 
 
@@ -287,7 +287,7 @@ class StateStore(QObject):
                 handle_file_fn(file_dict)
 
             for prev_wind_dict in table_preview_windows.all():
-                if prev_wind_dict['video_url']:
+                if prev_wind_dict['video_path']:
                     handle_prev_wind_fn(prev_wind_dict)
 
             for timeline_dict in table_timelines:

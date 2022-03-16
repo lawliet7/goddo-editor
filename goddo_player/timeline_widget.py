@@ -150,7 +150,7 @@ class TimelineWidget(QWidget):
                 painter.setBrush(orig_brush)
 
             painter.setPen(Qt.white)
-            filename = clip.video_url.fileName()
+            filename = clip.video_path.file_name()
             logging.debug(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
@@ -172,7 +172,7 @@ class TimelineWidget(QWidget):
         for i, t in enumerate(self.clip_rects):
             c, rect = t
             if rect.contains(event.pos()):
-                filename = c.video_url.fileName()
+                filename = c.video_path.file_name()
                 in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.in_frame, c.fps))
                 out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame, c.fps))
                 frame_diff = c.frame_in_out.out_frame - c.frame_in_out.in_frame

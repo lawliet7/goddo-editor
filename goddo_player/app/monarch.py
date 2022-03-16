@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 
 import cv2
@@ -105,7 +106,7 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(VideoPath(clip.video_url), False)
+            pw_signals.switch_video_slot.emit(VideoPath(clip.video_path), False)
 
             if clip.frame_in_out.in_frame is not None:
                 pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
@@ -246,7 +247,7 @@ class MonarchSystem(QObject):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
 
-        preview_window_state.video_url = video_path.url()
+        preview_window_state.video_path = video_path
         preview_window_state.frame_in_out = FrameInOut()
         preview_window.switch_video(video_path)
         if should_play:
@@ -270,12 +271,15 @@ class MonarchSystem(QObject):
             item = self.state.file_list.create_file_item(video_path)
             self.state.file_list.add_file_item(item)
             self.tabbed_list_window.videos_tab.add_video(video_path)
+        elif not os.path.exists(video_path.str()):
+            show_error_box(self.tabbed_list_window.videos_tab,
+                           f"file not found! - {video_path.str()}")
         else:
-            show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
+            show_error_box(self.tabbed_list_window.videos_tab,
+                           f"your system doesn't support file format dropped! - {video_path.str()}")
 
     def __on_save_file(self, video_path: VideoPath):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-        self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
         self.state.save_file(video_path)
 
     def __on_close_file(self):
@@ -307,7 +311,7 @@ class MonarchSystem(QObject):
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
 
-            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_url'])), False)
+            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_path'])), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
@@ -365,7 +369,7 @@ class MonarchSystem(QObject):
 
             if timeline_in_frame != pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -381,7 +385,7 @@ class MonarchSystem(QObject):
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
             if timeline_out_frame != pos:
-                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -389,3 +393,6 @@ class MonarchSystem(QObject):
 
     def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):
         self.get_preview_window_from_signal(self.sender()).toggle_play_pause(play_cmd)
+
+        if play_cmd == PlayCommand.PAUSE:
+            self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()

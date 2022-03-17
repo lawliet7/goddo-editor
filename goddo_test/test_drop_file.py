@@ -58,6 +58,8 @@ def test_drop_vid_file(app_thread, windows_container, test_file_ext):
 
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))
 
+    assert_state_is_blank(app_thread)
+
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 
     assert_after_drop(app_thread, video_path, new_total_count_expected)
@@ -94,3 +96,11 @@ def assert_after_drop(app_thread, video_path, new_total_count_expected):
     pixmap = screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap
 
+
+def assert_state_is_blank(app_thread):
+    file_list_state = app_thread.mon.state.file_list
+    videos_tab = app_thread.mon.tabbed_list_window.videos_tab
+    video_tab_list_widget = videos_tab.listWidget
+    assert len(file_list_state.files) == 0
+    assert len(file_list_state.files_dict) == 0
+    assert video_tab_list_widget.count() == 0

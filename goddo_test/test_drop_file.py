@@ -7,7 +7,7 @@ from goddo_player.app.video_path import VideoPath
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
 from goddo_test.utils.command_widget import Command, CommandType
-from goddo_test.utils.path_util import video_folder_path
+from goddo_test.utils.path_util import video_folder_path, test_output_folder_path
 from goddo_test.utils.test_utils import wait_until, drag_and_drop
 
 
@@ -51,7 +51,22 @@ def test_drop_vid_file(app_thread, windows_container, test_file_ext):
     wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
+    assert_after_drop(app_thread, video_path, new_total_count_expected)
+
+    save_file_path = test_output_folder_path().joinpath(f'drop_{test_file_ext}_save.json').resolve()
+    app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
+
+    app_thread.cmd.submit_cmd(Command(CommandType.RESET))
+
+    app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
+
+    assert_after_drop(app_thread, video_path, new_total_count_expected)
+
+
+def assert_after_drop(app_thread, video_path, new_total_count_expected):
     file_list_state = app_thread.mon.state.file_list
+    videos_tab = app_thread.mon.tabbed_list_window.videos_tab
+    video_tab_list_widget = videos_tab.listWidget
 
     # assert on state
     logging.info(f'{len(file_list_state.files)} - {new_total_count_expected}')
@@ -78,3 +93,4 @@ def test_drop_vid_file(app_thread, windows_container, test_file_ext):
     screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
     pixmap = screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap
+

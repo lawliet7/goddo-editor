@@ -86,7 +86,9 @@ class CommandWidget(QWidget):
             elif cmd.cmd_type == CommandType.ADD_ITEM_DND_WINDOW:
                 self.dnd_widget.add_item(cmd.params[0])
             elif cmd.cmd_type == CommandType.LOAD_FILE:
-                self._monarch.signals.emit(file_to_url(cmd.params[1]))
+                self._monarch.signals.load_slot.emit(cmd.params[0])
+            elif cmd.cmd_type == CommandType.SAVE_FILE:
+                self._monarch.signals.save_slot.emit(cmd.params[0])
             elif cmd.cmd_type == CommandType.PLAY_PREVIEW_VIDEO:
                 self._monarch.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
             elif cmd.cmd_type == CommandType.PAUSE_PREVIEW_VIDEO:

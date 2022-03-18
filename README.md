@@ -54,7 +54,8 @@
 
   <h5>IDE setup:</h5>
   If you are using pycharm, you can directly create run configs and use working directory as root folder.  No big deal.  <br/>
-  But if you are not then you would need to manually set the PYTHONPATH.  Below is example for vscode: <br/>
+  But if you are not then you would need to manually set the PYTHONPATH.  <br/>
+  Below is example for vscode: <br/>
 
   ```javascript
   "terminal.integrated.env.windows": {
@@ -67,7 +68,7 @@
 
   
   <h5>Run like this:</h5>
-  python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
+  python main.py
   
   <h4>shortcuts:</h4>
   

@@ -1,6 +1,3 @@
-# import sys
-# sys.path.append("/Users/William/PycharmProjects/maya_player")
-
 import logging
 import os
 

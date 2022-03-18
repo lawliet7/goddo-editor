@@ -9,12 +9,12 @@ from PyQt5.QtWidgets import QApplication, QWidget
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, TimelineClip
-from goddo_player.app.video_path import VideoPath
-from goddo_player.frame_in_out import FrameInOut
-from goddo_player.preview_window import PreviewWindow
-from goddo_player.preview_window_output import PreviewWindowOutput
-from goddo_player.tabbed_list_window import TabbedListWindow
-from goddo_player.timeline_window import TimelineWindow
+from goddo_player.utils.video_path import VideoPath
+from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.preview_window.preview_window import PreviewWindow
+from goddo_player.preview_window.preview_window_output import PreviewWindowOutput
+from goddo_player.list_window.tabbed_list_window import TabbedListWindow
+from goddo_player.timeline_window.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import file_to_url

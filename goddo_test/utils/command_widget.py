@@ -8,9 +8,8 @@ from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.app.signals import PlayCommand
-from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import clone_rect, activate_window
-from goddo_test.utils.BlankFullScreenWidget import BlankFullScreenWidget
+from goddo_test.utils.blank_full_screen_widget import BlankFullScreenWidget
 from goddo_test.utils.list_widget_for_dnd import ListWidgetForDnd
 from goddo_test.utils.test_utils import wait_until
 

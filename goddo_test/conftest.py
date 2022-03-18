@@ -1,11 +1,14 @@
+# import sys
+# sys.path.append("/Users/William/PycharmProjects/maya_player")
+
 import logging
 import os
 
 import pytest
 
-from goddo_test.utils.QtAppThread import QtAppThread
+from goddo_test.utils.qt_app_thread import QtAppThread
 from goddo_test.utils.command_widget import Command, CommandType
-from goddo_test.utils.path_util import test_output_folder_path, list_files
+from goddo_test.utils.path_util import my_test_output_folder_path, list_files
 from goddo_test.utils.test_utils import wait_until
 from goddo_test.utils.windows_container import WindowsContainer
 
@@ -47,9 +50,9 @@ def ui_reset(app_thread):
 
 @pytest.fixture(autouse=True, scope='session')
 def image_folder():
-    test_output_folder_path().mkdir(exist_ok=True)
+    my_test_output_folder_path().mkdir(exist_ok=True)
 
-    png_files = list_files(test_output_folder_path(), filter_func=lambda f: f.lower().endswith(".png") or f.lower().endswith(".json"))
+    png_files = list_files(my_test_output_folder_path(), filter_func=lambda f: f.lower().endswith(".png") or f.lower().endswith(".json"))
     for p in png_files:
         logging.info(f'deleting {p}')
         os.remove(p)

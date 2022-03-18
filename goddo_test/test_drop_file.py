@@ -3,11 +3,11 @@ import logging
 import pytest
 from PyQt5.QtWidgets import QLabel
 
-from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
 from goddo_test.utils.command_widget import Command, CommandType
-from goddo_test.utils.path_util import video_folder_path, test_output_folder_path
+from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.test_utils import wait_until, drag_and_drop
 
 
@@ -53,7 +53,7 @@ def test_drop_vid_file(app_thread, windows_container, test_file_ext):
 
     assert_after_drop(app_thread, video_path, new_total_count_expected)
 
-    save_file_path = test_output_folder_path().joinpath(f'drop_{test_file_ext}_save.json').resolve()
+    save_file_path = my_test_output_folder_path().joinpath(f'drop_{test_file_ext}_save.json').resolve()
     app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))

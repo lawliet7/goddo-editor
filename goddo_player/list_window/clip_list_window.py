@@ -12,13 +12,13 @@ from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLay
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore
-from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.base_qwidget import BaseQWidget
 from goddo_player.widgets.flow import FlowLayout
 from goddo_player.widgets.tag import TagWidget
-from screenshot_thread import ScreenshotThread
+from goddo_player.list_window.screenshot_thread import ScreenshotThread
 
 
 class ClipItemWidget(QWidget):

@@ -6,7 +6,7 @@ import numpy as np
 import pyaudio
 from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot
 
-from goddo_player.utils.number_utils import convert_to_int
+from utils.number_utils import convert_to_int
 
 
 class AudioSignals(QObject):

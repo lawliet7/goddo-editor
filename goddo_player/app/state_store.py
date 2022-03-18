@@ -11,8 +11,8 @@ from tinydb.table import Table
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.video_path import VideoPath
-from goddo_player.frame_in_out import FrameInOut
+from goddo_player.utils.video_path import VideoPath
+from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.singleton_meta import singleton
 from goddo_player.utils.url_utils import file_to_url
 

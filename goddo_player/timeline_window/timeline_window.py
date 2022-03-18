@@ -8,11 +8,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore, TimelineClip
-from goddo_player.timeline_widget import TimelineWidget
+from goddo_player.timeline_window.timeline_widget import TimelineWidget
 from goddo_player.utils.enums import IncDec
 
 

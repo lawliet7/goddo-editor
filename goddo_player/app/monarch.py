@@ -210,6 +210,8 @@ class MonarchSystem(QObject):
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
         preview_window.go_to_frame(frame_no, pos_type)
+        preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        preview_window_state.current_frame_no = frame_no
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
@@ -317,10 +319,10 @@ class MonarchSystem(QObject):
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
 
-            if 'in_frame' in frame_in_out_dict and frame_in_out_dict['in_frame']:
+            if frame_in_out_dict.get('in_frame'):
                 pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
 
-            if 'out_frame' in frame_in_out_dict and frame_in_out_dict['out_frame']:
+            if frame_in_out_dict.get('out_frame'):
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
             if prev_wind_dict['current_frame_no'] > 1:
@@ -328,10 +330,10 @@ class MonarchSystem(QObject):
             else:
                 pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
 
-            if 'is_max_speed' in prev_wind_dict:
+            if prev_wind_dict.get('is_max_speed'):
                 pw_signals.switch_speed_slot.emit()
 
-            if 'time_skip_multiplier' in prev_wind_dict:
+            if prev_wind_dict.get('time_skip_multiplier'):
                 new_multiplier = prev_wind_dict['time_skip_multiplier']
                 cur_multiplier = self.state.preview_window.time_skip_multiplier
 
@@ -346,7 +348,7 @@ class MonarchSystem(QObject):
             for clip_dict in timeline_dict['clips']:
                 StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict), -1)
 
-            if 'width_of_one_min' in timeline_dict:
+            if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
                 if width_of_one_min > PlayerConfigs.timeline_initial_width:
                     iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width) / 6)

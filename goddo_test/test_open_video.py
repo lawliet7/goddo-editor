@@ -9,7 +9,6 @@ from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
-from goddo_test.custom_asserts import assert_state_is_blank
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.test_utils import drag_and_drop, wait_until, pil_img_to_arr, cmp_image

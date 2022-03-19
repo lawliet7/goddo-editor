@@ -258,6 +258,7 @@ class MonarchSystem(QObject):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.fps = fps
         preview_window_state.total_frames = total_frames
+        preview_window_state.current_frame_no = 0
         preview_window_state.cur_total_frames = total_frames
         preview_window_state.cur_start_frame = 0
         preview_window_state.cur_end_frame = total_frames
@@ -316,10 +317,10 @@ class MonarchSystem(QObject):
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
 
-            if 'in_frame' in frame_in_out_dict:
+            if 'in_frame' in frame_in_out_dict and frame_in_out_dict['in_frame']:
                 pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
 
-            if 'out_frame' in frame_in_out_dict:
+            if 'out_frame' in frame_in_out_dict and frame_in_out_dict['out_frame']:
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
             if prev_wind_dict['current_frame_no'] > 1:
@@ -360,7 +361,11 @@ class MonarchSystem(QObject):
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
+
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        if not (0 <= pos <= preview_window_state.total_frames):
+            raise RuntimeError(f"Going to invalid in position: {pos}, total_frames={preview_window_state.total_frames}")
+
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
 
         if self.sender() is self.signals.preview_window_output:
@@ -377,7 +382,11 @@ class MonarchSystem(QObject):
 
     def __on_preview_video_out_frame(self, pos: int):
         logging.info(f'update out frame to {pos}')
+
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        if 0 > pos or pos > preview_window_state.total_frames:
+            raise RuntimeError(f"Going to invalid out position: {pos}, total_frames={preview_window_state.total_frames}")
+
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(pos)
 
         if self.sender() is self.signals.preview_window_output:

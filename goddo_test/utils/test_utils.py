@@ -13,7 +13,7 @@ from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QListWidget
 
 from goddo_player.utils.url_utils import file_to_url
-from goddo_test.utils.path_util import path_to_str, output_screenshot_folder_path
+from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path
 
 
 def grab_screenshot(region_tuple=None):
@@ -32,7 +32,7 @@ def save_screenshot(file_name: str, img=None):
     if img is None:
         img = pil_img_to_arr(pyautogui.screenshot())
 
-    screenshot_name = path_to_str(output_screenshot_folder_path().joinpath(file_name))
+    screenshot_name = path_to_str(my_test_output_folder_path().joinpath(file_name))
     cv2.imwrite(screenshot_name, img)
     logging.info(f'created screenshot {screenshot_name}')
 

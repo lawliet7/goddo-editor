@@ -7,9 +7,9 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
 from goddo_player.app.monarch import MonarchSystem
-from goddo_player.utils.url_utils import file_to_url
+from goddo_player.app.signals import PlayCommand
 from goddo_player.utils.window_util import clone_rect, activate_window
-from goddo_test.utils.BlankFullScreenWidget import BlankFullScreenWidget
+from goddo_test.utils.blank_full_screen_widget import BlankFullScreenWidget
 from goddo_test.utils.list_widget_for_dnd import ListWidgetForDnd
 from goddo_test.utils.test_utils import wait_until
 
@@ -28,6 +28,8 @@ class CommandType(Enum):
     LOAD_FILE = auto()
     SAVE_FILE = auto()
     CLOSE_FILE = auto()
+    PLAY_PREVIEW_VIDEO = auto()
+    PAUSE_PREVIEW_VIDEO = auto()
 
 
 class Command:
@@ -83,7 +85,13 @@ class CommandWidget(QWidget):
             elif cmd.cmd_type == CommandType.ADD_ITEM_DND_WINDOW:
                 self.dnd_widget.add_item(cmd.params[0])
             elif cmd.cmd_type == CommandType.LOAD_FILE:
-                self._monarch.signals.emit(file_to_url(cmd.params[1]))
+                self._monarch.signals.load_slot.emit(cmd.params[0])
+            elif cmd.cmd_type == CommandType.SAVE_FILE:
+                self._monarch.signals.save_slot.emit(cmd.params[0])
+            elif cmd.cmd_type == CommandType.PLAY_PREVIEW_VIDEO:
+                self._monarch.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
+            elif cmd.cmd_type == CommandType.PAUSE_PREVIEW_VIDEO:
+                self._monarch.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
             self._q.task_done()
         except Empty:
             pass

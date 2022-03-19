@@ -51,9 +51,24 @@
       - DEBUG
   
   * if you have icon put it in main package as icon.png
+
+  <h5>IDE setup:</h5>
+  If you are using pycharm, you can directly create run configs and use working directory as root folder.  No big deal.  <br/>
+  But if you are not then you would need to manually set the PYTHONPATH.  <br/>
+  Below is example for vscode: <br/>
+
+  ```javascript
+  "terminal.integrated.env.windows": {
+      "PYTHONPATH": "${workspaceFolder}"
+  },
+  "python.analysis.extraPaths": ["${workspaceFolder}"]
+  ```
+  - terminal.integrated.env.windows for running
+  - python.analysis.extraPaths for autocomplete
+
   
   <h5>Run like this:</h5>
-  python main.py {VIDEO} {INITIAL_OFFSET - OPTIONAL}
+  python main.py
   
   <h4>shortcuts:</h4>
   
@@ -62,6 +77,7 @@
   | all | esc  | quit  |
   | all | ctrl + s  | save  |
   | all | F2  | show all windows  |
+  | file window | ctrl + w  | close file and reset gui  |
   | preview | space  | play/pause  |
   | preview | i  | mark in  |
   | preview | o  | mark out  |
@@ -76,6 +92,7 @@
   | preview (slider) | mouse wheel up  |  go back 1 min |
   | preview | ->  |  advance 1 frame |
   | preview | <-  |  go back 5 frames |
+  | preview output | f  |  switch between being restricting play to be within clip in/out range or not |
   | timeline | ctrl + p  | process output  |
   | timeline | ctrl + c  | copy clip |
   | timeline | ctrl + x  | cut clip |

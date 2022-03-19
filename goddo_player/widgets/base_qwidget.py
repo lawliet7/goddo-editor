@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QWidget
 
-from goddo_player.app.event_helper import common_event_handling
+from goddo_player.utils.event_helper import common_event_handling
 
 
 class BaseQWidget(QWidget):

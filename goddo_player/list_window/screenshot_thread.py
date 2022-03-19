@@ -5,7 +5,7 @@ import imutils
 from PyQt5.QtCore import QRunnable, pyqtSlot
 from PyQt5.QtWidgets import QListWidgetItem
 
-from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 
 

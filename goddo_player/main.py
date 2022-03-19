@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.video_path import VideoPath
+from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.url_utils import file_to_url
 
 

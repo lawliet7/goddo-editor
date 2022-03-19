@@ -8,11 +8,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.app.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore, TimelineClip
-from goddo_player.timeline_widget import TimelineWidget
+from goddo_player.timeline_window.timeline_widget import TimelineWidget
 from goddo_player.utils.enums import IncDec
 
 
@@ -109,7 +109,7 @@ class TimelineWindow(QMainWindow):
         for i, clip in enumerate(self.state.timeline.clips):
             start_time = clip.frame_in_out.in_frame / clip.fps
             end_time = clip.frame_in_out.out_frame / clip.fps
-            file_path = clip.video_url.path()[1:] if platform.system() == 'Windows' else clip.video_url.path()
+            file_path = clip.video_path.str()
             output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
             cmd = f"ffmpeg -ss {start_time:.3f} -i {file_path} -to {end_time - start_time:.3f} -cbr 15 {output_path}"
             logging.info(f'executing cmd: {cmd}')
@@ -136,6 +136,6 @@ class TimelineWindow(QMainWindow):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         pw_state = self.state.preview_window
-        clip = TimelineClip(pw_state.video_url, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
+        clip = TimelineClip(pw_state.video_path, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
 
         self.signals.add_timeline_clip_slot.emit(clip, -1)

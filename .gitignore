@@ -55,6 +55,11 @@ coverage.xml
 .pytest_cache/
 .output/
 
+# saves / video output
+saves/
+output/
+tmp/
+
 # Translations
 *.mo
 *.pot

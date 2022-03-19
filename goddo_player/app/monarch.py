@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 
 import cv2
@@ -8,12 +9,12 @@ from PyQt5.QtWidgets import QApplication, QWidget
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, TimelineClip
-from goddo_player.app.video_path import VideoPath
-from goddo_player.frame_in_out import FrameInOut
-from goddo_player.preview_window import PreviewWindow
-from goddo_player.preview_window_output import PreviewWindowOutput
-from goddo_player.tabbed_list_window import TabbedListWindow
-from goddo_player.timeline_window import TimelineWindow
+from goddo_player.utils.video_path import VideoPath
+from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.preview_window.preview_window import PreviewWindow
+from goddo_player.preview_window.preview_window_output import PreviewWindowOutput
+from goddo_player.list_window.tabbed_list_window import TabbedListWindow
+from goddo_player.timeline_window.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import file_to_url
@@ -105,7 +106,7 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(VideoPath(clip.video_url), False)
+            pw_signals.switch_video_slot.emit(VideoPath(clip.video_path), False)
 
             if clip.frame_in_out.in_frame is not None:
                 pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
@@ -246,7 +247,7 @@ class MonarchSystem(QObject):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
 
-        preview_window_state.video_url = video_path.url()
+        preview_window_state.video_path = video_path
         preview_window_state.frame_in_out = FrameInOut()
         preview_window.switch_video(video_path)
         if should_play:
@@ -257,6 +258,7 @@ class MonarchSystem(QObject):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.fps = fps
         preview_window_state.total_frames = total_frames
+        preview_window_state.current_frame_no = 0
         preview_window_state.cur_total_frames = total_frames
         preview_window_state.cur_start_frame = 0
         preview_window_state.cur_end_frame = total_frames
@@ -270,12 +272,15 @@ class MonarchSystem(QObject):
             item = self.state.file_list.create_file_item(video_path)
             self.state.file_list.add_file_item(item)
             self.tabbed_list_window.videos_tab.add_video(video_path)
+        elif not os.path.exists(video_path.str()):
+            show_error_box(self.tabbed_list_window.videos_tab,
+                           f"file not found! - {video_path.str()}")
         else:
-            show_error_box(self.file_list_window, "your system doesn't support file format dropped!")
+            show_error_box(self.tabbed_list_window.videos_tab,
+                           f"your system doesn't support file format dropped! - {video_path.str()}")
 
     def __on_save_file(self, video_path: VideoPath):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-        self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
         self.state.save_file(video_path)
 
     def __on_close_file(self):
@@ -307,15 +312,15 @@ class MonarchSystem(QObject):
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
 
-            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_url'])), False)
+            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_path'])), False)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
 
-            if 'in_frame' in frame_in_out_dict:
+            if 'in_frame' in frame_in_out_dict and frame_in_out_dict['in_frame']:
                 pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
 
-            if 'out_frame' in frame_in_out_dict:
+            if 'out_frame' in frame_in_out_dict and frame_in_out_dict['out_frame']:
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
             if prev_wind_dict['current_frame_no'] > 1:
@@ -356,7 +361,11 @@ class MonarchSystem(QObject):
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
+
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        if not (0 <= pos <= preview_window_state.total_frames):
+            raise RuntimeError(f"Going to invalid in position: {pos}, total_frames={preview_window_state.total_frames}")
+
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
 
         if self.sender() is self.signals.preview_window_output:
@@ -365,7 +374,7 @@ class MonarchSystem(QObject):
 
             if timeline_in_frame != pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -373,7 +382,11 @@ class MonarchSystem(QObject):
 
     def __on_preview_video_out_frame(self, pos: int):
         logging.info(f'update out frame to {pos}')
+
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        if 0 > pos or pos > preview_window_state.total_frames:
+            raise RuntimeError(f"Going to invalid out position: {pos}, total_frames={preview_window_state.total_frames}")
+
         preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(pos)
 
         if self.sender() is self.signals.preview_window_output:
@@ -381,7 +394,7 @@ class MonarchSystem(QObject):
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
             if timeline_out_frame != pos:
-                new_clip = TimelineClip(video_url=clip.video_url, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -389,3 +402,6 @@ class MonarchSystem(QObject):
 
     def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):
         self.get_preview_window_from_signal(self.sender()).toggle_play_pause(play_cmd)
+
+        if play_cmd == PlayCommand.PAUSE:
+            self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()

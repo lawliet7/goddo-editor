@@ -77,7 +77,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer):
     assert_after_open(app_thread, windows_container, video_path, win_rect, base_img)
 
 
-def a_test_drop_on_preview_window(app_thread, windows_container: WindowsContainer):
+def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 
     file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
@@ -170,7 +170,7 @@ def assert_state_is_blank(app_thread, windows_container):
     assert app_thread.mon.state.preview_window.total_frames == 0
     assert app_thread.mon.state.preview_window.frame_in_out == FrameInOut()
     assert app_thread.mon.state.preview_window.current_frame_no == 0
-    # assert not app_thread.mon.state.preview_window.is_max_speed
+    assert not app_thread.mon.state.preview_window.is_max_speed
     assert app_thread.mon.state.preview_window.time_skip_multiplier == 1
     assert app_thread.mon.state.preview_window.cur_total_frames == 0
     assert app_thread.mon.state.preview_window.cur_start_frame == 0
@@ -186,7 +186,7 @@ def assert_state_is_blank(app_thread, windows_container):
     assert state_dict['frame_in_out']['in_frame'] is None
     assert state_dict['frame_in_out']['out_frame'] is None
     assert state_dict['current_frame_no'] == 0
-    # assert not state_dict['is_max_speed']
+    assert not state_dict['is_max_speed']
     assert state_dict['time_skip_multiplier'] == 1
     assert state_dict['cur_total_frames'] == 0
     assert state_dict['cur_start_frame'] == 0

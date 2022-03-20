@@ -403,7 +403,10 @@ class MonarchSystem(QObject):
                 self.timeline_window.update()
 
     def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):
-        self.get_preview_window_from_signal(self.sender()).toggle_play_pause(play_cmd)
+        preview_window = self.get_preview_window_from_signal(self.sender())
+        before_toggle_is_playing = preview_window.preview_widget.is_playing()
 
-        if play_cmd == PlayCommand.PAUSE:
+        preview_window.toggle_play_pause(play_cmd)
+
+        if play_cmd == PlayCommand.PAUSE or before_toggle_is_playing:
             self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()

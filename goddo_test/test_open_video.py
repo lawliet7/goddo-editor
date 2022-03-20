@@ -9,6 +9,7 @@ from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
+from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.test_utils import drag_and_drop, wait_until, pil_img_to_arr, cmp_image
@@ -152,43 +153,3 @@ def assert_after_open(app_thread, windows_container, video_path, win_rect, base_
     assert state_dict['cur_total_frames'] > 0
     assert state_dict['cur_start_frame'] == 0
     assert state_dict['cur_end_frame'] == 210
-
-def assert_state_is_blank(app_thread, windows_container):
-    # asserts
-    assert windows_container.preview_window.label.text() == 'you suck'
-
-    assert windows_container.preview_window.slider.value() == 0
-    assert not windows_container.preview_window.slider.isEnabled()
-    assert windows_container.preview_window.windowTitle().endswith(' - ')
-    assert windows_container.preview_window.preview_widget.frame_pixmap is None
-    assert windows_container.preview_window.preview_widget.get_cur_frame_no() == 0
-
-    # asert everything inside state
-    assert app_thread.mon.state.preview_window.name == 'source'
-    assert app_thread.mon.state.preview_window.video_path == VideoPath(QUrl(''))
-    assert app_thread.mon.state.preview_window.fps == 0
-    assert app_thread.mon.state.preview_window.total_frames == 0
-    assert app_thread.mon.state.preview_window.frame_in_out == FrameInOut()
-    assert app_thread.mon.state.preview_window.current_frame_no == 0
-    assert not app_thread.mon.state.preview_window.is_max_speed
-    assert app_thread.mon.state.preview_window.time_skip_multiplier == 1
-    assert app_thread.mon.state.preview_window.cur_total_frames == 0
-    assert app_thread.mon.state.preview_window.cur_start_frame == 0
-    assert app_thread.mon.state.preview_window.cur_end_frame == 0
-
-    # new_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
-    # assert cmp_image(new_img, base_img) < 0.9, f'preview window screen is matching before and after loading video'
-
-    state_dict = app_thread.mon.state.preview_window.as_dict()
-    assert state_dict['video_path'] == ''
-    assert state_dict['fps'] == 0
-    assert state_dict['total_frames'] == 0
-    assert state_dict['frame_in_out']['in_frame'] is None
-    assert state_dict['frame_in_out']['out_frame'] is None
-    assert state_dict['current_frame_no'] == 0
-    assert not state_dict['is_max_speed']
-    assert state_dict['time_skip_multiplier'] == 1
-    assert state_dict['cur_total_frames'] == 0
-    assert state_dict['cur_start_frame'] == 0
-    assert state_dict['cur_end_frame'] == 0
-

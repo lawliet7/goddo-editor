@@ -10,6 +10,9 @@ from goddo_test.utils.test_utils import wait_until
 from goddo_test.utils.windows_container import WindowsContainer
 
 
+pytest.register_assert_rewrite('goddo_test.common_asserts')
+
+
 @pytest.fixture(scope='session')
 def app_thread():
     t = QtAppThread()

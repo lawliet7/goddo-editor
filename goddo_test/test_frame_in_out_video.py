@@ -9,6 +9,7 @@ from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
+from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.test_utils import drag_and_drop, wait_until, pil_img_to_arr, cmp_image
@@ -67,7 +68,7 @@ def test_in_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
 
-    # assert_state_is_blank(app_thread, windows_container)
+    assert_state_is_blank(app_thread, windows_container)
 
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 
@@ -128,7 +129,7 @@ def test_out_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
 
-    # assert_state_is_blank(app_thread, windows_container)
+    assert_state_is_blank(app_thread, windows_container)
 
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 
@@ -195,7 +196,7 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
 
-    # assert_state_is_blank(app_thread, windows_container)
+    assert_state_is_blank(app_thread, windows_container)
 
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 

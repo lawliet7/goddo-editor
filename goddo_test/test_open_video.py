@@ -60,7 +60,8 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
 
-    app_thread.cmd.submit_cmd(Command(CommandType.PAUSE_PREVIEW_VIDEO))
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
     assert_after_open(app_thread, windows_container, video_path, win_rect, base_img)
 
@@ -107,7 +108,8 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer)
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
 
-    app_thread.cmd.submit_cmd(Command(CommandType.PAUSE_PREVIEW_VIDEO))
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
     assert_after_open(app_thread, windows_container, video_path, win_rect, base_img)
 

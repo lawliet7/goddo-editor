@@ -45,8 +45,6 @@ def test_in_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
 
-    # app_thread.cmd.submit_cmd(Command(CommandType.PAUSE_PREVIEW_VIDEO))
-
     pyautogui.press('space')
 
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
@@ -103,8 +101,6 @@ def test_out_frame(app_thread, windows_container: WindowsContainer):
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
-
-    # app_thread.cmd.submit_cmd(Command(CommandType.PAUSE_PREVIEW_VIDEO))
 
     time.sleep(0.5)
 
@@ -164,8 +160,6 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer):
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
-
-    # app_thread.cmd.submit_cmd(Command(CommandType.PAUSE_PREVIEW_VIDEO))
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())

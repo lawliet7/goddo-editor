@@ -175,7 +175,10 @@ class PreviewWidget(QWidget):
         elif play_cmd is PlayCommand.PAUSE:
             self.timer.stop()
         else:
-            if self.timer.isActive():
+            if self.is_playing():
                 self.timer.stop()
             else:
                 self.timer.start()
+
+    def is_playing(self):
+        return self.timer and self.timer.isActive()

@@ -28,8 +28,6 @@ class CommandType(Enum):
     LOAD_FILE = auto()
     SAVE_FILE = auto()
     CLOSE_FILE = auto()
-    PLAY_PREVIEW_VIDEO = auto()
-    PAUSE_PREVIEW_VIDEO = auto()
 
 
 class Command:
@@ -88,10 +86,6 @@ class CommandWidget(QWidget):
                 self._monarch.signals.load_slot.emit(cmd.params[0])
             elif cmd.cmd_type == CommandType.SAVE_FILE:
                 self._monarch.signals.save_slot.emit(cmd.params[0])
-            elif cmd.cmd_type == CommandType.PLAY_PREVIEW_VIDEO:
-                self._monarch.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
-            elif cmd.cmd_type == CommandType.PAUSE_PREVIEW_VIDEO:
-                self._monarch.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
             self._q.task_done()
         except Empty:
             pass

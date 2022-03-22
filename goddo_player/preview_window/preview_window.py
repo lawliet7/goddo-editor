@@ -148,17 +148,17 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.TOGGLE)
         elif event.key() == Qt.Key_S:
             self.signals.preview_window.switch_speed_slot.emit()
+        elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
+            self.signals.preview_window.in_frame_slot.emit(-1)
+            self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_I:
             self.signals.preview_window.in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.signals.preview_window.slider_update_slot.emit()
-        elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
-            self.signals.preview_window.in_frame_slot.emit(None)
+        elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
+            self.signals.preview_window.out_frame_slot.emit(-1)
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_O:
             self.signals.preview_window.out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.signals.preview_window.slider_update_slot.emit()
-        elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
-            self.signals.preview_window.out_frame_slot.emit(None)
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)

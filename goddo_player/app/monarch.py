@@ -365,16 +365,17 @@ class MonarchSystem(QObject):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
 
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
-        if not (0 <= pos <= preview_window_state.total_frames):
+        if pos != -1 and not (0 <= pos <= preview_window_state.total_frames):
             raise RuntimeError(f"Going to invalid in position: {pos}, total_frames={preview_window_state.total_frames}")
 
-        preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(pos)
+        new_pos = pos if pos >= 0 else None
+        preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_in_frame(new_pos)
 
         if self.sender() is self.signals.preview_window_output:
             opened_clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
             timeline_in_frame = opened_clip.frame_in_out.get_resolved_in_frame()
 
-            if timeline_in_frame != pos:
+            if timeline_in_frame != new_pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
                 new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
@@ -386,16 +387,17 @@ class MonarchSystem(QObject):
         logging.info(f'update out frame to {pos}')
 
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
-        if 0 > pos or pos > preview_window_state.total_frames:
+        if pos != -1 and not (0 <= pos <= preview_window_state.total_frames):
             raise RuntimeError(f"Going to invalid out position: {pos}, total_frames={preview_window_state.total_frames}")
 
-        preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(pos)
+        new_pos = pos if pos >= 0 else None
+        preview_window_state.frame_in_out = preview_window_state.frame_in_out.update_out_frame(new_pos)
 
         if self.sender() is self.signals.preview_window_output:
             clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
-            if timeline_out_frame != pos:
+            if timeline_out_frame != new_pos:
                 new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip

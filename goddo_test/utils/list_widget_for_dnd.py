@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QMimeData
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QWidget, QListWidget, QLabel, QListWidgetItem
+from PyQt5.QtCore import Qt
 
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
@@ -12,6 +13,7 @@ class ListWidgetForDnd:
 
         self.list_widget = QListWidget()
         self.list_widget.itemPressed.connect(self._on_item_clicked)
+        # self.list_widget.setSelectionMode(QListWidget.MultiSelection)
 
     def show(self):
         self.list_widget.show()
@@ -23,6 +25,7 @@ class ListWidgetForDnd:
         item = QListWidgetItem()
         self.list_widget.addItem(item)
         self.list_widget.setItemWidget(item, QLabel(txt))
+        # item.setSelected(select)
 
     def get_item_and_widget(self, idx):
         item = self.list_widget.item(idx)
@@ -41,11 +44,17 @@ class ListWidgetForDnd:
             return item_widget.pos()
 
     def _on_item_clicked(self, item):
-        path = self.list_widget.itemWidget(item).text()
+        all_items = self.list_widget.findItems('*', Qt.MatchWildcard)
 
         drag = QDrag(self.list_widget)
         mime_data = QMimeData()
-        mime_data.setUrls([file_to_url(path)])
+
+        file_urls = []
+        for cur_item in all_items:
+            path = self.list_widget.itemWidget(cur_item).text()
+            file_urls.append(file_to_url(path))
+        mime_data.setUrls(file_urls)
+
         drag.setMimeData(mime_data)
         drag.exec()
 

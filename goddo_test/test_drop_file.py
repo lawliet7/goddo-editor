@@ -115,8 +115,6 @@ def test_drop_multiple_vid_file(app_thread, windows_container):
 
     assert_after_multiple_drop(app_thread, video_path1, video_path2, new_total_count_expected)
 
-    time.sleep(5)
-
 
 def assert_after_drop(app_thread, video_path, new_total_count_expected):
     file_list_state = app_thread.mon.state.file_list

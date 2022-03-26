@@ -1,8 +1,11 @@
+import time
 import pyautogui
 import pytest
+from goddo_player.utils.window_util import local_to_global_pos
 
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.test_utils import wait_until, cmp_image, pil_img_to_arr
+from goddo_test.utils.windows_container import WindowsContainer
 
 
 def test_all_visible(app_thread):
@@ -21,7 +24,7 @@ def test_all_visible(app_thread):
 # https://stackoverflow.com/questions/50393741/opencv-python-how-to-avoid-cv2-imwrite-memory-leak-in-py3
 @pytest.mark.parametrize("test_win_key", ["tabbed_list_window", "preview_window",
                                           "output_window", "timeline_window"])
-def test_show_all_file_window_main(app_thread, windows_container, test_win_key, comparison_threshold=0.9):
+def test_show_all_file_window_main(app_thread, windows_container: WindowsContainer, test_win_key, comparison_threshold=0.9):
     submit_cmd = app_thread.cmd.submit_cmd
 
     windows_dict = windows_container.__dict__
@@ -30,8 +33,18 @@ def test_show_all_file_window_main(app_thread, windows_container, test_win_key, 
     # save_screenshot(f'screen_{test_win_key}_base.png', img_base)
     # del img_base
 
+    # pos = local_to_global_pos(windows_container.preview_window)
+    pos = getattr(windows_container, test_win_key).pos()
+    pyautogui.moveTo(pos.x()+30, pos.y()+10)
+    pyautogui.click()
+
     submit_cmd(Command(CommandType.SHOW_MAX_WINDOW))
-    submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key.upper()}')))
+    # submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key.upper()}')))
+
+    time.sleep(0.5)
+
+    with pyautogui.hold('alt'):
+        pyautogui.press(['tab'])
 
     wait_until(lambda: getattr(windows_container, test_win_key).isActiveWindow())
 
@@ -72,5 +85,3 @@ def test_show_all_file_window_main(app_thread, windows_container, test_win_key, 
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_new.png', new_img)
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_base.png', base_img)
         assert cmp_image(new_img, base_img) > comparison_threshold
-
-

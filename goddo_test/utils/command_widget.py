@@ -18,10 +18,6 @@ class CommandType(Enum):
     SHOW_MAX_WINDOW = auto()
     HIDE_MAX_WINDOW = auto()
     RESET = auto()
-    ACTIVATE_TABBED_LIST_WINDOW = auto()
-    ACTIVATE_PREVIEW_WINDOW = auto()
-    ACTIVATE_OUTPUT_WINDOW = auto()
-    ACTIVATE_TIMELINE_WINDOW = auto()
     SHOW_DND_WINDOW = auto()
     HIDE_DND_WINDOW = auto()
     ADD_ITEM_DND_WINDOW = auto()
@@ -68,14 +64,6 @@ class CommandWidget(QWidget):
                 self._max_widget.show()
             elif cmd.cmd_type == CommandType.HIDE_MAX_WINDOW:
                 self._max_widget.hide()
-            elif cmd.cmd_type == CommandType.ACTIVATE_TABBED_LIST_WINDOW:
-                activate_window(self._monarch.tabbed_list_window)
-            elif cmd.cmd_type == CommandType.ACTIVATE_PREVIEW_WINDOW:
-                activate_window(self._monarch.preview_window)
-            elif cmd.cmd_type == CommandType.ACTIVATE_OUTPUT_WINDOW:
-                activate_window(self._monarch.preview_window_output)
-            elif cmd.cmd_type == CommandType.ACTIVATE_TIMELINE_WINDOW:
-                activate_window(self._monarch.timeline_window)
             elif cmd.cmd_type == CommandType.SHOW_DND_WINDOW:
                 self.dnd_widget.show()
             elif cmd.cmd_type == CommandType.HIDE_DND_WINDOW:

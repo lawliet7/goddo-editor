@@ -33,10 +33,7 @@ def test_show_all_file_window_main(app_thread, windows_container: WindowsContain
     # save_screenshot(f'screen_{test_win_key}_base.png', img_base)
     # del img_base
 
-    # pos = local_to_global_pos(windows_container.preview_window)
-    pos = getattr(windows_container, test_win_key).pos()
-    pyautogui.moveTo(pos.x()+30, pos.y()+10)
-    pyautogui.click()
+    click_main_window(windows_dict[test_win_key])
 
     submit_cmd(Command(CommandType.SHOW_MAX_WINDOW))
     # submit_cmd(Command(getattr(CommandType, f'ACTIVATE_{test_win_key.upper()}')))
@@ -68,7 +65,12 @@ def test_show_all_file_window_main(app_thread, windows_container: WindowsContain
         else:
             assert cmp_image(new_img, base_img) < comparison_threshold, f'failed for {test_win_key} - {k}'
 
+    img_new = None
+    del img_new
+
     pyautogui.press('F2')
+
+    wait_until(lambda: len([v for k,v in windows_dict.items() if not v.isMinimized()]) == len(windows_dict))
 
     img_new = pil_img_to_arr(pyautogui.screenshot())
     # save_screenshot(f'screen_{test_win_key}_new_after.png', img_new)
@@ -85,3 +87,64 @@ def test_show_all_file_window_main(app_thread, windows_container: WindowsContain
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_new.png', new_img)
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_base.png', base_img)
         assert cmp_image(new_img, base_img) > comparison_threshold
+
+
+@pytest.mark.parametrize("test_win_key", ["tabbed_list_window", "preview_window",
+                                          "output_window", "timeline_window"])
+def test_minimize_and_show_all_file_window_main(app_thread, windows_container: WindowsContainer, test_win_key, comparison_threshold=0.9):
+    submit_cmd = app_thread.cmd.submit_cmd
+
+    img_base = pil_img_to_arr(pyautogui.screenshot())
+
+    windows_dict = windows_container.__dict__
+    for k in windows_dict.keys():
+        if k != test_win_key:
+            submit_cmd(Command(CommandType.MINIMIZE_GODDO_WINDOW, [windows_dict[k]]))
+
+    click_main_window(windows_dict[test_win_key])
+
+    img_new = pil_img_to_arr(pyautogui.screenshot())
+
+    for k in windows_dict.keys():
+        win = windows_dict[k]
+        x, y, w, h = win.geometry().getRect()
+
+        # img_base = cv2.imread(str(output_screenshot_folder_path().joinpath(f'screen_{test_win_key}_base.png')))
+        # img_new = cv2.imread(str(output_screenshot_folder_path().joinpath(f'screen_{test_win_key}_new_before.png')))
+
+        new_img = img_new[y:y+h, x:x+w]
+        base_img = img_base[y:y+h, x:x+w]
+        # save_screenshot(f'visibility_cmp_before_win_{test_win_key}_{k}_new.png', new_img)
+        # save_screenshot(f'visibility_cmp_before_win_{test_win_key}_{k}_base.png', base_img)
+        if k == test_win_key:
+            assert cmp_image(new_img, base_img) > comparison_threshold, f'failed for {test_win_key} - {k}'
+        else:
+            assert cmp_image(new_img, base_img) < comparison_threshold, f'failed for {test_win_key} - {k}'
+
+    img_new = None
+    del img_new
+
+    pyautogui.press('F2')
+
+    wait_until(lambda: len([v for k,v in windows_dict.items() if not v.isMinimized()]) == len(windows_dict))
+
+    img_new = pil_img_to_arr(pyautogui.screenshot())
+
+    for k in windows_dict.keys():
+        win = windows_dict[k]
+        x, y, w, h = win.geometry().getRect()
+
+        # img_base = cv2.imread(str(output_screenshot_folder_path().joinpath(f'screen_{test_win_key}_base.png')))
+        # img_new = cv2.imread(str(output_screenshot_folder_path().joinpath(f'screen_{test_win_key}_new_after.png')))
+
+        new_img = img_new[y:y + h, x:x + w]
+        base_img = img_base[y:y + h, x:x + w]
+        # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_new.png', new_img)
+        # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_base.png', base_img)
+        assert cmp_image(new_img, base_img) > comparison_threshold
+
+
+def click_main_window(main_window):
+    pos = main_window.pos()
+    pyautogui.moveTo(pos.x()+30, pos.y()+10)
+    pyautogui.click()

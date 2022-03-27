@@ -24,6 +24,7 @@ class CommandType(Enum):
     LOAD_FILE = auto()
     SAVE_FILE = auto()
     CLOSE_FILE = auto()
+    MINIMIZE_GODDO_WINDOW = auto()
 
 
 class Command:
@@ -74,6 +75,8 @@ class CommandWidget(QWidget):
                 self._monarch.signals.load_slot.emit(cmd.params[0])
             elif cmd.cmd_type == CommandType.SAVE_FILE:
                 self._monarch.signals.save_slot.emit(cmd.params[0])
+            elif cmd.cmd_type == CommandType.MINIMIZE_GODDO_WINDOW:
+                cmd.params[0].showMinimized()
             self._q.task_done()
         except Empty:
             pass

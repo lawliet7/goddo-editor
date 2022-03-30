@@ -2,7 +2,6 @@ import re
 import time
 
 import pyautogui
-import pytest
 from PyQt5.QtCore import QUrl
 
 from goddo_player.utils.video_path import VideoPath
@@ -405,6 +404,143 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer):
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [VideoPath(file_to_url(str(save_file_path)))]))
 
     assert_after_in_out(app_thread, windows_container, video_path, current_frame_no=out_frame)
+
+
+def test_go_to_in_frame(app_thread, windows_container: WindowsContainer):
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    file_path = video_folder_path().joinpath('supported').joinpath("test_vid.mp4").resolve()
+    video_path = VideoPath(file_to_url(file_path))
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    # win_rect = windows_container.preview_window.geometry().getRect()
+    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    pyautogui.press('i')
+
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+
+    slider = windows_container.preview_window.slider
+
+    cur_slider_value = slider.value()
+
+    in_frame = app_thread.mon.state.preview_window.current_frame_no
+
+    pyautogui.press('space')
+
+    time.sleep(0.5)
+
+    pyautogui.press('space')
+
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+    out_frame = app_thread.mon.state.preview_window.current_frame_no
+
+    pyautogui.press('o')
+
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    
+    pos = local_to_global_pos(slider, windows_container.preview_window)
+    x_offset = int(slider.width() * 0.9)
+    y_offset = int(slider.height() * 0.5)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    pyautogui.click()
+
+    wait_until(lambda: slider.value() > cur_slider_value)
+
+    pyautogui.press('[')
+
+    wait_until(lambda: slider.value() == cur_slider_value)
+
+
+def test_go_to_out_frame(app_thread, windows_container: WindowsContainer):
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    file_path = video_folder_path().joinpath('supported').joinpath("test_vid.mp4").resolve()
+    video_path = VideoPath(file_to_url(file_path))
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    # win_rect = windows_container.preview_window.geometry().getRect()
+    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    pyautogui.press('i')
+
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+
+    slider = windows_container.preview_window.slider
+
+    in_frame = app_thread.mon.state.preview_window.current_frame_no
+
+    pyautogui.press('space')
+
+    time.sleep(0.5)
+
+    pyautogui.press('space')
+
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+    out_frame = app_thread.mon.state.preview_window.current_frame_no
+
+    pyautogui.press('o')
+
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+
+    cur_slider_value = slider.value()
+    
+    pos = local_to_global_pos(slider, windows_container.preview_window)
+    x_offset = int(slider.width() * 0.9)
+    y_offset = int(slider.height() * 0.5)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    pyautogui.click()
+
+    wait_until(lambda: slider.value() > cur_slider_value)
+
+    pyautogui.press(']')
+
+    wait_until(lambda: slider.value() == cur_slider_value)
+
 
 
 def assert_after_in_out(app_thread, windows_container, video_path, in_frame=None, out_frame=None, current_frame_no=None):

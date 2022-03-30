@@ -171,6 +171,7 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         elif event.key() == Qt.Key_BracketRight:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
@@ -178,6 +179,7 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):

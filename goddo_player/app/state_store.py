@@ -66,6 +66,9 @@ class PreviewWindowState:
 class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
 
+    def as_dict(self):
+        return dict(self)
+
 
 @dataclass
 class FileListStateItem:
@@ -229,6 +232,17 @@ class StateStore(QObject):
         self.cur_save_file = VideoPath(file_to_url(PlayerConfigs.default_save_file))
 
         logging.info(f'cur save file: {self.cur_save_file}')
+
+    def as_dict(self):
+        d = {}
+        d['preview_window'] = self.preview_window.as_dict()
+        d['preview_window_output'] = self.preview_window_output.as_dict()
+        d['app_config'] = self.app_config.as_dict()
+        d['file_list'] = self.file_list.as_dict()
+        d['clip_list'] = self.clip_list.as_dict()
+        d['timeline'] = self.timeline.as_dict()
+        d['cur_save_file'] = str(self.cur_save_file)
+        return d
 
     def save_file(self, video_path: VideoPath):
 

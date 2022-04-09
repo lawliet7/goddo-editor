@@ -59,3 +59,8 @@ def build_time_ms_str_least_chars(hours=0, mins=0, secs=0, ms=0):
         return "{:2d}:{:02d}.{:03d}".format(mins, secs, ms)
     else:
         return "{:2d}.{:03d}".format(secs, ms)
+
+
+# hours, mins, secs, frames
+def time_str_to_components(time_str: str):
+    return int(time_str[0]), int(time_str[2:4]), int(time_str[5:7]), int(time_str[8:])

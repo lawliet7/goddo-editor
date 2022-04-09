@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QListWidget
 
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
+from goddo_player.utils.window_util import local_to_global_pos
 from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path, video_folder_path
 
 
@@ -131,3 +132,17 @@ def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):
 def get_test_vid_path():
     file_path = video_folder_path().joinpath('supported').joinpath("test_vid.mp4").resolve()
     return VideoPath(file_to_url(file_path))
+
+
+def click_on_prev_wind_slider(preview_window, pct):
+    slider = preview_window.slider
+
+    old_slider_value = slider.value()
+
+    pos = local_to_global_pos(slider, preview_window)
+    x_offset = int(slider.width() * pct)
+    y_offset = int(slider.height() * 0.5)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    pyautogui.click()
+
+    wait_until(lambda: slider.value() != old_slider_value)

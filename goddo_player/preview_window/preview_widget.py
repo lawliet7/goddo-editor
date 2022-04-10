@@ -66,7 +66,7 @@ class PreviewWidget(QWidget):
     def switch_video(self, video_path: VideoPath):
         preview_window_signals = self.signals.get_preview_window(self.window_name)
 
-        if not video_path.url().isEmpty():
+        if not video_path.is_empty():
             self.cap = cv2.VideoCapture(video_path.str())
 
             fps = self.cap.get(cv2.CAP_PROP_FPS)

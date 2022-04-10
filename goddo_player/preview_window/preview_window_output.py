@@ -136,7 +136,7 @@ class PreviewWindowOutput(QWidget):
         clip_idx = self.state.timeline.opened_clip_index + 1
         self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
 
-        if video_path.url().isEmpty():
+        if video_path.is_empty():
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)

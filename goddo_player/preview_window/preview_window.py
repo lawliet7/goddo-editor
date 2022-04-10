@@ -129,7 +129,7 @@ class PreviewWindow(QWidget):
 
         self.update()
 
-        if video_path.url().isEmpty():
+        if video_path.is_empty():
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)

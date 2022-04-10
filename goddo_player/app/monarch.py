@@ -106,7 +106,7 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(VideoPath(clip.video_path), False)
+            pw_signals.switch_video_slot.emit(clip.video_path, False)
 
             if clip.frame_in_out.in_frame is not None:
                 pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)

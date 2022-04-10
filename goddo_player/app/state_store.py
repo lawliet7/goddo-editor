@@ -67,7 +67,7 @@ class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
 
     def as_dict(self):
-        return dict(self)
+        return asdict(self)
 
 
 @dataclass
@@ -142,6 +142,9 @@ class ClipListState:
     clips: List[ClipListStateItem] = field(default_factory=list)
     clips_dict: Dict[str, ClipListStateItem] = field(default_factory=dict)
 
+    def as_dict(self):
+        return asdict(self)
+
     @staticmethod
     def create_file_item(url: QUrl, frame_in_out: FrameInOut):
         return ClipListStateItem(url, frame_in_out)
@@ -157,6 +160,9 @@ class ClipListState:
 class FileListState:
     files: List[FileListStateItem] = field(default_factory=list)
     files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
+
+    def as_dict(self):
+        return asdict(self)
 
     @staticmethod
     def create_file_item(video_path: VideoPath):
@@ -308,6 +314,8 @@ class StateStore(QObject):
                 handle_timeline_fn(timeline_dict)
 
             db.close()
+
+            self.cur_save_file = video_path
 
             logging.info(f'finished loading {video_path}')
             logging.info(f'preview {self.preview_window}')

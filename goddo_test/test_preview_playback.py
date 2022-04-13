@@ -29,7 +29,6 @@ def test_slider_disabled_initially(windows_container: WindowsContainer):
 
 def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsContainer):
     blank_state_dict = app_thread.mon.state.as_dict()
-    logging.info(f'blank timeline state {blank_state_dict["timeline"]}')
 
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)

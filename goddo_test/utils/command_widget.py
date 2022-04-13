@@ -55,7 +55,7 @@ class CommandWidget(QWidget):
 
     def _handler(self):
         try:
-            cmd = self._q.get_nowait()
+            cmd = self._q.get(timeout=0.1)
 
             logging.info(f'executing cmd {cmd}')
 

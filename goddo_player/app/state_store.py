@@ -20,11 +20,11 @@ from goddo_player.utils.url_utils import file_to_url
 @dataclass
 class PreviewWindowState:
     name: str
-    video_path: VideoPath = None
+    video_path: VideoPath = field(default=VideoPath(QUrl()))
     fps: float = field(default=0)
     total_frames: int = field(default=0)
     frame_in_out: FrameInOut = field(default_factory=FrameInOut)
-    current_frame_no: int = field(default=-1)
+    current_frame_no: int = field(default=0)
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
     cur_total_frames: int = field(default=0)

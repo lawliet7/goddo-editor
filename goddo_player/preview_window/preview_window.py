@@ -117,10 +117,12 @@ class PreviewWindow(QWidget):
         return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
+        logging.info('begin on value change')
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window.total_frames}')
         self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
+        logging.info('finished on value change')
 
     def switch_video(self, video_path: VideoPath):
         self.preview_widget.switch_video(video_path)

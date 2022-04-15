@@ -15,7 +15,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, get_test_vid_path, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):
@@ -27,9 +27,7 @@ def test_slider_disabled_initially(windows_container: WindowsContainer):
     assert windows_container.preview_window.slider.value() == 0
 
 
-def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsContainer):
-    blank_state_dict = app_thread.mon.state.as_dict()
-
+def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
@@ -43,6 +41,8 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
+    time.sleep(0.5)
+
     img_new = pil_img_to_arr(pyautogui.screenshot())
 
     assert cmp_image(img_base, img_new) < 0.98
@@ -51,16 +51,18 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
     assert secs == 6
     assert 5 <= frames <= 15
 
-    save_reload_and_assert_state(app_thread, windows_container, 'test_out_frame_save.json')
+    save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_out_frame_save.json')
 
-def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsContainer):
+def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
     img_base = pil_img_to_arr(pyautogui.screenshot())
 
     click_on_prev_wind_slider(windows_container.preview_window, 0.9)
+    time.sleep(0.5)
 
+    logging.info(f'slider value {windows_container.preview_window.slider.value()}')
     img_new = pil_img_to_arr(pyautogui.screenshot())
 
     assert cmp_image(img_base, img_new) < 0.98
@@ -69,7 +71,7 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     assert secs == 6
     assert 5 <= frames <= 15
 
-    save_reload_and_assert_state(app_thread, windows_container, 'test_while_paused_seek_on_slider.json')
+    save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_while_paused_seek_on_slider.json')
 
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))

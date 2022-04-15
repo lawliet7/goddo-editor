@@ -32,6 +32,9 @@ class Command:
         self.cmd_type = cmd_type
         self.params = params
 
+    def __repr__(self):
+        return f'Command(cmd_type={self.cmd_type},params={self.params})'
+
 
 class CommandWidget(QWidget):
     def __init__(self, monarch: MonarchSystem):

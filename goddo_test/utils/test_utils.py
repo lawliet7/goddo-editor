@@ -151,17 +151,21 @@ def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=Tr
         time.sleep(0.5)
 
 
-def save_reload_and_assert_state(app_thread, windows_container, save_file_name: str):
+def save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file_name: str):
     from goddo_test.utils.command_widget import Command, CommandType
 
     save_file_path = my_test_output_folder_path().joinpath(save_file_name).resolve()
     save_path = VideoPath(file_to_url(str(save_file_path)))
 
-    state_dict = app_thread.mon.state.as_dict()
+    before_state_dict = app_thread.mon.state.as_dict()
 
     app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
+
+    reset_state_dict = app_thread.mon.state.as_dict()
+    assert_state(reset_state_dict, blank_state)
+
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
 
@@ -169,11 +173,17 @@ def save_reload_and_assert_state(app_thread, windows_container, save_file_name: 
 
     assert after_load_state_dict['cur_save_file'] == str(save_path)
 
-    # the save file is obviously going to be different since we jus loaded a brand new file
-    state_dict.pop('cur_save_file')
-    after_load_state_dict.pop('cur_save_file')
+    assert_state(before_state_dict, after_load_state_dict)
 
-    # without this it's very hard to see which field has error
-    for k in state_dict:
-        assert state_dict[k] == after_load_state_dict[k], f'{k} is different'
-    assert state_dict == after_load_state_dict
+def assert_state(src_state, dest_state):
+    if 'cur_save_file' in src_state:
+        src_state = src_state.copy()
+        src_state.pop('cur_save_file')
+
+    if 'cur_save_file' in dest_state:
+        dest_state = dest_state.copy()
+        dest_state.pop('cur_save_file')        
+    
+    for k in src_state:
+        assert src_state[k] == dest_state[k], f'{k} is different'
+    assert src_state == dest_state

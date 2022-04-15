@@ -39,12 +39,15 @@ def app_thread():
 
 @pytest.fixture(scope='session')
 def windows_container(app_thread):
-    return WindowsContainer(
+    wc = WindowsContainer(
         app_thread.mon.tabbed_list_window,
         app_thread.mon.preview_window,
         app_thread.mon.preview_window_output,
         app_thread.mon.timeline_window,
     )
+    for _, w in vars(wc).items():
+        wait_until(lambda: w.isVisible())
+    return wc
 
 
 @pytest.fixture(autouse=True)
@@ -63,5 +66,11 @@ def image_folder():
         os.remove(p)
 
     return
+
+@pytest.fixture(scope='session')
+def blank_state(app_thread, windows_container):
+    d = app_thread.mon.state.as_dict()
+    d.pop('cur_save_file')
+    yield d
 
 

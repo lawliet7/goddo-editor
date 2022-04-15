@@ -132,16 +132,16 @@ class PreviewWindowOutput(QWidget):
     def switch_video(self, video_path: VideoPath):
         self.preview_widget.switch_video(video_path)
 
-        name = video_path.file_name(include_ext=False)
-        clip_idx = self.state.timeline.opened_clip_index + 1
-        self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
-
         if video_path.is_empty():
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)
             self.slider.setDisabled(True)
+            self.setWindowTitle(f'{self.base_title}')
         else:
+            name = video_path.file_name(include_ext=False)
+            clip_idx = self.state.timeline.opened_clip_index + 1
+            self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
             self.slider.setDisabled(False)
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):

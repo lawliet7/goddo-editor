@@ -60,8 +60,11 @@ class PreviewWidget(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         logging.info(f'drop {event.mimeData().urls()}')
 
+        video_path = VideoPath(event.mimeData().urls()[0])
+
         preview_window_signals = self.signals.get_preview_window(self.window_name)
-        preview_window_signals.switch_video_slot.emit(VideoPath(event.mimeData().urls()[0]), True)
+        preview_window_signals.switch_video_slot.emit(video_path, True)
+        self.signals.add_file_slot.emit(video_path)
 
     def switch_video(self, video_path: VideoPath):
         preview_window_signals = self.signals.get_preview_window(self.window_name)

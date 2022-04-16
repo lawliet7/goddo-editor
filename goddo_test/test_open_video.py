@@ -1,9 +1,11 @@
+import logging
 import re
 import time
 
 import pyautogui
 import pytest
 from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QLabel
 
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
@@ -155,3 +157,34 @@ def assert_after_open(app_thread, windows_container, video_path, win_rect, base_
     assert state_dict['cur_total_frames'] > 0
     assert state_dict['cur_start_frame'] == 0
     assert state_dict['cur_end_frame'] == 210
+
+    file_list_state = app_thread.mon.state.file_list
+    videos_tab = app_thread.mon.tabbed_list_window.videos_tab
+    video_tab_list_widget = videos_tab.listWidget
+
+    new_total_count_expected  = 1
+
+    # assert on state
+    assert len(file_list_state.files) == new_total_count_expected
+    assert len(file_list_state.files_dict) == new_total_count_expected
+
+    file_item = file_list_state.files[-1]
+    assert file_item.name == video_path
+    assert len(file_item.tags) == 0
+    assert video_path.str() in file_list_state.files_dict
+    assert file_list_state.files_dict[video_path.str()] == file_item
+
+    # assert on widget
+    assert video_tab_list_widget.count() == new_total_count_expected
+
+    item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
+    item_widget = video_tab_list_widget.itemWidget(item)
+    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    assert item_label == video_path.file_name()
+
+    # wait for screenshot to finish loading
+    wait_until(lambda: app_thread.cmd.queue_is_empty())
+
+    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
+    pixmap = screenshot_label.pixmap()
+    assert pixmap != videos_tab.black_pixmap

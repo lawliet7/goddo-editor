@@ -143,7 +143,10 @@ class ClipListState:
     clips_dict: Dict[str, ClipListStateItem] = field(default_factory=dict)
 
     def as_dict(self):
-        return asdict(self)
+        return {
+            "clips": [c.as_dict() for c in self.clips],
+            "clips_dict": {k:v.as_dict() for (k,v) in self.clips_dict.items()}
+        }
 
     @staticmethod
     def create_file_item(url: QUrl, frame_in_out: FrameInOut):
@@ -162,7 +165,10 @@ class FileListState:
     files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
 
     def as_dict(self):
-        return asdict(self)
+        return {
+            "files": [f.as_dict() for f in self.files],
+            "files_dict": {k:v.as_dict() for (k,v) in self.files_dict.items()}
+        }
 
     @staticmethod
     def create_file_item(video_path: VideoPath):

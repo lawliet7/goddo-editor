@@ -69,6 +69,8 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
 
+    time.sleep(0.5)
+
     save_file_path = my_test_output_folder_path().joinpath(f'test_in_out_frame_save.json').resolve()
     save_path = VideoPath(file_to_url(str(save_file_path)))
     assert_save_reload_assert_again(app_thread, windows_container, video_path, save_path, None, in_frame, out_frame)

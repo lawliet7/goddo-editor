@@ -128,6 +128,8 @@ def test_minimize_and_show_all_file_window_main(app_thread, windows_container: W
 
     wait_until(lambda: len([v for k,v in windows_dict.items() if not v.isMinimized()]) == len(windows_dict))
 
+    time.sleep(0.5)
+
     img_new = pil_img_to_arr(pyautogui.screenshot())
 
     for k in windows_dict.keys():

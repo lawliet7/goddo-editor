@@ -35,7 +35,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer):
     src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
     videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
     dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
     dest_pt_x = dest_corner_pt.x() + 10
     dest_pt_y = dest_corner_pt.y() + 10
@@ -160,7 +160,7 @@ def assert_after_open(app_thread, windows_container, video_path, win_rect, base_
 
     file_list_state = app_thread.mon.state.file_list
     videos_tab = app_thread.mon.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
 
     new_total_count_expected  = 1
 

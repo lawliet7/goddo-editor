@@ -190,9 +190,9 @@ class FileListWindow(BaseQWidget):
         self.state = StateStore()
 
         vbox = QVBoxLayout(self)
-        self.listWidget = FileListWidget()
-        self.listWidget.itemDoubleClicked.connect(self.double_clicked)
-        vbox.addWidget(self.listWidget)
+        self.list_widget = FileListWidget()
+        self.list_widget.itemDoubleClicked.connect(self.double_clicked)
+        vbox.addWidget(self.list_widget)
         self.setLayout(vbox)
 
         self.black_pixmap = numpy_to_pixmap(np.zeros((108, 192, 1)))
@@ -204,21 +204,21 @@ class FileListWindow(BaseQWidget):
         self.clip_list_dict: Dict[str, ClipItemWidget] = {}
 
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
-        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
+        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         item_widget.screenshot_label.setPixmap(pixmap)
 
     def add_video(self, video_path: VideoPath):
         logging.info(f'adding video {video_path}')
 
         # Add to list a new item (item is simply an entry in your list)
-        item = QListWidgetItem(self.listWidget)
+        item = QListWidgetItem(self.list_widget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(video_path, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(video_path, self.list_widget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
-        self.listWidget.addItem(item)
-        self.listWidget.setItemWidget(item, row)
+        self.list_widget.addItem(item)
+        self.list_widget.setItemWidget(item, row)
 
         th = ScreenshotThread(video_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
@@ -226,7 +226,7 @@ class FileListWindow(BaseQWidget):
         self.clip_list_dict[video_path.str()] = row
 
     def double_clicked(self, item):
-        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
+        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
         self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, True)
 

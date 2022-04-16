@@ -39,7 +39,7 @@ def test_drop_vid_file(app_thread, windows_container, test_file_ext):
     src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
     videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
     dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
     dest_pt_x = dest_corner_pt.x() + 10
     dest_pt_y = dest_corner_pt.y() + 10
@@ -88,7 +88,7 @@ def test_drop_multiple_vid_file(app_thread, windows_container):
     src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
 
     videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
     dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
     dest_pt_x = dest_corner_pt.x() + 10
     dest_pt_y = dest_corner_pt.y() + 10
@@ -119,7 +119,7 @@ def test_drop_multiple_vid_file(app_thread, windows_container):
 def assert_after_drop(app_thread, video_path, new_total_count_expected):
     file_list_state = app_thread.mon.state.file_list
     videos_tab = app_thread.mon.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
 
     # assert on state
     logging.info(f'{len(file_list_state.files)} - {new_total_count_expected}')
@@ -150,7 +150,7 @@ def assert_after_drop(app_thread, video_path, new_total_count_expected):
 def assert_after_multiple_drop(app_thread, video_path1, video_path2, new_total_count_expected):
     file_list_state = app_thread.mon.state.file_list
     videos_tab = app_thread.mon.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.listWidget
+    video_tab_list_widget = videos_tab.list_widget
 
     # assert on state
     logging.info(f'{len(file_list_state.files)} - {new_total_count_expected}')

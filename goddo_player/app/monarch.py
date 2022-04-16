@@ -289,8 +289,8 @@ class MonarchSystem(QObject):
         # load empty file so it resets the state
         self.signals.load_slot.emit(VideoPath(QUrl()))
 
-        self.tabbed_list_window.videos_tab.listWidget.clear()
-        self.tabbed_list_window.clips_tab.listWidget.clear()
+        self.tabbed_list_window.videos_tab.list_widget.clear()
+        self.tabbed_list_window.clips_tab.list_widget.clear()
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), False)

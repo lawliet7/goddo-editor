@@ -32,13 +32,13 @@ class ClipItemWidget(QWidget):
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
-        lbl = QLabel()
-        lbl.setObjectName('screenshot')
-        lbl.setFixedHeight(default_pixmap.height())
-        lbl.setPixmap(default_pixmap)
+        self.screenshot_label = QLabel()
+        self.screenshot_label.setObjectName('screenshot')
+        self.screenshot_label.setFixedHeight(default_pixmap.height())
+        self.screenshot_label.setPixmap(default_pixmap)
 
         h_layout = QHBoxLayout()
-        h_layout.addWidget(lbl)
+        h_layout.addWidget(self.screenshot_label)
 
         widget = QWidget()
 
@@ -56,11 +56,11 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        label = QLabel(video_path.file_name())
-        label.setObjectName("name")
+        self.file_name_label = QLabel(video_path.file_name())
+        self.file_name_label.setObjectName("name")
 
         v_layout = QVBoxLayout()
-        v_layout.addWidget(label)
+        v_layout.addWidget(self.file_name_label)
         v_layout.addWidget(scroll)
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
@@ -205,9 +205,7 @@ class FileListWindow(BaseQWidget):
 
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
         item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
-        child = item_widget.findChild(QLabel, 'screenshot')
-        logging.debug(f'found child {child}')
-        child.setPixmap(pixmap)
+        item_widget.screenshot_label.setPixmap(pixmap)
 
     def add_video(self, video_path: VideoPath):
         logging.info(f'adding video {video_path}')

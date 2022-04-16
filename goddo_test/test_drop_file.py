@@ -137,14 +137,13 @@ def assert_after_drop(app_thread, video_path, new_total_count_expected):
 
     item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
     item_widget = video_tab_list_widget.itemWidget(item)
-    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    item_label = item_widget.file_name_label.text()
     assert item_label == video_path.file_name()
 
     # wait for screenshot to finish loading
     wait_until(lambda: app_thread.cmd.queue_is_empty())
 
-    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
-    pixmap = screenshot_label.pixmap()
+    pixmap = item_widget.screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap
 
 
@@ -175,17 +174,16 @@ def assert_after_multiple_drop(app_thread, video_path1, video_path2, new_total_c
 
     item = video_tab_list_widget.item(video_tab_list_widget.count() - 2)
     item_widget = video_tab_list_widget.itemWidget(item)
-    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    item_label = item_widget.file_name_label.text()
     assert item_label == video_path1.file_name()
 
     item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
     item_widget = video_tab_list_widget.itemWidget(item)
-    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    item_label = item_widget.file_name_label.text()
     assert item_label == video_path2.file_name()
 
     # wait for screenshot to finish loading
     wait_until(lambda: app_thread.cmd.queue_is_empty())
 
-    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
-    pixmap = screenshot_label.pixmap()
+    pixmap = item_widget.screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap

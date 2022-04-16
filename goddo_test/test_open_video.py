@@ -179,12 +179,11 @@ def assert_after_open(app_thread, windows_container, video_path, win_rect, base_
 
     item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
     item_widget = video_tab_list_widget.itemWidget(item)
-    item_label = item_widget.findChildren(QLabel, "name")[0].text()
+    item_label = item_widget.file_name_label.text()
     assert item_label == video_path.file_name()
 
     # wait for screenshot to finish loading
     wait_until(lambda: app_thread.cmd.queue_is_empty())
 
-    screenshot_label = item_widget.findChildren(QLabel, "screenshot")[0]
-    pixmap = screenshot_label.pixmap()
+    pixmap = item_widget.screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap

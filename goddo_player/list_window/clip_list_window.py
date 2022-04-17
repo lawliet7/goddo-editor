@@ -45,10 +45,9 @@ class ClipItemWidget(QWidget):
         # groupBox = QGroupBox(f'Tags')
         # vbox = QVBoxLayout()
 
-        flow = FlowLayout(margin=1)
+        self.flow_layout = FlowLayout(margin=1)
         # vbox.addWidget(groupBox)
-        widget.setLayout(flow)
-        self.flow_layout = flow
+        widget.setLayout(self.flow_layout)
 
         scroll = FileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)

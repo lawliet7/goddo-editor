@@ -8,7 +8,7 @@ from typing import Callable
 import cv2
 import numpy as np
 import pyautogui
-from PyQt5.QtCore import QMimeData
+from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QListWidget
 
@@ -159,10 +159,13 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
 
     before_state_dict = app_thread.mon.state.as_dict()
     before_win_state_dict = windows_container.as_dict()
+    logging.info(f'before_win_state_dict = {before_win_state_dict}')
 
     app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
+
+    time.sleep(0.5)
 
     reset_state_dict = app_thread.mon.state.as_dict()
     assert_state(reset_state_dict, blank_state)
@@ -170,10 +173,12 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
     wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
 
-    # time.sleep(5)
+    time.sleep(0.5)
 
     after_load_state_dict = app_thread.mon.state.as_dict()
     after_load_win_state_dict = windows_container.as_dict()
+
+    logging.info(f'after_load_win_state_dict = {after_load_win_state_dict}')
 
     assert after_load_state_dict['cur_save_file'] == str(save_path)
 
@@ -193,3 +198,17 @@ def assert_state(src_state, dest_state, is_window_state=False):
     for k in src_state:
         assert src_state[k] == dest_state[k], f'{k} is different'
     assert src_state == dest_state
+
+def qrect_as_dict(rect: QRect):
+    return {
+        'x': rect.x(),
+        'y': rect.y(),
+        'width': rect.width(),
+        'height': rect.height()
+    }
+
+def qsize_as_dict(size: QSize):
+    return {
+        'height': size.height(),
+        'width': size.width()
+    }

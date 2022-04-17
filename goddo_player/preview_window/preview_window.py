@@ -58,8 +58,6 @@ class PreviewWindow(QWidget):
 
         self.setLayout(vbox)
 
-        self.time_skip_multiplier = 6
-
     def update(self):
         super().update()
 

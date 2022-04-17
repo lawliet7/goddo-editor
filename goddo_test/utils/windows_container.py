@@ -2,6 +2,7 @@ from goddo_player.list_window.tabbed_list_window import TabbedListWindow
 from goddo_player.preview_window.preview_window import PreviewWindow
 from goddo_player.preview_window.preview_window_output import PreviewWindowOutput
 from goddo_player.timeline_window.timeline_window import TimelineWindow
+from goddo_test.utils.test_utils import qrect_as_dict, qsize_as_dict
 
 
 class WindowsContainer:
@@ -15,6 +16,8 @@ class WindowsContainer:
         return {
           'tabbed_list_window': {
               'windowTitle': self.tabbed_list_window.windowTitle(),
+              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              # not sure if we should also include screenshot pixmap
               'videos_tab': {
                 'clips': self._get_clip_dict(self.tabbed_list_window.videos_tab.list_widget)
               },
@@ -23,13 +26,28 @@ class WindowsContainer:
               }
           },
           'preview_window': {
-              'windowTitle': self.preview_window.windowTitle()
+              'windowTitle': self.preview_window.windowTitle(),
+              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'label': self.preview_window.label.text(),
+              'slider': {
+                  'value': self.preview_window.slider.value(),
+                  'isDisabled': self.preview_window.slider.isEnabled()
+              }
           },
           'output_window': {
-              'windowTitle': self.output_window.windowTitle()
+              'windowTitle': self.output_window.windowTitle(),
+              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'label': self.output_window.label.text(),
+              'slider': {
+                  'value': self.output_window.slider.value(),
+                  'isDisabled': self.output_window.slider.isEnabled()
+              }
           },
           'timeline_window': {
-              'windowTitle': self.timeline_window.windowTitle()
+              'windowTitle': self.timeline_window.windowTitle(),
+              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'innerWidgetSize': qsize_as_dict(self.timeline_window.inner_widget.size()),
+              'clip_rects': [(c.as_dict(),qrect_as_dict(r)) for c,r in self.timeline_window.inner_widget.clip_rects]
           }
         }
 
@@ -38,8 +56,14 @@ class WindowsContainer:
         clips = []
         for item in list_widget.get_all_items():
             item_widget = list_widget.itemWidget(item)
+
+            tags = []
+            for i in range(item_widget.flow_layout.count()):
+                tags.append(item_widget.flow_layout.itemAt(i).text())
+            
             clip_dict = {
-                'name': item_widget.file_name_label.text()
+                'name': item_widget.file_name_label.text(),
+                'tags': tags
             }
             clips.append(clip_dict)
         return clips

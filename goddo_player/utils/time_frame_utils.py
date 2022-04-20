@@ -64,3 +64,19 @@ def build_time_ms_str_least_chars(hours=0, mins=0, secs=0, ms=0):
 # hours, mins, secs, frames
 def time_str_to_components(time_str: str):
     return int(time_str[0]), int(time_str[2:4]), int(time_str[5:7]), int(time_str[8:])
+
+# last component_type is either frames or ms
+def time_str_to_frames(time_str: str, fps, last_component_type='frames'):
+    hrs, mins, secs, ms_or_frames = time_str_to_components(time_str)
+
+    last_component_total_frames = 0
+    if last_component_type.lower() == 'frames':
+        last_component_total_frames = ms_or_frames
+    elif last_component_type.lower() == 'ms':
+        ms = ms_or_frames
+
+        if fps is None or fps == 0:
+            raise Exception(f"Please pass correct fps in, we cannot divide by {fps}")
+        last_component_total_frames = int(ms / 1000 * fps)
+
+    return int(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps) + last_component_total_frames

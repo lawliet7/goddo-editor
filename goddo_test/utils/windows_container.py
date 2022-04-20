@@ -27,27 +27,27 @@ class WindowsContainer:
           },
           'preview_window': {
               'windowTitle': self.preview_window.windowTitle(),
-              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'geometry': qrect_as_dict(self.preview_window.geometry()),
               'label': self.preview_window.label.text(),
               'slider': {
                   'value': self.preview_window.slider.value(),
-                  'isDisabled': self.preview_window.slider.isEnabled()
+                  'isEnabled': self.preview_window.slider.isEnabled()
               },
               'restrict_frame_interval': self.preview_window.preview_widget.restrict_frame_interval
           },
           'output_window': {
               'windowTitle': self.output_window.windowTitle(),
-              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'geometry': qrect_as_dict(self.output_window.geometry()),
               'label': self.output_window.label.text(),
               'slider': {
                   'value': self.output_window.slider.value(),
-                  'isDisabled': self.output_window.slider.isEnabled()
+                  'isEnabled': self.output_window.slider.isEnabled()
               },
-              'restrict_frame_interval': self.preview_window.preview_widget.restrict_frame_interval
+              'restrict_frame_interval': self.output_window.preview_widget.restrict_frame_interval
           },
           'timeline_window': {
               'windowTitle': self.timeline_window.windowTitle(),
-              'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
+              'geometry': qrect_as_dict(self.timeline_window.geometry()),
               'innerWidgetSize': qsize_as_dict(self.timeline_window.inner_widget.size()),
               'clip_rects': [(c.as_dict(),qrect_as_dict(r)) for c,r in self.timeline_window.inner_widget.clip_rects]
           }

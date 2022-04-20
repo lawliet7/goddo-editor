@@ -162,9 +162,9 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer):
     with pyautogui.hold('shift'):
         pyautogui.press(['i'])
 
-    time.sleep(0.5)
-
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is None)
+
+    time.sleep(0.5)
 
     save_file_path = my_test_output_folder_path().joinpath(f'test_unset_in_out_frame.json').resolve()
     save_path = VideoPath(file_to_url(str(save_file_path)))

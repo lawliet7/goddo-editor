@@ -5,7 +5,7 @@ from numpy import save
 
 import pyautogui
 from PyQt5.QtCore import QUrl
-from goddo_player.utils.time_frame_utils import time_str_to_components
+from goddo_player.utils.time_frame_utils import time_str_to_components, time_str_to_frames
 
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
@@ -71,8 +71,167 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     assert secs == 6
     assert 5 <= frames <= 15
 
+    assert_state(app_thread, windows_container, video_path)
+
     save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_while_paused_seek_on_slider.json')
 
+def assert_state(app_thread, windows_container, video_path):
+    state_dict = app_thread.mon.state.as_dict()
+    logging.info(f'state dict {state_dict}')
+
+    video_total_frames = 210
+    fps_2_places = 29.97
+
+    # preview window asserts
+    assert state_dict['preview_window']['video_path'] == str(video_path)
+    assert round(state_dict['preview_window']['fps'],2) == fps_2_places
+    assert state_dict['preview_window']['total_frames'] == video_total_frames
+    assert state_dict['preview_window']['frame_in_out']['in_frame'] is None
+    assert state_dict['preview_window']['frame_in_out']['out_frame'] is None
+    assert int(video_total_frames * 0.89) <= state_dict['preview_window']['current_frame_no'] <= int(video_total_frames * 0.91)
+    assert not state_dict['preview_window']['is_max_speed']
+    assert state_dict['preview_window']['time_skip_multiplier'] == 1
+    assert state_dict['preview_window']['cur_total_frames'] == video_total_frames
+    assert state_dict['preview_window']['cur_start_frame'] == 0
+    assert state_dict['preview_window']['cur_end_frame'] == video_total_frames
+
+    # preview window output asserts
+    assert state_dict['preview_window_output']['video_path'] == ''
+    assert state_dict['preview_window_output']['fps'] == 0
+    assert state_dict['preview_window_output']['total_frames'] == 0
+    assert state_dict['preview_window_output']['frame_in_out']['in_frame'] is None
+    assert state_dict['preview_window_output']['frame_in_out']['out_frame'] is None
+    assert state_dict['preview_window_output']['current_frame_no'] == 0
+    assert not state_dict['preview_window_output']['is_max_speed']
+    assert state_dict['preview_window_output']['time_skip_multiplier'] == 1
+    assert state_dict['preview_window_output']['cur_total_frames'] == 0
+    assert state_dict['preview_window_output']['cur_start_frame'] == 0
+    assert state_dict['preview_window_output']['cur_end_frame'] == 0
+
+    assert state_dict['app_config']['extra_frames_in_secs_config'] == 10
+
+    def assert_file_item(file_item_dict):
+        assert file_item_dict['name'] == str(video_path)
+        assert file_item_dict['tags'] == []
+
+    for f in state_dict['file_list']['files']:
+        assert_file_item(f)
+
+    for k,v in state_dict['file_list']['files_dict'].items():
+        assert k == str(video_path)
+        assert_file_item(v)
+
+    # todo clip list not implemented yet
+    assert len(state_dict['clip_list']['clips']) == 0
+    assert len(state_dict['clip_list']['clips_dict']) == 0
+
+    # assert timeline
+    assert len(state_dict['timeline']['clips']) == 0
+    # for c in state_dict['timeline']['clips']:
+    #     assert c['video_path'] == str(video_path)
+    #     assert round(c['fps'],2) == 29.97
+    #     assert c['total_frames'] == str(video_path)
+    #     assert c['frame_in_out']['in_frame'] == str(video_path)
+    #     assert c['frame_in_out']['out_frame'] == str(video_path)
+    assert state_dict['timeline']['width_of_one_min'] == 120
+    assert state_dict['timeline']['selected_clip_index'] == -1
+    assert state_dict['timeline']['opened_clip_index'] == -1
+
+    win_state_dict = windows_container.as_dict()
+
+    # assert window preview
+    assert win_state_dict['tabbed_list_window']['geometry']['x'] == 0
+    assert win_state_dict['tabbed_list_window']['geometry']['y'] == 27
+    assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
+    assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
+
+    for c in win_state_dict['tabbed_list_window']['videos_tab']['clips']:
+        assert c['name'] == video_path.file_name()
+        assert c['tags'] == []
+
+    # todo clip list not implemented yet
+    assert len(win_state_dict['tabbed_list_window']['clips_tab']['clips']) == 0
+
+    # assert win state preview window
+    assert win_state_dict['preview_window']['windowTitle'].endswith(f' - {video_path.file_name(include_ext=False)}')
+    assert win_state_dict['preview_window']['geometry']['x'] == 546
+    assert win_state_dict['preview_window']['geometry']['y'] == 78
+    assert win_state_dict['preview_window']['geometry']['width'] == 640
+    assert win_state_dict['preview_window']['geometry']['height'] == 407
+    logging.info(win_state_dict['preview_window']['label'])
+
+    time_label, speed_label, skip_label = [x for x in win_state_dict['preview_window']['label'].split(' ') if x.strip() != '']
+    assert speed_label.strip() == 'speed=normal'
+    assert skip_label.strip() == 'skip=5s'
+
+    cur_time_label, total_time_label = time_label.split('/')
+    assert total_time_label.strip() == '0:00:07.00'
+
+    total_frames_in_time_label = time_str_to_frames(cur_time_label,fps_2_places)
+    assert int(video_total_frames * 0.89) <= total_frames_in_time_label <= int(video_total_frames * 0.91)
+
+    assert win_state_dict['preview_window']['slider']['isEnabled'] == True
+    assert 200 * 0.89 <= win_state_dict['preview_window']['slider']['value'] <= 200 * 0.91
+    assert win_state_dict['preview_window']['restrict_frame_interval'] == False
+
+    # assert win state output
+    assert ' - clip#' not in win_state_dict['output_window']['windowTitle']
+    assert win_state_dict['output_window']['geometry']['x'] == 1196
+    assert win_state_dict['output_window']['geometry']['y'] == 78
+    assert win_state_dict['output_window']['geometry']['width'] == 640
+    assert win_state_dict['output_window']['geometry']['height'] == 407
+    assert win_state_dict['output_window']['label'] == 'you suck'
+    assert win_state_dict['output_window']['slider']['isEnabled'] == False
+    assert win_state_dict['output_window']['slider']['value'] == 0
+    assert win_state_dict['output_window']['restrict_frame_interval'] == True
+
+     # assert win state timeline
+    assert win_state_dict['timeline_window']['geometry']['x'] == 546
+    assert win_state_dict['timeline_window']['geometry']['y'] == 525
+    assert win_state_dict['timeline_window']['geometry']['width'] == 1075
+    assert win_state_dict['timeline_window']['geometry']['height'] == 393
+    assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == 1075
+    assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
+    assert len(win_state_dict['timeline_window']['clip_rects']) == 0
+
+
+    '''
+  "timeline_window": {
+    "windowTitle": "美少女捜査官",
+    "geometry": {
+      "x": 0,
+      "y": 27,
+      "width": 546,
+      "height": 1000
+    },
+    "innerWidgetSize": {
+      "height": 393,
+      "width": 1075
+    },
+    "clip_rects": [
+      [
+        {
+          "video_path": "...",
+          "fps": 29.97002997002997,
+          "total_frames": 75879,
+          "frame_in_out": {
+            "in_frame": 1545,
+            "out_frame": 3424
+          }
+        },
+        {
+          "x": 0,
+          "y": 68,
+          "width": 125,
+          "height": 100
+        }
+      ]
+    ]
+  }
+}
+    '''
+
+    
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 

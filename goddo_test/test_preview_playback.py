@@ -51,6 +51,7 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
     assert secs == 6
     assert 5 <= frames <= 15
 
+    assert_state(app_thread, windows_container, video_path, 0.89, 1)
     save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_out_frame_save.json')
 
 def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsContainer, blank_state):
@@ -71,11 +72,10 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     assert secs == 6
     assert 5 <= frames <= 15
 
-    assert_state(app_thread, windows_container, video_path)
-
+    assert_state(app_thread, windows_container, video_path, 0.89, 0.91)
     save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_while_paused_seek_on_slider.json')
 
-def assert_state(app_thread, windows_container, video_path):
+def assert_state(app_thread, windows_container, video_path, slider_start_pct, slider_end_pct):
     state_dict = app_thread.mon.state.as_dict()
     logging.info(f'state dict {state_dict}')
 
@@ -88,7 +88,7 @@ def assert_state(app_thread, windows_container, video_path):
     assert state_dict['preview_window']['total_frames'] == video_total_frames
     assert state_dict['preview_window']['frame_in_out']['in_frame'] is None
     assert state_dict['preview_window']['frame_in_out']['out_frame'] is None
-    assert int(video_total_frames * 0.89) <= state_dict['preview_window']['current_frame_no'] <= int(video_total_frames * 0.91)
+    assert int(video_total_frames * slider_start_pct) <= state_dict['preview_window']['current_frame_no'] <= int(video_total_frames * slider_end_pct)
     assert not state_dict['preview_window']['is_max_speed']
     assert state_dict['preview_window']['time_skip_multiplier'] == 1
     assert state_dict['preview_window']['cur_total_frames'] == video_total_frames
@@ -168,10 +168,11 @@ def assert_state(app_thread, windows_container, video_path):
     assert total_time_label.strip() == '0:00:07.00'
 
     total_frames_in_time_label = time_str_to_frames(cur_time_label,fps_2_places)
-    assert int(video_total_frames * 0.89) <= total_frames_in_time_label <= int(video_total_frames * 0.91)
+    assert int(video_total_frames * slider_start_pct) <= total_frames_in_time_label <= int(video_total_frames * slider_end_pct)
 
+    slider_max = windows_container.preview_window.slider.maximum()
     assert win_state_dict['preview_window']['slider']['isEnabled'] == True
-    assert 200 * 0.89 <= win_state_dict['preview_window']['slider']['value'] <= 200 * 0.91
+    assert slider_max * slider_start_pct <= win_state_dict['preview_window']['slider']['value'] <= slider_max * slider_end_pct
     assert win_state_dict['preview_window']['restrict_frame_interval'] == False
 
     # assert win state output

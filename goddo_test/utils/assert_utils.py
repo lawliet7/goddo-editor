@@ -11,16 +11,17 @@ def generic_assert(app_thread, windows_container, blank_state, save_file,
                    fn_assert_file_list, fn_assert_clip_list, fn_assert_preview, fn_assert_output, fn_assert_timeline):
 
     state_dict = app_thread.mon.state.as_dict()
+    win_state_dict = windows_container.as_dict()
 
-    fn_assert_file_list(app_thread, windows_container, state_dict)
-    fn_assert_clip_list(app_thread, windows_container, state_dict)
-    fn_assert_preview(app_thread, windows_container, state_dict)
-    fn_assert_output(app_thread, windows_container, state_dict)
-    fn_assert_timeline(app_thread, windows_container, state_dict)
+    fn_assert_file_list(app_thread, windows_container, state_dict, win_state_dict)
+    fn_assert_clip_list(app_thread, windows_container, state_dict, win_state_dict)
+    fn_assert_preview(app_thread, windows_container, state_dict, win_state_dict)
+    fn_assert_output(app_thread, windows_container, state_dict, win_state_dict)
+    fn_assert_timeline(app_thread, windows_container, state_dict , win_state_dict)
 
     save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file)
 
-def get_assert_file_list_for_test_file_1_fn(tags):
+def get_assert_file_list_for_test_file_1_fn(tags=[]):
     file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
     video_path = VideoPath(file_to_url(file_path))
 
@@ -52,19 +53,28 @@ def get_assert_file_list_for_test_file_1_fn(tags):
 
     return fn1
 
-def assert_blank_list(app_thread, windows_container, state_dict, win_state_dict):
-    # assert state
-    assert len(state_dict['file_list']['files']) == 0
-    assert len(state_dict['file_list']['files_dict']) == 0
+def get_assert_blank_list_fn(is_file_list: bool):
+    def fn1(app_thread, windows_container, state_dict, win_state_dict):
+        if is_file_list:
+            # assert state
+            assert len(state_dict['file_list']['files']) == 0
+            assert len(state_dict['file_list']['files_dict']) == 0
 
-    # assert win state
-    assert len(state_dict['file_list']['files']) == 0
-    assert len(state_dict['file_list']['files_dict']) == 0
+            # assert win state
+            assert len(win_state_dict['videos_tab']['clips']) == 0
+        else:
+            # assert state
+            assert len(state_dict['clip_list']['clips']) == 0
+            assert len(state_dict['clip_list']['clips_dict']) == 0
 
-    assert win_state_dict['tabbed_list_window']['geometry']['x'] == 0
-    assert win_state_dict['tabbed_list_window']['geometry']['y'] == 27
-    assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
-    assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
+            # assert win state
+            assert len(win_state_dict['tabbed_list_window']['clips_tab']['clips']) == 0
+
+        assert win_state_dict['tabbed_list_window']['geometry']['x'] == 0
+        assert win_state_dict['tabbed_list_window']['geometry']['y'] == 27
+        assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
+        assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
+    return fn1
 
 def get_assert_preview_for_test_file_1_fn(slider_start_pct, slider_end_pct):
     file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
@@ -147,6 +157,7 @@ def get_assert_preview_for_blank_file_fn(is_output_window: bool):
 
         # win state asserts
         assert ' - clip#' not in win_state_dict['output_window']['windowTitle']
+        assert geometry_dict
         assert win_state_dict['output_window']['label'] == 'you suck'
         assert win_state_dict['output_window']['slider']['isEnabled'] == False
         assert win_state_dict['output_window']['slider']['value'] == 0

@@ -13,6 +13,7 @@ from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import local_to_global_pos
 from goddo_test.common_asserts import assert_state_is_blank
+from goddo_test.utils.assert_utils import assert_blank_timeline, generic_assert, get_assert_blank_list_fn, get_assert_file_list_for_test_file_1_fn, get_assert_preview_for_blank_file_fn, get_assert_preview_for_test_file_1_fn
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.test_utils import drag_and_drop, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
@@ -66,8 +67,11 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
-    assert_state(app_thread, windows_container, video_path, 0.01, 0.15)
-    save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_drop_on_preview_window.json')
+    # assert_state(app_thread, windows_container, video_path, 0.01, 0.15)
+    # save_reload_and_assert_state(app_thread, windows_container, blank_state, 'test_drop_on_preview_window.json')
+    generic_assert(app_thread, windows_container, blank_state, 'test_drop_on_preview_window.json',
+                   get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), get_assert_preview_for_test_file_1_fn(0.01, 0.15), 
+                   get_assert_preview_for_blank_file_fn(is_output_window=True), assert_blank_timeline)
 
 
 def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer, blank_state):

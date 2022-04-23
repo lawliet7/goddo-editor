@@ -325,7 +325,7 @@ class MonarchSystem(QObject):
             if frame_in_out_dict.get('out_frame'):
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
-            if prev_wind_dict['current_frame_no'] > 1:
+            if prev_wind_dict['current_frame_no'] > 0:
                 pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
             else:
                 pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)

@@ -4,7 +4,7 @@ from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_test.utils.path_util import video_folder_path
-from goddo_test.utils.test_utils import save_reload_and_assert_state
+from goddo_test.utils.test_utils import qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
 
 
 def generic_assert(app_thread, windows_container, blank_state, save_file,
@@ -47,9 +47,17 @@ def get_assert_file_list_for_test_file_1_fn(tags=[]):
         clips = win_state_dict['tabbed_list_window']['videos_tab']['clips']
         assert len(clips) == 1
 
-        for c in clips:
-            assert clips[0]['name'] == video_path.file_name()
-            assert clips[0]['tags'] == tags
+        assert clips[0]['name'] == video_path.file_name()
+        assert clips[0]['tags'] == tags
+
+        # wait for screenshot to finish loading
+        wait_until(lambda: app_thread.cmd.queue_is_empty())
+        videos_tab = windows_container.tabbed_list_window.videos_tab
+        video_tab_list_widget = videos_tab.list_widget
+        item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
+        item_widget = video_tab_list_widget.itemWidget(item)
+        pixmap = item_widget.screenshot_label.pixmap()
+        assert pixmap != videos_tab.black_pixmap
 
     return fn1
 
@@ -121,47 +129,60 @@ def get_assert_preview_for_test_file_1_fn(slider_start_pct, slider_end_pct):
         assert slider_max * slider_start_pct <= win_state_dict['preview_window']['slider']['value'] <= slider_max * slider_end_pct
         assert win_state_dict['preview_window']['restrict_frame_interval'] == False
 
+        frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
+        assert qimg_to_arr(frame_pixmap.toImage()).mean() != 0
+
     return fn1
 
 def get_assert_preview_for_blank_file_fn(is_output_window: bool):
-    if is_output_window:
-        geometry_dict = {
-            "x": 1196,
-            "y": 78,
-            "width": 640,
-            "height": 407
-        }
-        restrict_frame_interval = False
-    else:
-        geometry_dict = {
-            "x": 546,
-            "y": 78,
-            "width": 640,
-            "height": 407
-        }
-        restrict_frame_interval = True
-
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
+        if is_output_window:
+            geometry_dict = {
+                "x": 1196,
+                "y": 78,
+                "width": 640,
+                "height": 407
+            }
+            restrict_frame_interval = True
+            resolved_state_dict = state_dict['preview_window_output']
+            resolved_win_state_dict = win_state_dict['output_window']
+
+            frame_pixmap = windows_container.output_window.preview_widget.frame_pixmap
+            assert frame_pixmap is None or qimg_to_arr(frame_pixmap.toImage()).mean() == 0
+        else:
+            geometry_dict = {
+                "x": 546,
+                "y": 78,
+                "width": 640,
+                "height": 407
+            }
+            restrict_frame_interval = False
+            resolved_state_dict = state_dict['preview_window']
+            resolved_win_state_dict = win_state_dict['preview_window']
+
+            frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
+            assert frame_pixmap is None or qimg_to_arr(frame_pixmap.toImage()).mean() == 0
+
         # state asserts
-        assert state_dict['preview_window']['video_path'] == ''
-        assert round(state_dict['preview_window']['fps'],2) == 0
-        assert state_dict['preview_window']['total_frames'] == 0
-        assert state_dict['preview_window']['frame_in_out']['in_frame'] is None
-        assert state_dict['preview_window']['frame_in_out']['out_frame'] is None
-        assert state_dict['preview_window']['current_frame_no'] == 0
-        assert not state_dict['preview_window']['is_max_speed']
-        assert state_dict['preview_window']['time_skip_multiplier'] == 1
-        assert state_dict['preview_window']['cur_total_frames'] == 0
-        assert state_dict['preview_window']['cur_start_frame'] == 0
-        assert state_dict['preview_window']['cur_end_frame'] == 0
+        assert resolved_state_dict['video_path'] == ''
+        assert round(resolved_state_dict['fps'],2) == 0
+        assert resolved_state_dict['total_frames'] == 0
+        assert resolved_state_dict['frame_in_out']['in_frame'] is None
+        assert resolved_state_dict['frame_in_out']['out_frame'] is None
+        assert resolved_state_dict['current_frame_no'] == 0
+        assert not resolved_state_dict['is_max_speed']
+        assert resolved_state_dict['time_skip_multiplier'] == 1
+        assert resolved_state_dict['cur_total_frames'] == 0
+        assert resolved_state_dict['cur_start_frame'] == 0
+        assert resolved_state_dict['cur_end_frame'] == 0
 
         # win state asserts
         assert ' - clip#' not in win_state_dict['output_window']['windowTitle']
-        assert geometry_dict
-        assert win_state_dict['output_window']['label'] == 'you suck'
-        assert win_state_dict['output_window']['slider']['isEnabled'] == False
-        assert win_state_dict['output_window']['slider']['value'] == 0
-        assert win_state_dict['output_window']['restrict_frame_interval'] == restrict_frame_interval
+        assert resolved_win_state_dict['geometry'] == geometry_dict
+        assert resolved_win_state_dict['label'] == 'you suck'
+        assert resolved_win_state_dict['slider']['isEnabled'] == False
+        assert resolved_win_state_dict['slider']['value'] == 0
+        assert resolved_win_state_dict['restrict_frame_interval'] == restrict_frame_interval
     return fn1
 
 def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_dict):

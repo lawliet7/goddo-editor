@@ -184,7 +184,7 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer, bla
             assert_blank_timeline)
 
 
-def test_go_to_in_frame(app_thread, windows_container: WindowsContainer):
+def test_go_to_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
@@ -223,8 +223,15 @@ def test_go_to_in_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: slider.value() == cur_slider_value)
 
+    expected_slider_pct = cur_slider_value/200
+    generic_assert(app_thread, windows_container, blank_state, 'test_go_to_in_frame.json',
+            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=in_frame, in_frame=in_frame, out_frame=out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True), 
+            assert_blank_timeline)
 
-def test_go_to_out_frame(app_thread, windows_container: WindowsContainer):
+
+def test_go_to_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
@@ -263,65 +270,12 @@ def test_go_to_out_frame(app_thread, windows_container: WindowsContainer):
 
     wait_until(lambda: slider.value() == cur_slider_value)
 
-
-def assert_save_reload_assert_again(app_thread, windows_container, video_path, save_path, current_frame_no, in_frame, out_frame):
-    assert_after_in_out(app_thread, windows_container, video_path, current_frame_no, in_frame, out_frame)
-
-    app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
-
-    app_thread.cmd.submit_cmd(Command(CommandType.RESET))
-
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
-
-    assert_state_is_blank(app_thread, windows_container)
-
-    app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
-
-    assert_after_in_out(app_thread, windows_container, video_path, current_frame_no, in_frame, out_frame)
-
-
-def assert_after_in_out(app_thread, windows_container, video_path, current_frame_no=None, in_frame=None, out_frame=None):
-    # asserts
-    assert windows_container.preview_window.label.text() != 'you suck'
-
-    # label should be like 0:00:0X.XX/0:00:07:00
-    assert re.match('0:00:0[0-9]\\.[0-9]{2}/0:00:07\\.00', windows_container.preview_window.label.text()[:21])
-
-    assert windows_container.preview_window.slider.value() > 0
-    assert windows_container.preview_window.slider.isEnabled()
-    assert windows_container.preview_window.windowTitle().endswith(f'- {video_path.file_name(include_ext=False)}')
-    assert windows_container.preview_window.preview_widget.frame_pixmap
-    assert windows_container.preview_window.preview_widget.get_cur_frame_no() == (current_frame_no or out_frame or in_frame)
-
-    # asert everything inside state
-    assert app_thread.mon.state.preview_window.name == 'source'
-    assert app_thread.mon.state.preview_window.video_path == video_path
-    assert round(app_thread.mon.state.preview_window.fps, 2) == 29.97
-    assert app_thread.mon.state.preview_window.total_frames == 210
-    assert app_thread.mon.state.preview_window.frame_in_out == FrameInOut(in_frame, out_frame)
-    assert app_thread.mon.state.preview_window.current_frame_no == (current_frame_no or out_frame or in_frame)
-    assert not app_thread.mon.state.preview_window.is_max_speed
-    assert app_thread.mon.state.preview_window.time_skip_multiplier == 1
-    assert app_thread.mon.state.preview_window.cur_total_frames == 210
-    assert app_thread.mon.state.preview_window.cur_start_frame == 0
-    assert app_thread.mon.state.preview_window.cur_end_frame == 210
-
-    # new_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
-    # assert cmp_image(new_img, base_img) < 0.9, f'preview window screen is matching before and after loading video'
-
-    state_dict = app_thread.mon.state.preview_window.as_dict()
-    assert state_dict['video_path'] == video_path.str()
-    assert round(state_dict['fps'], 2) == 29.97
-    assert state_dict['total_frames'] == 210
-    assert state_dict['frame_in_out']['in_frame'] == in_frame
-    assert state_dict['frame_in_out']['out_frame'] == out_frame
-    assert state_dict['current_frame_no'] == (current_frame_no or out_frame or in_frame)
-    assert not state_dict['is_max_speed']
-    assert state_dict['time_skip_multiplier'] == 1
-    assert state_dict['cur_total_frames'] > 0
-    assert state_dict['cur_start_frame'] == 0
-    assert state_dict['cur_end_frame'] == 210
-
+    expected_slider_pct = cur_slider_value/200
+    generic_assert(app_thread, windows_container, blank_state, 'test_go_to_out_frame.json',
+            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=out_frame, in_frame=in_frame, out_frame=out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True), 
+            assert_blank_timeline)
 
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))

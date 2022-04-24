@@ -68,7 +68,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
 
     generic_assert(app_thread, windows_container, blank_state, 'test_dbl_click_video_list.json',
                    get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                   get_assert_preview_for_test_file_1_fn(0.00, 0.15), 
+                   get_assert_preview_for_test_file_1_fn(), 
                    get_assert_preview_for_blank_file_fn(is_output_window=True), 
                    assert_blank_timeline)
 
@@ -93,9 +93,6 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
     dest_pt_x = dest_corner_pt.x() + 10
     dest_pt_y = dest_corner_pt.y() + 10
 
-    win_rect = windows_container.preview_window.geometry().getRect()
-    base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
-
     drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
 
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
@@ -105,8 +102,10 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
+    time.sleep(0.5)
+
     generic_assert(app_thread, windows_container, blank_state, 'test_drop_on_preview_window.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(0.00, 0.15), 
+                get_assert_preview_for_test_file_1_fn(), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)

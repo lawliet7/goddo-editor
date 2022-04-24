@@ -84,7 +84,7 @@ def get_assert_blank_list_fn(is_file_list: bool):
         assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
     return fn1
 
-def get_assert_preview_for_test_file_1_fn(slider_start_pct, slider_end_pct):
+def get_assert_preview_for_test_file_1_fn(slider_range=(0.00, 0.15), current_frame_no=None, in_frame=None, out_frame=None):
     file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
     video_path = VideoPath(file_to_url(file_path))
 
@@ -92,14 +92,20 @@ def get_assert_preview_for_test_file_1_fn(slider_start_pct, slider_end_pct):
     fps_2_places = 29.97
     total_time_str = '0:00:07.00'
 
+    if current_frame_no is None:
+        from_current_frame_no = int(video_total_frames * slider_range[0])
+        to_current_frame_no = int(video_total_frames * slider_range[1])
+    else:
+        from_current_frame_no = to_current_frame_no = current_frame_no
+
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # preview window asserts
         assert state_dict['preview_window']['video_path'] == str(video_path)
         assert round(state_dict['preview_window']['fps'],2) == fps_2_places
         assert state_dict['preview_window']['total_frames'] == video_total_frames
-        assert state_dict['preview_window']['frame_in_out']['in_frame'] is None
-        assert state_dict['preview_window']['frame_in_out']['out_frame'] is None
-        assert int(video_total_frames * slider_start_pct) <= state_dict['preview_window']['current_frame_no'] <= int(video_total_frames * slider_end_pct)
+        assert state_dict['preview_window']['frame_in_out']['in_frame'] is in_frame
+        assert state_dict['preview_window']['frame_in_out']['out_frame'] is out_frame
+        assert from_current_frame_no <= state_dict['preview_window']['current_frame_no'] <= to_current_frame_no
         assert not state_dict['preview_window']['is_max_speed']
         assert state_dict['preview_window']['time_skip_multiplier'] == 1
         assert state_dict['preview_window']['cur_total_frames'] == video_total_frames
@@ -122,11 +128,11 @@ def get_assert_preview_for_test_file_1_fn(slider_start_pct, slider_end_pct):
         assert total_time_label.strip() == total_time_str
 
         total_frames_in_time_label = time_str_to_frames(cur_time_label,fps_2_places)
-        assert int(video_total_frames * slider_start_pct) <= total_frames_in_time_label <= int(video_total_frames * slider_end_pct)
+        assert int(video_total_frames * slider_range[0]) <= total_frames_in_time_label <= int(video_total_frames * slider_range[1])
 
         slider_max = windows_container.preview_window.slider.maximum()
         assert win_state_dict['preview_window']['slider']['isEnabled'] == True
-        assert slider_max * slider_start_pct <= win_state_dict['preview_window']['slider']['value'] <= slider_max * slider_end_pct
+        assert slider_max * slider_range[0] <= win_state_dict['preview_window']['slider']['value'] <= slider_max * slider_range[1]
         assert win_state_dict['preview_window']['restrict_frame_interval'] == False
 
         frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap

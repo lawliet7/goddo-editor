@@ -81,7 +81,33 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 0.91)), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
-    
+
+def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    img_base = pil_img_to_arr(pyautogui.screenshot())
+
+    pyautogui.press('s')
+    pyautogui.press('space')
+
+    time.sleep(1)
+
+    pyautogui.press('space')
+
+    img_new = pil_img_to_arr(pyautogui.screenshot())
+    assert cmp_image(img_base, img_new) < 0.98
+
+    logging.info(f'=== slider value {windows_container.preview_window.slider.value()}')
+
+    time.sleep(3)
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.5, 1), is_max_speed=True), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 

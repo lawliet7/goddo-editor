@@ -27,16 +27,16 @@ class TimelineWindow(QMainWindow):
         self.state = StateStore()
         self.signals = StateStoreSignals()
 
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        # self.scrollArea.setWidgetResizable(True)
-        self.innerWidget = TimelineWidget()
-        self.innerWidget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.scrollArea.setWidget(self.innerWidget)
-        self.scrollArea.setMinimumWidth(640)
-        self.scrollArea.setMinimumHeight(360)
-        self.setCentralWidget(self.scrollArea)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        # self.scroll_area.setWidgetResizable(True)
+        self.inner_widget = TimelineWidget()
+        self.inner_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.scroll_area.setWidget(self.inner_widget)
+        self.scroll_area.setMinimumWidth(640)
+        self.scroll_area.setMinimumHeight(360)
+        self.setCentralWidget(self.scroll_area)
 
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
@@ -45,15 +45,15 @@ class TimelineWindow(QMainWindow):
         super().update()
 
         # scroll area widget resizable is not enabled so need to manually signal repaint
-        self.innerWidget.update()
+        self.inner_widget.update()
 
     def resizeEvent(self, resize_event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(resize_event)
-        self.innerWidget.resize(max(self.innerWidget.width(), resize_event.size().width()),
+        self.inner_widget.resize(max(self.inner_widget.width(), resize_event.size().width()),
                                  resize_event.size().height())
 
     def resize_timeline_widget(self):
-        self.innerWidget.resize_timeline_widget()
+        self.inner_widget.resize_timeline_widget()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)
@@ -83,18 +83,18 @@ class TimelineWindow(QMainWindow):
             super().keyPressEvent(event)
 
     def add_rect_for_new_clip(self, clip: TimelineClip):
-        self.innerWidget.add_rect_for_new_clip(clip)
+        self.inner_widget.add_rect_for_new_clip(clip)
         self.resize_timeline_widget()
 
     def recalculate_clip_rects(self):
         x = 0
         new_clip_rects = []
         for clip in self.state.timeline.clips:
-            rect = self.innerWidget.calc_rect_for_clip(clip, x)
+            rect = self.inner_widget.calc_rect_for_clip(clip, x)
             new_clip_rects.append((clip, rect))
             x += rect.width()
 
-        self.innerWidget.clip_rects = new_clip_rects
+        self.inner_widget.clip_rects = new_clip_rects
         self.resize_timeline_widget()
 
     def __process(self):

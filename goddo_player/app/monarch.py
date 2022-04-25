@@ -159,11 +159,11 @@ class MonarchSystem(QObject):
                                                        PlayerConfigs.timeline_min_width_of_one_min)
         logging.debug(f'width_of_one_min updated to {self.state.timeline.width_of_one_min}')
 
-        logging.debug(f'before clip rects {self.timeline_window.innerWidget.clip_rects}')
+        logging.debug(f'before clip rects {self.timeline_window.inner_widget.clip_rects}')
 
         self.timeline_window.recalculate_clip_rects()
 
-        logging.debug(f'after clip rects {self.timeline_window.innerWidget.clip_rects}')
+        logging.debug(f'after clip rects {self.timeline_window.inner_widget.clip_rects}')
 
         self.timeline_window.update()
 
@@ -380,7 +380,7 @@ class MonarchSystem(QObject):
                 new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
-                self.timeline_window.innerWidget.recalculate_all_clip_rects()
+                self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
     def __on_preview_video_out_frame(self, pos: int):
@@ -401,7 +401,7 @@ class MonarchSystem(QObject):
                 new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
-                self.timeline_window.innerWidget.recalculate_all_clip_rects()
+                self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
     def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):

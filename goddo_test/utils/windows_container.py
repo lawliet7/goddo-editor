@@ -48,8 +48,8 @@ class WindowsContainer:
           'timeline_window': {
               'windowTitle': self.timeline_window.windowTitle(),
               'geometry': qrect_as_dict(self.timeline_window.geometry()),
-              'innerWidgetSize': qsize_as_dict(self.timeline_window.innerWidget.size()),
-              'clip_rects': [(c.as_dict(),qrect_as_dict(r)) for c,r in self.timeline_window.innerWidget.clip_rects]
+              'innerWidgetSize': qsize_as_dict(self.timeline_window.inner_widget.size()),
+              'clip_rects': [(c.as_dict(),qrect_as_dict(r)) for c,r in self.timeline_window.inner_widget.clip_rects]
           }
         }
 

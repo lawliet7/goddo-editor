@@ -25,8 +25,7 @@ FILE_EXT_PARAMS = get_list_of_test_file_exts()
 def test_drop_vid_file(app_thread, windows_container, blank_state, test_file_ext):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 
-    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.{test_file_ext}").resolve()
-    video_path = VideoPath(file_to_url(file_path))
+    video_path = get_test_vid_path(test_file_ext)
     app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
 
     dnd_widget = app_thread.cmd.dnd_widget

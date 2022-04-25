@@ -18,7 +18,7 @@ def assert_state_is_blank(app_thread, windows_container):
 
     assert windows_container.preview_window.slider.value() == 0
     assert not windows_container.preview_window.slider.isEnabled()
-    assert windows_container.preview_window.windowTitle().endswith(' - ')
+    assert ' - ' not in windows_container.preview_window.windowTitle()
     assert windows_container.preview_window.preview_widget.frame_pixmap is None
     assert windows_container.preview_window.preview_widget.get_cur_frame_no() == 0
 

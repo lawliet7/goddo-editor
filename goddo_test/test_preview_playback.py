@@ -54,7 +54,7 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
 
     generic_assert(app_thread, windows_container, blank_state, 'test_out_frame_save.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn((0.89, 1)), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 1)), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -78,7 +78,7 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
 
     generic_assert(app_thread, windows_container, blank_state, 'test_while_paused_seek_on_slider.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn((0.89, 0.91)), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 0.91)), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
     

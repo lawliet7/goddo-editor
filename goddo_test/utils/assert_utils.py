@@ -4,7 +4,7 @@ from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_test.utils.path_util import video_folder_path
-from goddo_test.utils.test_utils import qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
+from goddo_test.utils.test_utils import get_test_vid_path, qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
 
 
 def generic_assert(app_thread, windows_container, blank_state, save_file,
@@ -21,9 +21,8 @@ def generic_assert(app_thread, windows_container, blank_state, save_file,
 
     save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file)
 
-def get_assert_file_list_for_test_file_1_fn(tags=[]):
-    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
-    video_path = VideoPath(file_to_url(file_path))
+def get_assert_file_list_for_test_file_1_fn(ext='mp4', tags=[]):
+    video_path = get_test_vid_path(ext)
 
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # assert state
@@ -84,9 +83,8 @@ def get_assert_blank_list_fn(is_file_list: bool):
         assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
     return fn1
 
-def get_assert_preview_for_test_file_1_fn(slider_range=(0.00, 0.15), current_frame_no=None, in_frame=None, out_frame=None):
-    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
-    video_path = VideoPath(file_to_url(file_path))
+def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), current_frame_no=None, in_frame=None, out_frame=None):
+    video_path = get_test_vid_path(ext)
 
     video_total_frames = 210
     fps_2_places = 29.97

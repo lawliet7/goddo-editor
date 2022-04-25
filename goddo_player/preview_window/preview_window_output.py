@@ -142,6 +142,8 @@ class PreviewWindowOutput(QWidget):
             self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
             self.slider.setDisabled(False)
 
+        self.update()
+
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         if self.preview_widget.cap:
             self.preview_widget.exec_play_cmd(cmd)

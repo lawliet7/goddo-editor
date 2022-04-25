@@ -129,10 +129,13 @@ def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):
     pyautogui.mouseUp()
 
 
-def get_test_vid_path():
-    file_path = video_folder_path().joinpath('supported').joinpath("test_vid.mp4").resolve()
+def get_test_vid_path(ext='mp4'):
+    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.{ext}").resolve()
     return VideoPath(file_to_url(file_path))
 
+def get_test_vid_2_path():
+    file_path = video_folder_path().joinpath("test_vid2.mp4").resolve()
+    return VideoPath(file_to_url(file_path))
 
 def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
     slider = preview_window.slider
@@ -159,7 +162,17 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
 
     before_state_dict = app_thread.mon.state.as_dict()
     before_win_state_dict = windows_container.as_dict()
-    logging.info(f'before_win_state_dict = {before_win_state_dict}')
+
+    if windows_container.output_window.preview_widget.cap is not None:
+        check_type = "output_window"
+    elif len(windows_container.timeline_window.innerWidget.clip_rects) > 0:
+        check_type = 'timeline_window'
+    elif windows_container.preview_window.preview_widget.cap is not None:
+        check_type = "preview_window"
+    elif windows_container.tabbed_list_window.videos_tab.list_widget.count() > 0:
+        check_type = "file_list_window"
+    else:
+        check_type = None
 
     app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))
@@ -171,7 +184,14 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     assert_state(reset_state_dict, blank_state)
 
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    if check_type == 'output_window':
+        wait_until(lambda: len(windows_container.timeline_window.innerWidget.clip_rects) > 0)
+    elif check_type == 'timeline_window':
+        wait_until(lambda: len(windows_container.timeline_window.innerWidget.clip_rects) > 0)
+    elif check_type == 'preview_window':
+        wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    elif check_type == 'file_list_window':
+        wait_until(lambda: windows_container.tabbed_list_window.videos_tab.list_widget.count() > 0)
 
     time.sleep(0.5)
 

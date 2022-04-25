@@ -16,15 +16,14 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import assert_blank_timeline, generic_assert, get_assert_blank_list_fn, get_assert_file_list_for_test_file_1_fn, get_assert_preview_for_blank_file_fn, get_assert_preview_for_test_file_1_fn
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
 def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, blank_state):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 
-    file_path = video_folder_path().joinpath('supported').joinpath("test_vid.mp4").resolve()
-    video_path = VideoPath(file_to_url(file_path))
+    video_path = get_test_vid_path()
     app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
 
     dnd_widget = app_thread.cmd.dnd_widget
@@ -76,8 +75,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
 def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer, blank_state):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
 
-    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.mp4").resolve()
-    video_path = VideoPath(file_to_url(file_path))
+    video_path = get_test_vid_path()
     app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
 
     dnd_widget = app_thread.cmd.dnd_widget

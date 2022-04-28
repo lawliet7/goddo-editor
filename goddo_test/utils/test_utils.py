@@ -140,7 +140,7 @@ def get_test_vid_2_path():
 def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
     slider = preview_window.slider
 
-    old_slider_value = slider.value()
+    old_frame_no = preview_window.state.preview_window.current_frame_no
 
     pos = local_to_global_pos(slider, preview_window)
     x_offset = int(slider.width() * pct)
@@ -149,7 +149,7 @@ def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=Tr
     pyautogui.click()
 
     if should_slider_value_change:
-        wait_until(lambda: slider.value() != old_slider_value)
+        wait_until(lambda: old_frame_no != preview_window.state.preview_window.current_frame_no)
     else:
         time.sleep(0.5)
 

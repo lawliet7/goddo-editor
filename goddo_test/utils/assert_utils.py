@@ -147,6 +147,9 @@ def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), 
         frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
         assert qimg_to_arr(frame_pixmap.toImage()).mean() != 0
 
+        import cv2
+        assert state_dict['preview_window']['current_frame_no'] == int(windows_container.preview_window.preview_widget.cap.get(cv2.CAP_PROP_POS_FRAMES))
+
     return fn1
 
 def get_assert_preview_for_blank_file_fn(is_output_window: bool):

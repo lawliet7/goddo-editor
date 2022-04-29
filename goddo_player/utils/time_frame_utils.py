@@ -77,6 +77,6 @@ def time_str_to_frames(time_str: str, fps, last_component_type='frames'):
 
         if fps is None or fps == 0:
             raise Exception(f"Please pass correct fps in, we cannot divide by {fps}")
-        last_component_total_frames = int(ms / 1000 * fps)
+        last_component_total_frames = ms / 1000 * fps
 
-    return int(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps) + last_component_total_frames
+    return int(round(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames))

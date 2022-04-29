@@ -262,5 +262,6 @@ class FrameInOutSlider(ClickSlider):
             frame_diff = self.get_wheel_skip_time() * -1
         else:
             frame_diff = self.get_wheel_skip_time()
+        frame_diff = int(frame_diff)
 
         self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

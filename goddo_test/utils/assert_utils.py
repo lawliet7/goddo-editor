@@ -83,7 +83,8 @@ def get_assert_blank_list_fn(is_file_list: bool):
         assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
     return fn1
 
-def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), current_frame_no=None, in_frame=None, out_frame=None, is_max_speed=False):
+def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), current_frame_no=None, in_frame=None, out_frame=None, is_max_speed=False,
+                                          time_skip_label="5s"):
     video_path = get_test_vid_path(ext)
 
     video_total_frames = 210
@@ -96,6 +97,15 @@ def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), 
     else:
         from_current_frame_no = to_current_frame_no = current_frame_no
 
+    if 'm' in time_skip_label:
+        idx_of_m = time_skip_label.index("m")
+        mins = int(time_skip_label[:idx_of_m])
+        secs = int(time_skip_label[idx_of_m+1:-1])
+        time_skip_multiplier = int((mins * 60 + secs) / 5)
+    else:
+        secs = int(time_skip_label[:-1])
+        time_skip_multiplier = int(secs / 5)
+
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # preview window asserts
         assert state_dict['preview_window']['video_path'] == str(video_path)
@@ -105,7 +115,7 @@ def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), 
         assert state_dict['preview_window']['frame_in_out']['out_frame'] is out_frame
         assert from_current_frame_no <= state_dict['preview_window']['current_frame_no'] <= to_current_frame_no
         assert state_dict['preview_window']['is_max_speed'] == is_max_speed
-        assert state_dict['preview_window']['time_skip_multiplier'] == 1
+        assert state_dict['preview_window']['time_skip_multiplier'] == time_skip_multiplier
         assert state_dict['preview_window']['cur_total_frames'] == video_total_frames
         assert state_dict['preview_window']['cur_start_frame'] == 0
         assert state_dict['preview_window']['cur_end_frame'] == video_total_frames
@@ -121,7 +131,7 @@ def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), 
         time_label, speed_label, skip_label = [x for x in win_state_dict['preview_window']['label'].split(' ') if x.strip() != '']
         max_speed_label = "max" if is_max_speed else "normal"
         assert speed_label.strip() == f'speed={max_speed_label}'
-        assert skip_label.strip() == 'skip=5s'
+        assert skip_label.strip() == f'skip={time_skip_label}'
 
         cur_time_label, total_time_label = time_label.split('/')
         assert total_time_label.strip() == total_time_str

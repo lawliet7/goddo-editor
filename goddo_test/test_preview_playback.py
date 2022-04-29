@@ -94,7 +94,7 @@ def test_skip_ahead_to_end(app_thread, windows_container: WindowsContainer, blan
 
     generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.98, 1), is_max_speed=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -129,7 +129,7 @@ def test_skip_before_to_beginning(app_thread, windows_container: WindowsContaine
 
     generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_to_beginning.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.0, 0.1), is_max_speed=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.0, 0.01), is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -167,9 +167,63 @@ def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, bl
 
     wait_until(lambda: not windows_container.preview_window.is_playing() and old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_to_beginning.json',
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.75, 1), is_max_speed=True), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.55, 0.90), is_max_speed=True), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_skip_ahead_10s(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    go_to_prev_wind_slider(windows_container.preview_window, 0.1)
+    pyautogui.scroll(1)
+
+    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 1)
+
+    def check_skip_label():
+        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
+        return skip_label
+    
+    assert check_skip_label() == 'skip=5s'
+
+    pyautogui.press('add')
+
+    wait_until(lambda: check_skip_label() == 'skip=10s')
+
+    pyautogui.scroll(-1)
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), current_frame_no=210, time_skip_label="10s"), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    go_to_prev_wind_slider(windows_container.preview_window, 0.9)
+    pyautogui.scroll(-1)
+
+    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no <= 209)
+
+    def check_skip_label():
+        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
+        return skip_label
+    
+    assert check_skip_label() == 'skip=5s'
+
+    pyautogui.press('add')
+
+    wait_until(lambda: check_skip_label() == 'skip=10s')
+
+    pyautogui.scroll(1)
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0, 0.01), current_frame_no=1, time_skip_label="10s"), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 

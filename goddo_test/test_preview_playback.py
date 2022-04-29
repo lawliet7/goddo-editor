@@ -181,16 +181,12 @@ def test_skip_ahead_10s(app_thread, windows_container: WindowsContainer, blank_s
     pyautogui.scroll(1)
 
     wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 1)
-
-    def check_skip_label():
-        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
-        return skip_label
     
-    assert check_skip_label() == 'skip=5s'
+    assert check_skip_label(windows_container) == 'skip=5s'
 
     pyautogui.press('add')
 
-    wait_until(lambda: check_skip_label() == 'skip=10s')
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=10s')
 
     pyautogui.scroll(-1)
 
@@ -208,16 +204,12 @@ def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_
     pyautogui.scroll(-1)
 
     wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no <= 209)
-
-    def check_skip_label():
-        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
-        return skip_label
     
-    assert check_skip_label() == 'skip=5s'
+    assert check_skip_label(windows_container) == 'skip=5s'
 
-    pyautogui.press('add')
+    pyautogui.press('add') # numpad+
 
-    wait_until(lambda: check_skip_label() == 'skip=10s')
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=10s')
 
     pyautogui.scroll(1)
 
@@ -226,6 +218,67 @@ def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_
                 get_assert_preview_for_test_file_1_fn(slider_range=(0, 0.01), current_frame_no=1, time_skip_label="10s"), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
+
+def test_capped_time_skip_multiplier_to_5m(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+    
+    assert check_skip_label(windows_container) == 'skip=5s'
+
+    for _ in range(12):
+        pyautogui.press('add') # numpad+
+
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=1m5s')
+
+    for _ in range(12*5-1):
+        pyautogui.press('add') # numpad+
+
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=5m')
+
+    pyautogui.press('add') # numpad+
+
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=5m')
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(time_skip_label="5m"), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_floored_time_skip_multiplier_to_5s(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+    
+    assert check_skip_label(windows_container) == 'skip=5s'
+
+    pyautogui.press('add') # numpad+
+    pyautogui.press('add') # numpad+
+    pyautogui.press('add') # numpad+
+
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=20s')
+
+    pyautogui.press('subtract') # numpad-
+
+    wait_until(lambda: check_skip_label(windows_container) == 'skip=15s')
+
+    pyautogui.press('subtract') # numpad-
+    pyautogui.press('subtract') # numpad-
+
+    assert check_skip_label(windows_container) == 'skip=5s'
+
+    pyautogui.press('subtract') # numpad-
+
+    assert check_skip_label(windows_container) == 'skip=5s'
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(),
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def check_skip_label(windows_container):
+        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
+        return skip_label    
 
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))

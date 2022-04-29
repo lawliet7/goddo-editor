@@ -110,7 +110,7 @@ class PreviewWindow(QWidget):
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
         num_mins = int(self.state.preview_window.time_skip_multiplier * 5 / 60) % 60
-        min_txt = f'{num_mins}m ' if num_mins > 0 else ''
+        min_txt = f'{num_mins}m' if num_mins > 0 else ''
         sec_txt = f'{num_secs}s' if num_secs > 0 else ''
         return f'{min_txt}{sec_txt}'
 

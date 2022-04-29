@@ -100,11 +100,14 @@ def get_assert_preview_for_test_file_1_fn(ext='mp4', slider_range=(0.00, 0.15), 
     if 'm' in time_skip_label:
         idx_of_m = time_skip_label.index("m")
         mins = int(time_skip_label[:idx_of_m])
-        secs = int(time_skip_label[idx_of_m+1:-1])
-        time_skip_multiplier = int((mins * 60 + secs) / 5)
+        if 's' in time_skip_label:
+            secs = int(time_skip_label[idx_of_m+1:-1])
+        else:
+            secs = 0
     else:
+        mins = 0
         secs = int(time_skip_label[:-1])
-        time_skip_multiplier = int(secs / 5)
+    time_skip_multiplier = int((mins * 60 + secs) / 5)
 
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # preview window asserts

@@ -18,22 +18,22 @@ class CommandType(Enum):
     SHOW_MAX_WINDOW = auto()
     HIDE_MAX_WINDOW = auto()
     RESET = auto()
-    ACTIVATE_TABBED_LIST_WINDOW = auto()
-    ACTIVATE_PREVIEW_WINDOW = auto()
-    ACTIVATE_OUTPUT_WINDOW = auto()
-    ACTIVATE_TIMELINE_WINDOW = auto()
     SHOW_DND_WINDOW = auto()
     HIDE_DND_WINDOW = auto()
     ADD_ITEM_DND_WINDOW = auto()
     LOAD_FILE = auto()
     SAVE_FILE = auto()
     CLOSE_FILE = auto()
+    MINIMIZE_GODDO_WINDOW = auto()
 
 
 class Command:
     def __init__(self, cmd_type: CommandType, params: List = []):
         self.cmd_type = cmd_type
         self.params = params
+
+    def __repr__(self):
+        return f'Command(cmd_type={self.cmd_type},params={self.params})'
 
 
 class CommandWidget(QWidget):
@@ -58,7 +58,7 @@ class CommandWidget(QWidget):
 
     def _handler(self):
         try:
-            cmd = self._q.get_nowait()
+            cmd = self._q.get(timeout=0.1)
 
             logging.info(f'executing cmd {cmd}')
 
@@ -68,14 +68,6 @@ class CommandWidget(QWidget):
                 self._max_widget.show()
             elif cmd.cmd_type == CommandType.HIDE_MAX_WINDOW:
                 self._max_widget.hide()
-            elif cmd.cmd_type == CommandType.ACTIVATE_TABBED_LIST_WINDOW:
-                activate_window(self._monarch.tabbed_list_window)
-            elif cmd.cmd_type == CommandType.ACTIVATE_PREVIEW_WINDOW:
-                activate_window(self._monarch.preview_window)
-            elif cmd.cmd_type == CommandType.ACTIVATE_OUTPUT_WINDOW:
-                activate_window(self._monarch.preview_window_output)
-            elif cmd.cmd_type == CommandType.ACTIVATE_TIMELINE_WINDOW:
-                activate_window(self._monarch.timeline_window)
             elif cmd.cmd_type == CommandType.SHOW_DND_WINDOW:
                 self.dnd_widget.show()
             elif cmd.cmd_type == CommandType.HIDE_DND_WINDOW:
@@ -86,6 +78,8 @@ class CommandWidget(QWidget):
                 self._monarch.signals.load_slot.emit(cmd.params[0])
             elif cmd.cmd_type == CommandType.SAVE_FILE:
                 self._monarch.signals.save_slot.emit(cmd.params[0])
+            elif cmd.cmd_type == CommandType.MINIMIZE_GODDO_WINDOW:
+                cmd.params[0].showMinimized()
             self._q.task_done()
         except Empty:
             pass

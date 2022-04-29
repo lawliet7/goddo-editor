@@ -32,13 +32,13 @@ class ClipItemWidget(QWidget):
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
-        lbl = QLabel()
-        lbl.setObjectName('screenshot')
-        lbl.setFixedHeight(default_pixmap.height())
-        lbl.setPixmap(default_pixmap)
+        self.screenshot_label = QLabel()
+        self.screenshot_label.setObjectName('screenshot')
+        self.screenshot_label.setFixedHeight(default_pixmap.height())
+        self.screenshot_label.setPixmap(default_pixmap)
 
         h_layout = QHBoxLayout()
-        h_layout.addWidget(lbl)
+        h_layout.addWidget(self.screenshot_label)
 
         widget = QWidget()
 
@@ -56,11 +56,11 @@ class ClipItemWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        label = QLabel(video_path.file_name())
-        label.setObjectName("name")
+        self.file_name_label = QLabel(video_path.file_name())
+        self.file_name_label.setObjectName("name")
 
         v_layout = QVBoxLayout()
-        v_layout.addWidget(label)
+        v_layout.addWidget(self.file_name_label)
         v_layout.addWidget(scroll)
         h_layout.addLayout(v_layout)
         self.setLayout(h_layout)
@@ -190,9 +190,9 @@ class FileListWindow(BaseQWidget):
         self.state = StateStore()
 
         vbox = QVBoxLayout(self)
-        self.listWidget = FileListWidget()
-        self.listWidget.itemDoubleClicked.connect(self.double_clicked)
-        vbox.addWidget(self.listWidget)
+        self.list_widget = FileListWidget()
+        self.list_widget.itemDoubleClicked.connect(self.double_clicked)
+        vbox.addWidget(self.list_widget)
         self.setLayout(vbox)
 
         self.black_pixmap = numpy_to_pixmap(np.zeros((108, 192, 1)))
@@ -204,23 +204,21 @@ class FileListWindow(BaseQWidget):
         self.clip_list_dict: Dict[str, ClipItemWidget] = {}
 
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
-        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
-        child = item_widget.findChild(QLabel, 'screenshot')
-        logging.debug(f'found child {child}')
-        child.setPixmap(pixmap)
+        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
+        item_widget.screenshot_label.setPixmap(pixmap)
 
     def add_video(self, video_path: VideoPath):
         logging.info(f'adding video {video_path}')
 
         # Add to list a new item (item is simply an entry in your list)
-        item = QListWidgetItem(self.listWidget)
+        item = QListWidgetItem(self.list_widget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(video_path, self.listWidget, self.black_pixmap)
+        row = ClipItemWidget(video_path, self.list_widget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
-        self.listWidget.addItem(item)
-        self.listWidget.setItemWidget(item, row)
+        self.list_widget.addItem(item)
+        self.list_widget.setItemWidget(item, row)
 
         th = ScreenshotThread(video_path, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
@@ -228,7 +226,7 @@ class FileListWindow(BaseQWidget):
         self.clip_list_dict[video_path.str()] = row
 
     def double_clicked(self, item):
-        item_widget: ClipItemWidget = self.listWidget.itemWidget(item)
+        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
         self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, True)
 

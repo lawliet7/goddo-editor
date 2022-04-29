@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Test One",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["goddo_test\\test_preview_playback.py::test_while_playing_seek_on_slider"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Test All",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            // "args": ["goddo_test\\test_preview_playback.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Run Main",
+            "type": "python",
+            "request": "launch",
+            "program": "goddo_player\\main.py",
+            // "module": "pytest",
+            // "args": ["goddo_test\\test_preview_playback.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Run Test Save",
+            "type": "python",
+            "request": "launch",
+            "program": "goddo_player\\main.py",
+            // "module": "pytest",
+            "args": ["--save-file","saves\\blank.json"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

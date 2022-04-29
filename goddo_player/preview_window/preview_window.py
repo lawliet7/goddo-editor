@@ -58,8 +58,6 @@ class PreviewWindow(QWidget):
 
         self.setLayout(vbox)
 
-        self.time_skip_multiplier = 6
-
     def update(self):
         super().update()
 
@@ -112,30 +110,32 @@ class PreviewWindow(QWidget):
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60
         num_mins = int(self.state.preview_window.time_skip_multiplier * 5 / 60) % 60
-        min_txt = f'{num_mins}m ' if num_mins > 0 else ''
+        min_txt = f'{num_mins}m' if num_mins > 0 else ''
         sec_txt = f'{num_secs}s' if num_secs > 0 else ''
         return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
+        logging.info('begin on value change')
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window.total_frames}')
         self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
+        logging.info('finished on value change')
 
     def switch_video(self, video_path: VideoPath):
         self.preview_widget.switch_video(video_path)
 
-        self.setWindowTitle(self.base_title + ' - ' + video_path.file_name(include_ext=False))
-
-        self.update()
-
-        if video_path.url().isEmpty():
+        if video_path.is_empty():
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)
             self.slider.setDisabled(True)
+            self.setWindowTitle(f'{self.base_title}')
         else:
+            self.setWindowTitle(self.base_title + ' - ' + video_path.file_name(include_ext=False))
             self.slider.setDisabled(False)
+
+        self.update()
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         if self.preview_widget.cap:
@@ -162,8 +162,9 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.preview_widget.update_frame_pixmap(1)
-            self.update()
+            # self.preview_widget.update_frame_pixmap(1)
+            # self.update()
+            self.signals.preview_window.seek_slot.emit(1, PositionType.RELATIVE)
         elif event.key() == Qt.Key_BracketLeft:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
@@ -171,6 +172,7 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         elif event.key() == Qt.Key_BracketRight:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
@@ -178,6 +180,7 @@ class PreviewWindow(QWidget):
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
                 self.preview_widget.update_frame_pixmap(frame_diff)
                 self.update()
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
@@ -188,8 +191,9 @@ class PreviewWindow(QWidget):
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.preview_widget.update_frame_pixmap(-5)
-            self.update()
+            # self.preview_widget.update_frame_pixmap(-5)
+            # self.update()
+            self.signals.preview_window.seek_slot.emit(-5, PositionType.RELATIVE)
         else:
             super().keyPressEvent(event)
 
@@ -260,5 +264,6 @@ class FrameInOutSlider(ClickSlider):
             frame_diff = self.get_wheel_skip_time() * -1
         else:
             frame_diff = self.get_wheel_skip_time()
+        frame_diff = int(frame_diff)
 
         self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)

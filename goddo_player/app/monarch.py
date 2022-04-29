@@ -106,7 +106,7 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(VideoPath(clip.video_path), False)
+            pw_signals.switch_video_slot.emit(clip.video_path, False)
 
             if clip.frame_in_out.in_frame is not None:
                 pw_signals.in_frame_slot.emit(clip.frame_in_out.in_frame)
@@ -211,7 +211,12 @@ class MonarchSystem(QObject):
             self.sender().play_cmd_slot.emit(PlayCommand.PAUSE)
         preview_window.go_to_frame(frame_no, pos_type)
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
-        preview_window_state.current_frame_no = frame_no
+
+        if pos_type == PositionType.ABSOLUTE:
+            preview_window_state.current_frame_no = frame_no
+        else:
+            preview_window_state.current_frame_no = min(max(frame_no + preview_window_state.current_frame_no,1), preview_window_state.total_frames)
+
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
@@ -289,8 +294,8 @@ class MonarchSystem(QObject):
         # load empty file so it resets the state
         self.signals.load_slot.emit(VideoPath(QUrl()))
 
-        self.tabbed_list_window.videos_tab.listWidget.clear()
-        self.tabbed_list_window.clips_tab.listWidget.clear()
+        self.tabbed_list_window.videos_tab.list_widget.clear()
+        self.tabbed_list_window.clips_tab.list_widget.clear()
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), False)
@@ -325,7 +330,7 @@ class MonarchSystem(QObject):
             if frame_in_out_dict.get('out_frame'):
                 pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
 
-            if prev_wind_dict['current_frame_no'] > 1:
+            if prev_wind_dict['current_frame_no'] > 0:
                 pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
             else:
                 pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
@@ -350,12 +355,12 @@ class MonarchSystem(QObject):
 
             if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
-                if width_of_one_min > PlayerConfigs.timeline_initial_width:
-                    iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width) / 6)
+                if width_of_one_min > PlayerConfigs.timeline_initial_width_of_one_min:
+                    iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width_of_one_min) / 6)
                     for i in range(iterations):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
-                elif width_of_one_min < PlayerConfigs.timeline_initial_width:
-                    iterations = int((PlayerConfigs.timeline_initial_width - width_of_one_min) / 6)
+                elif width_of_one_min < PlayerConfigs.timeline_initial_width_of_one_min:
+                    iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for i in range(iterations):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
 

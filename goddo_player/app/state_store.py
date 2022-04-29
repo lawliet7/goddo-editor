@@ -20,11 +20,11 @@ from goddo_player.utils.url_utils import file_to_url
 @dataclass
 class PreviewWindowState:
     name: str
-    video_path: VideoPath = None
+    video_path: VideoPath = field(default=VideoPath(QUrl()))
     fps: float = field(default=0)
     total_frames: int = field(default=0)
     frame_in_out: FrameInOut = field(default_factory=FrameInOut)
-    current_frame_no: int = field(default=-1)
+    current_frame_no: int = field(default=0)
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
     cur_total_frames: int = field(default=0)
@@ -65,6 +65,9 @@ class PreviewWindowState:
 @dataclass
 class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+
+    def as_dict(self):
+        return asdict(self)
 
 
 @dataclass
@@ -139,6 +142,12 @@ class ClipListState:
     clips: List[ClipListStateItem] = field(default_factory=list)
     clips_dict: Dict[str, ClipListStateItem] = field(default_factory=dict)
 
+    def as_dict(self):
+        return {
+            "clips": [c.as_dict() for c in self.clips],
+            "clips_dict": {k:v.as_dict() for (k,v) in self.clips_dict.items()}
+        }
+
     @staticmethod
     def create_file_item(url: QUrl, frame_in_out: FrameInOut):
         return ClipListStateItem(url, frame_in_out)
@@ -154,6 +163,12 @@ class ClipListState:
 class FileListState:
     files: List[FileListStateItem] = field(default_factory=list)
     files_dict: Dict[str, FileListStateItem] = field(default_factory=dict)
+
+    def as_dict(self):
+        return {
+            "files": [f.as_dict() for f in self.files],
+            "files_dict": {k:v.as_dict() for (k,v) in self.files_dict.items()}
+        }
 
     @staticmethod
     def create_file_item(video_path: VideoPath):
@@ -230,6 +245,17 @@ class StateStore(QObject):
 
         logging.info(f'cur save file: {self.cur_save_file}')
 
+    def as_dict(self):
+        d = {}
+        d['preview_window'] = self.preview_window.as_dict()
+        d['preview_window_output'] = self.preview_window_output.as_dict()
+        d['app_config'] = self.app_config.as_dict()
+        d['file_list'] = self.file_list.as_dict()
+        d['clip_list'] = self.clip_list.as_dict()
+        d['timeline'] = self.timeline.as_dict()
+        d['cur_save_file'] = str(self.cur_save_file)
+        return d
+
     def save_file(self, video_path: VideoPath):
 
         logging.info(f'saving {video_path}')
@@ -294,6 +320,8 @@ class StateStore(QObject):
                 handle_timeline_fn(timeline_dict)
 
             db.close()
+
+            self.cur_save_file = video_path
 
             logging.info(f'finished loading {video_path}')
             logging.info(f'preview {self.preview_window}')

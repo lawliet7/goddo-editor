@@ -8,12 +8,14 @@ from typing import Callable
 import cv2
 import numpy as np
 import pyautogui
-from PyQt5.QtCore import QMimeData
+from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QListWidget
 
 from goddo_player.utils.url_utils import file_to_url
-from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path
+from goddo_player.utils.video_path import VideoPath
+from goddo_player.utils.window_util import local_to_global_pos
+from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path, video_folder_path
 
 
 def grab_screenshot(region_tuple=None):
@@ -125,3 +127,110 @@ def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):
     pyautogui.mouseDown()
     pyautogui.dragTo(dest_pt_x, dest_pt_y, duration=1)
     pyautogui.mouseUp()
+
+
+def get_test_vid_path(ext='mp4'):
+    file_path = video_folder_path().joinpath('supported').joinpath(f"test_vid.{ext}").resolve()
+    return VideoPath(file_to_url(file_path))
+
+def get_test_vid_2_path():
+    file_path = video_folder_path().joinpath("test_vid2.mp4").resolve()
+    return VideoPath(file_to_url(file_path))
+
+def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
+    old_frame_no = preview_window.state.preview_window.current_frame_no
+    
+    go_to_prev_wind_slider(preview_window, pct)
+    pyautogui.click()
+
+    if should_slider_value_change:
+        wait_until(lambda: old_frame_no != preview_window.state.preview_window.current_frame_no)
+    else:
+        time.sleep(0.5)
+
+def go_to_prev_wind_slider(preview_window, pct):
+    slider = preview_window.slider
+    pos = local_to_global_pos(slider, preview_window)
+    x_offset = int(slider.width() * pct)
+    y_offset = int(slider.height() * 0.5)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+
+
+def save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file_name: str):
+    from goddo_test.utils.command_widget import Command, CommandType
+
+    save_file_path = my_test_output_folder_path().joinpath(save_file_name).resolve()
+    save_path = VideoPath(file_to_url(str(save_file_path)))
+
+    before_state_dict = app_thread.mon.state.as_dict()
+    before_win_state_dict = windows_container.as_dict()
+
+    if windows_container.output_window.preview_widget.cap is not None:
+        check_type = "output_window"
+    elif len(windows_container.timeline_window.inner_widget.clip_rects) > 0:
+        check_type = 'timeline_window'
+    elif windows_container.preview_window.preview_widget.cap is not None:
+        check_type = "preview_window"
+    elif windows_container.tabbed_list_window.videos_tab.list_widget.count() > 0:
+        check_type = "file_list_window"
+    else:
+        check_type = None
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
+    app_thread.cmd.submit_cmd(Command(CommandType.RESET))
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
+
+    time.sleep(0.5)
+
+    reset_state_dict = app_thread.mon.state.as_dict()
+    assert_state(reset_state_dict, blank_state)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
+    if check_type == 'output_window':
+        wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) > 0)
+    elif check_type == 'timeline_window':
+        wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) > 0)
+    elif check_type == 'preview_window':
+        wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    elif check_type == 'file_list_window':
+        wait_until(lambda: windows_container.tabbed_list_window.videos_tab.list_widget.count() > 0)
+
+    time.sleep(0.5)
+
+    after_load_state_dict = app_thread.mon.state.as_dict()
+    after_load_win_state_dict = windows_container.as_dict()
+
+    logging.info(f'after_load_win_state_dict = {after_load_win_state_dict}')
+
+    assert after_load_state_dict['cur_save_file'] == str(save_path)
+
+    assert_state(before_state_dict, after_load_state_dict)
+    assert_state(before_win_state_dict, after_load_win_state_dict)
+
+def assert_state(src_state, dest_state, is_window_state=False):
+    if not is_window_state:
+        if 'cur_save_file' in src_state:
+            src_state = src_state.copy()
+            src_state.pop('cur_save_file')
+
+        if 'cur_save_file' in dest_state:
+            dest_state = dest_state.copy()
+            dest_state.pop('cur_save_file')        
+    
+    for k in src_state:
+        assert src_state[k] == dest_state[k], f'{k} is different'
+    assert src_state == dest_state
+
+def qrect_as_dict(rect: QRect):
+    return {
+        'x': rect.x(),
+        'y': rect.y(),
+        'width': rect.width(),
+        'height': rect.height()
+    }
+
+def qsize_as_dict(size: QSize):
+    return {
+        'height': size.height(),
+        'width': size.width()
+    }

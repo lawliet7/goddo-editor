@@ -162,8 +162,9 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.preview_widget.update_frame_pixmap(1)
-            self.update()
+            # self.preview_widget.update_frame_pixmap(1)
+            # self.update()
+            self.signals.preview_window.seek_slot.emit(1, PositionType.RELATIVE)
         elif event.key() == Qt.Key_BracketLeft:
             frame_in_out = self.state.preview_window.frame_in_out
             if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
@@ -190,8 +191,9 @@ class PreviewWindow(QWidget):
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.preview_widget.update_frame_pixmap(-5)
-            self.update()
+            # self.preview_widget.update_frame_pixmap(-5)
+            # self.update()
+            self.signals.preview_window.seek_slot.emit(-5, PositionType.RELATIVE)
         else:
             super().keyPressEvent(event)
 

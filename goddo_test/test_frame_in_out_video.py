@@ -39,7 +39,6 @@ def test_out_frame(app_thread, windows_container: WindowsContainer, blank_state)
     drop_video_on_preview(app_thread, windows_container, video_path)
 
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    # time.sleep(3)
 
     print(app_thread.mon.state.preview_window)
     cur_frame_no = app_thread.mon.state.preview_window.current_frame_no

@@ -25,6 +25,8 @@ def test_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
     pyautogui.press('i')
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
 
+    logging.info(f'=== slider value {windows_container.preview_window.slider.value()}')
+
     generic_assert(app_thread, windows_container, blank_state, 'test_in_frame_save.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(current_frame_no=cur_frame_no, in_frame=cur_frame_no), 

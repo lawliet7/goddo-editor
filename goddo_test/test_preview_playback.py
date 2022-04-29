@@ -16,7 +16,7 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, get_test_vid_path, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, get_test_vid_path, go_to_prev_wind_slider, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):
@@ -88,19 +88,13 @@ def test_skip_ahead_to_end(app_thread, windows_container: WindowsContainer, blan
     old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
     click_on_prev_wind_slider(windows_container.preview_window, 0.7)
-
-    slider = windows_container.preview_window.slider
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.1)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
     pyautogui.scroll(-1)
 
     wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
     generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.9, 1), is_max_speed=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.98, 1), is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -110,18 +104,15 @@ def test_skip_ahead(app_thread, windows_container: WindowsContainer, blank_state
 
     old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
-    slider = windows_container.preview_window.slider
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.1)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    go_to_prev_wind_slider(windows_container.preview_window, 0.1)
     pyautogui.scroll(-1)
 
     wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
+    slider_range = get_slider_range(windows_container, old_frame_no, is_fwd=True, threshold=0.01)
     generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.7, 0.9), is_max_speed=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=slider_range, is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -131,11 +122,7 @@ def test_skip_before_to_beginning(app_thread, windows_container: WindowsContaine
 
     old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
-    slider = windows_container.preview_window.slider
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.1)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    go_to_prev_wind_slider(windows_container.preview_window, 0.1)
     pyautogui.scroll(1)
 
     wait_until(lambda: old_frame_no > windows_container.preview_window.state.preview_window.current_frame_no)
@@ -150,28 +137,26 @@ def test_skip_before(app_thread, windows_container: WindowsContainer, blank_stat
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
-
     click_on_prev_wind_slider(windows_container.preview_window, 0.9)
 
-    slider = windows_container.preview_window.slider
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.1)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
+
     pyautogui.scroll(1)
 
-    wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
+    wait_until(lambda: old_frame_no > windows_container.preview_window.state.preview_window.current_frame_no)
 
+    slider_range = get_slider_range(windows_container, old_frame_no, is_fwd=False, threshold=0.01)
     generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_to_beginning.json',
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.15, 0.25), is_max_speed=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=slider_range, is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
 def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
+
+    old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
     pyautogui.press('s')
     pyautogui.press('space')
@@ -180,7 +165,13 @@ def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, bl
 
     pyautogui.press('space')
 
-    time.sleep(3)
+    wait_until(lambda: not windows_container.preview_window.is_playing() and old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
+
+    generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_to_beginning.json',
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.75, 1), is_max_speed=True), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
 
 def drop_video_on_preview(app_thread, windows_container, video_path):
     app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
@@ -212,3 +203,13 @@ def drop_video_on_preview(app_thread, windows_container, video_path):
     pyautogui.press('space')
 
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+def get_slider_range(windows_container, old_frame_no, is_fwd, wheel_amt = 5, threshold = 0.01):
+    fps = windows_container.preview_window.state.preview_window.fps
+    total_frames = windows_container.preview_window.state.preview_window.total_frames
+    increment_amt = wheel_amt * fps if is_fwd else -wheel_amt * fps
+    est_frame_pct = round(max(min(old_frame_no + increment_amt, total_frames),0) / total_frames, 3)
+    slider_range = (max(est_frame_pct - threshold,0), min(est_frame_pct + threshold, 200))
+    logging.info(f'=== slider value {windows_container.preview_window.slider.value()}, range {slider_range},' +
+                   ' total_frames {total_frames}, fps {fps} est_frame_pct {est_frame_pct} old_frame_no {old_frame_no}')
+    return slider_range

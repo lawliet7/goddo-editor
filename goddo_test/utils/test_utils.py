@@ -138,20 +138,22 @@ def get_test_vid_2_path():
     return VideoPath(file_to_url(file_path))
 
 def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
-    slider = preview_window.slider
-
     old_frame_no = preview_window.state.preview_window.current_frame_no
-
-    pos = local_to_global_pos(slider, preview_window)
-    x_offset = int(slider.width() * pct)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    
+    go_to_prev_wind_slider(preview_window, pct)
     pyautogui.click()
 
     if should_slider_value_change:
         wait_until(lambda: old_frame_no != preview_window.state.preview_window.current_frame_no)
     else:
         time.sleep(0.5)
+
+def go_to_prev_wind_slider(preview_window, pct):
+    slider = preview_window.slider
+    pos = local_to_global_pos(slider, preview_window)
+    x_offset = int(slider.width() * pct)
+    y_offset = int(slider.height() * 0.5)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
 
 
 def save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file_name: str):

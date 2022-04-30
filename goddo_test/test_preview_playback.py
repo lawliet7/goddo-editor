@@ -153,23 +153,40 @@ def test_skip_before(app_thread, windows_container: WindowsContainer, blank_stat
                 assert_blank_timeline)
 
 def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, blank_state):
+    def play_for_one_sec():
+        pyautogui.press('space')
+        time.sleep(1)
+        pyautogui.press('space')
+        wait_until(lambda: not windows_container.preview_window.is_playing() and old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
+
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
     old_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
+    pyautogui.press('i')
+
+    play_for_one_sec()
+
+    new_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
+
+    pyautogui.press('[')
+    wait_until(lambda: old_frame_no == windows_container.preview_window.state.preview_window.current_frame_no)
+
     pyautogui.press('s')
-    pyautogui.press('space')
+    play_for_one_sec()
 
-    time.sleep(1)
+    super_new_frame_no = windows_container.preview_window.state.preview_window.current_frame_no
 
-    pyautogui.press('space')
+    logging.info(f'=== old frame no {old_frame_no} new frame no {new_frame_no} super new frame no {super_new_frame_no}')
 
-    wait_until(lambda: not windows_container.preview_window.is_playing() and old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
+    assert (super_new_frame_no - old_frame_no) > ((new_frame_no - old_frame_no) * 1.5) # at least 10% faster than normal
+
+    slider_value_pct = windows_container.preview_window.slider.value() / 200
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(slider_range=(0.55, 0.90), is_max_speed=True), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(slider_value_pct-0.01, slider_value_pct+0.01), is_max_speed=True, in_frame=old_frame_no), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 

@@ -16,11 +16,11 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_preview, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_preview, get_current_method_name, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
-def test_drop_clip_on_timeline(app_thread, windows_container: WindowsContainer, blank_state):
+def test_drop_clip_in_only(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
@@ -42,11 +42,11 @@ def test_drop_clip_on_timeline(app_thread, windows_container: WindowsContainer, 
 
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_drop_clip_on_timeline.json',
-            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(in_frame=in_frame), 
-            get_assert_preview_for_blank_file_fn(is_output_window=True), 
-            get_assert_timeline_for_test_file_1_fn(in_frame=in_frame))
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False),
+            get_assert_preview_for_test_file_1_fn(in_frame=in_frame),
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_for_test_file_1_fn(in_frame=in_frame))          
 
 def test_zoom_in_on_timeline(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
@@ -73,7 +73,7 @@ def test_zoom_in_on_timeline(app_thread, windows_container: WindowsContainer, bl
     for _ in range(3):
         pyautogui.press('add')
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_zoom_in_on_timeline.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(in_frame=in_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -104,7 +104,7 @@ def test_zoom_out_on_timeline(app_thread, windows_container: WindowsContainer, b
     for _ in range(3):
         pyautogui.press('subtract')
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_zoom_out_on_timeline.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(in_frame=in_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 

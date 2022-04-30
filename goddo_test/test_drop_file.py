@@ -52,11 +52,12 @@ def test_drop_vid_file(app_thread, windows_container, blank_state, test_file_ext
     wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
-    generic_assert(app_thread, windows_container, blank_state, f'drop_{test_file_ext}_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(ext=test_file_ext), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
-                assert_blank_timeline)
+                assert_blank_timeline,
+                save_file=f'<file_name>.<method_name>_{test_file_ext}.json')
 
 
 
@@ -92,7 +93,7 @@ def test_drop_multiple_vid_file(app_thread, windows_container, blank_state):
     wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
-    generic_assert(app_thread, windows_container, blank_state, 'drop_multiple_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 assert_file_list_for_multiple_files, get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 

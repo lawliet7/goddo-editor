@@ -65,7 +65,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
 
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_dbl_click_video_list.json',
+    generic_assert(app_thread, windows_container, blank_state,
                    get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                    get_assert_preview_for_test_file_1_fn(), 
                    get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -102,7 +102,7 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
 
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_drop_on_preview_window.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 

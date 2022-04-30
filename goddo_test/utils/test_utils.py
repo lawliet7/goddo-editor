@@ -1,3 +1,4 @@
+import inspect
 import logging
 import math
 import os
@@ -267,3 +268,12 @@ def drop_video_on_preview(app_thread, windows_container, video_path):
     pyautogui.press('space')
 
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+def get_current_method_name(levels=1):
+    cur_frame = inspect.currentframe()
+    try:
+        for _ in range(levels):
+            cur_frame = cur_frame.f_back
+        return inspect.getmodulename(cur_frame.f_code.co_filename), cur_frame.f_code.co_name
+    finally:
+        del cur_frame

@@ -52,7 +52,7 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
     assert secs == 6
     assert 5 <= frames <= 15
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_out_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 1)), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -75,7 +75,7 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     assert secs == 6
     assert 5 <= frames <= 15
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_while_paused_seek_on_slider.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 0.91)), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -92,7 +92,7 @@ def test_skip_ahead_to_end(app_thread, windows_container: WindowsContainer, blan
 
     wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -110,7 +110,7 @@ def test_skip_ahead(app_thread, windows_container: WindowsContainer, blank_state
     wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
     slider_range = get_slider_range(windows_container, old_frame_no, is_fwd=True, threshold=0.01)
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=slider_range, is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -127,7 +127,7 @@ def test_skip_before_to_beginning(app_thread, windows_container: WindowsContaine
 
     wait_until(lambda: old_frame_no > windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_to_beginning.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.0, 0.01), is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -146,7 +146,7 @@ def test_skip_before(app_thread, windows_container: WindowsContainer, blank_stat
     wait_until(lambda: old_frame_no > windows_container.preview_window.state.preview_window.current_frame_no)
 
     slider_range = get_slider_range(windows_container, old_frame_no, is_fwd=False, threshold=0.01)
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_before.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=slider_range, is_max_speed=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -167,7 +167,7 @@ def test_switch_to_max_speed(app_thread, windows_container: WindowsContainer, bl
 
     wait_until(lambda: not windows_container.preview_window.is_playing() and old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_switch_to_max_speed.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.55, 0.90), is_max_speed=True), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -190,7 +190,7 @@ def test_skip_ahead_10s(app_thread, windows_container: WindowsContainer, blank_s
 
     pyautogui.scroll(-1)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_ahead_10s.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), current_frame_no=210, time_skip_label="10s"), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -213,7 +213,7 @@ def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_
 
     pyautogui.scroll(1)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_skip_before_10s.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0, 0.01), current_frame_no=1, time_skip_label="10s"), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -239,7 +239,7 @@ def test_capped_time_skip_multiplier_to_5m(app_thread, windows_container: Window
 
     wait_until(lambda: check_skip_label(windows_container) == 'skip=5m')
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_capped_time_skip_multiplier_to_5m.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(time_skip_label="5m"), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -270,7 +270,7 @@ def test_floored_time_skip_multiplier_to_5s(app_thread, windows_container: Windo
 
     assert check_skip_label(windows_container) == 'skip=5s'
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_floored_time_skip_multiplier_to_5s.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -287,7 +287,7 @@ def test_advance_frame_with_right_key(app_thread, windows_container: WindowsCont
 
     wait_until(lambda: old_frame_no < windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_advance_frame_with_right_key.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(old_slider_pct, old_slider_pct+0.01), current_frame_no=old_frame_no+1),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -304,7 +304,7 @@ def test_move_5_frames_back_with_left_key(app_thread, windows_container: Windows
 
     wait_until(lambda: old_frame_no > windows_container.preview_window.state.preview_window.current_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_move_5_frames_back_with_left_key.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(old_slider_pct-5/210-0.01, old_slider_pct), current_frame_no=old_frame_no-5),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -320,7 +320,7 @@ def test_play_to_end(app_thread, windows_container: WindowsContainer, blank_stat
 
     wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 210)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_move_5_frames_back_with_left_key.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), current_frame_no=210),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -338,7 +338,7 @@ def test_advance_next_frame_at_end_should_do_nothing(app_thread, windows_contain
     pyautogui.press('right')
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_move_5_frames_back_with_left_key.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), current_frame_no=210),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -360,7 +360,7 @@ def test_go_back_prev_5_frames_at_beginning_should_do_nothing(app_thread, window
 
     wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no < old_frame_no)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_move_5_frames_back_with_left_key.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0, 0.01), current_frame_no=1),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 

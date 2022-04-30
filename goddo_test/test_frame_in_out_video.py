@@ -27,7 +27,7 @@ def test_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
 
     logging.info(f'=== slider value {windows_container.preview_window.slider.value()}')
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_in_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(current_frame_no=cur_frame_no, in_frame=cur_frame_no), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -47,7 +47,7 @@ def test_out_frame(app_thread, windows_container: WindowsContainer, blank_state)
 
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_out_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(out_frame=cur_frame_no), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -77,7 +77,7 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer, blank_sta
 
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_in_out_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), in_frame=in_frame, out_frame=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -107,7 +107,7 @@ def test_unset_in_frame(app_thread, windows_container: WindowsContainer, blank_s
     with pyautogui.hold('shift'):
         pyautogui.press(['i'])
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_unset_in_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), out_frame=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -139,7 +139,7 @@ def test_unset_out_frame(app_thread, windows_container: WindowsContainer, blank_
 
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_unset_out_frame_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), current_frame_no=out_frame, in_frame=in_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -178,7 +178,7 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer, bla
 
     time.sleep(0.5)
 
-    generic_assert(app_thread, windows_container, blank_state, 'test_unset_in_out_frame.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), current_frame_no=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -225,7 +225,7 @@ def test_go_to_in_frame(app_thread, windows_container: WindowsContainer, blank_s
     wait_until(lambda: slider.value() == cur_slider_value)
 
     expected_slider_pct = cur_slider_value/200
-    generic_assert(app_thread, windows_container, blank_state, 'test_go_to_in_frame.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=in_frame, in_frame=in_frame, out_frame=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
@@ -272,7 +272,7 @@ def test_go_to_out_frame(app_thread, windows_container: WindowsContainer, blank_
     wait_until(lambda: slider.value() == cur_slider_value)
 
     expected_slider_pct = cur_slider_value/200
-    generic_assert(app_thread, windows_container, blank_state, 'test_go_to_out_frame.json',
+    generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=out_frame, in_frame=in_frame, out_frame=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 

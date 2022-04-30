@@ -4,11 +4,16 @@ from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_test.utils.path_util import video_folder_path
-from goddo_test.utils.test_utils import get_test_vid_path, qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
+from goddo_test.utils.test_utils import get_current_method_name, get_test_vid_path, qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
 
 
-def generic_assert(app_thread, windows_container, blank_state, save_file,
-                   fn_assert_file_list, fn_assert_clip_list, fn_assert_preview, fn_assert_output, fn_assert_timeline):
+def generic_assert(app_thread, windows_container, blank_state,
+                   fn_assert_file_list, fn_assert_clip_list, fn_assert_preview, fn_assert_output, fn_assert_timeline, 
+                   save_file='<file_name>.<method_name>.json'):
+
+    file_name, method_name = get_current_method_name(2)
+    resolved_save_file = save_file.replace('<file_name>', file_name).replace('<method_name>', method_name)
+    logging.info(resolved_save_file)
 
     state_dict = app_thread.mon.state.as_dict()
     win_state_dict = windows_container.as_dict()
@@ -19,7 +24,7 @@ def generic_assert(app_thread, windows_container, blank_state, save_file,
     fn_assert_output(app_thread, windows_container, state_dict, win_state_dict)
     fn_assert_timeline(app_thread, windows_container, state_dict , win_state_dict)
 
-    save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file)
+    save_reload_and_assert_state(app_thread, windows_container, blank_state, resolved_save_file)
 
 def get_assert_file_list_for_test_file_1_fn(ext='mp4', tags=[]):
     video_path = get_test_vid_path(ext)

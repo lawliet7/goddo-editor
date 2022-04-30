@@ -357,12 +357,12 @@ class MonarchSystem(QObject):
                 width_of_one_min = timeline_dict['width_of_one_min']
                 if width_of_one_min > PlayerConfigs.timeline_initial_width_of_one_min:
                     iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width_of_one_min) / 6)
-                    for i in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
+                    for _ in range(iterations):
+                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
                 elif width_of_one_min < PlayerConfigs.timeline_initial_width_of_one_min:
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for i in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
+                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
 
         self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 

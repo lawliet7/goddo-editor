@@ -16,7 +16,7 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, get_test_vid_path, go_to_prev_wind_slider, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_test_vid_path, go_to_prev_wind_slider, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):
@@ -368,38 +368,7 @@ def test_go_back_prev_5_frames_at_beginning_should_do_nothing(app_thread, window
 
 def check_skip_label(windows_container):
         _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
-        return skip_label    
-
-def drop_video_on_preview(app_thread, windows_container, video_path):
-    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
-
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
-
-    dnd_widget = app_thread.cmd.dnd_widget
-
-    item_idx = dnd_widget.get_count() - 1
-    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
-
-    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
-    src_pt_x = src_corner_pt.x() + 10
-    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
-
-    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
-    dest_pt_x = dest_corner_pt.x() + 10
-    dest_pt_y = dest_corner_pt.y() + 10
-
-    # win_rect = windows_container.preview_window.geometry().getRect()
-    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
-
-    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
-
-    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
-
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+        return skip_label
 
 def get_slider_range(windows_container, old_frame_no, is_fwd, wheel_amt = 5, threshold = 0.01):
     fps = windows_container.preview_window.state.preview_window.fps

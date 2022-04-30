@@ -12,7 +12,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_preview, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
@@ -277,34 +277,3 @@ def test_go_to_out_frame(app_thread, windows_container: WindowsContainer, blank_
             get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=out_frame, in_frame=in_frame, out_frame=out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
-
-def drop_video_on_preview(app_thread, windows_container, video_path):
-    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
-
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
-
-    dnd_widget = app_thread.cmd.dnd_widget
-
-    item_idx = dnd_widget.get_count() - 1
-    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
-
-    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
-    src_pt_x = src_corner_pt.x() + 10
-    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
-
-    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
-    dest_pt_x = dest_corner_pt.x() + 10
-    dest_pt_y = dest_corner_pt.y() + 10
-
-    # win_rect = windows_container.preview_window.geometry().getRect()
-    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
-
-    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
-
-    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
-
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())

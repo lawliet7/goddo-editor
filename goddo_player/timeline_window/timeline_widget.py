@@ -153,7 +153,7 @@ class TimelineWidget(QWidget):
             filename = clip.video_path.file_name()
             logging.debug(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
-            out_frame_ts = self.build_time_str(out_frame, clip.fps)
+            out_frame_ts = self.build_time_str(out_frame, clip.fps) if out_frame else self.build_time_str(clip.total_frames, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             x += rect.width()
 

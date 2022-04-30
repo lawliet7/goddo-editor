@@ -234,3 +234,36 @@ def qsize_as_dict(size: QSize):
         'height': size.height(),
         'width': size.width()
     }
+
+def drop_video_on_preview(app_thread, windows_container, video_path):
+    from goddo_test.utils.command_widget import Command, CommandType
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    # win_rect = windows_container.preview_window.geometry().getRect()
+    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+
+    pyautogui.press('space')
+
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())

@@ -228,15 +228,39 @@ def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_d
     assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
     assert len(win_state_dict['timeline_window']['clip_rects']) == 0
 
+def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None):
+
+    video_path = get_test_vid_path('mp4')
+
+    video_total_frames = 210
+    fps_2_places = 29.97
+    total_time_str = '0:00:07.00'
+
+    def fn1(app_thread, windows_container, state_dict, win_state_dict):
+        # assert timeline
+        assert len(state_dict['timeline']['clips']) == 1
+        clip = state_dict['timeline']['clips'][0]
+        assert clip['video_path'] == str(video_path)
+        assert round(clip['fps'],2) == fps_2_places
+        assert clip['total_frames'] == video_total_frames
+        assert clip['frame_in_out']['in_frame'] == in_frame
+        assert clip['frame_in_out']['out_frame'] == out_frame
+        # assert state_dict['timeline']['width_of_one_min'] == 120
+        # assert state_dict['timeline']['selected_clip_index'] == -1
+        # assert state_dict['timeline']['opened_clip_index'] == -1
+
+        # assert win state timeline
+        assert win_state_dict['timeline_window']['geometry']['x'] == 546
+        assert win_state_dict['timeline_window']['geometry']['y'] == 525
+        assert win_state_dict['timeline_window']['geometry']['width'] == 1075
+        assert win_state_dict['timeline_window']['geometry']['height'] == 393
+        assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == 1075
+        assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
+        assert len(win_state_dict['timeline_window']['clip_rects']) == 1
+    return fn1
+
     '''
   "timeline_window": {
-    "windowTitle": "美少女捜査官",
-    "geometry": {
-      "x": 0,
-      "y": 27,
-      "width": 546,
-      "height": 1000
-    },
     "innerWidgetSize": {
       "height": 393,
       "width": 1075

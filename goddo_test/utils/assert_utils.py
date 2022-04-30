@@ -209,12 +209,6 @@ def get_assert_preview_for_blank_file_fn(is_output_window: bool):
 def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_dict):
     # assert timeline
     assert len(state_dict['timeline']['clips']) == 0
-    # for c in state_dict['timeline']['clips']:
-    #     assert c['video_path'] == str(video_path)
-    #     assert round(c['fps'],2) == 29.97
-    #     assert c['total_frames'] == str(video_path)
-    #     assert c['frame_in_out']['in_frame'] == str(video_path)
-    #     assert c['frame_in_out']['out_frame'] == str(video_path)
     assert state_dict['timeline']['width_of_one_min'] == 120
     assert state_dict['timeline']['selected_clip_index'] == -1
     assert state_dict['timeline']['opened_clip_index'] == -1
@@ -228,7 +222,7 @@ def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_d
     assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
     assert len(win_state_dict['timeline_window']['clip_rects']) == 0
 
-def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None):
+def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None, width_of_one_min = 120):
 
     video_path = get_test_vid_path('mp4')
 
@@ -245,10 +239,11 @@ def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None):
         assert clip['total_frames'] == video_total_frames
         assert clip['frame_in_out']['in_frame'] == in_frame
         assert clip['frame_in_out']['out_frame'] == out_frame
-        # assert state_dict['timeline']['width_of_one_min'] == 120
-        # assert state_dict['timeline']['selected_clip_index'] == -1
-        # assert state_dict['timeline']['opened_clip_index'] == -1
-
+        assert state_dict['timeline']['width_of_one_min'] == width_of_one_min
+        assert state_dict['timeline']['selected_clip_index'] == -1
+        assert state_dict['timeline']['opened_clip_index'] == -1
+        assert state_dict['timeline']['clipboard_clip'] is None
+        
         # assert win state timeline
         assert win_state_dict['timeline_window']['geometry']['x'] == 546
         assert win_state_dict['timeline_window']['geometry']['y'] == 525
@@ -257,33 +252,22 @@ def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None):
         assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == 1075
         assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
         assert len(win_state_dict['timeline_window']['clip_rects']) == 1
-    return fn1
 
-    '''
-  "timeline_window": {
-    "innerWidgetSize": {
-      "height": 393,
-      "width": 1075
-    },
-    "clip_rects": [
-      [
-        {
-          "video_path": "...",
-          "fps": 29.97002997002997,
-          "total_frames": 75879,
-          "frame_in_out": {
-            "in_frame": 1545,
-            "out_frame": 3424
-          }
-        },
-        {
-          "x": 0,
-          "y": 68,
-          "width": 125,
-          "height": 100
-        }
-      ]
-    ]
-  }
-}
-    '''
+        clip, rect = win_state_dict['timeline_window']['clip_rects'][0]
+        assert clip['video_path'] == str(video_path)
+        assert round(clip['fps'],2) == fps_2_places
+        assert clip['total_frames'] == video_total_frames
+        assert clip['frame_in_out']['in_frame'] == in_frame
+        assert clip['frame_in_out']['out_frame'] == out_frame
+
+        resolved_in_frame = in_frame if in_frame else 1
+        resolved_out_frame = out_frame if out_frame else video_total_frames
+        total_clip_frames = resolved_out_frame - resolved_in_frame + 1
+        est_no_of_pixels = total_clip_frames / fps_2_places / 60 * width_of_one_min
+
+        assert rect['x'] == 0
+        assert rect['y'] == 68
+        assert est_no_of_pixels - 1 <= rect['width'] <= est_no_of_pixels + 1
+        assert rect['height'] == 100
+
+    return fn1

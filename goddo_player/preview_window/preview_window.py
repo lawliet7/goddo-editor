@@ -162,25 +162,19 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.slider_update_slot.emit()
         elif event.key() == Qt.Key_Right:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            # self.preview_widget.update_frame_pixmap(1)
-            # self.update()
             self.signals.preview_window.seek_slot.emit(1, PositionType.RELATIVE)
         elif event.key() == Qt.Key_BracketLeft:
             frame_in_out = self.state.preview_window.frame_in_out
-            if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
+            if frame_in_out.in_frame:
                 self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
-                self.preview_widget.update_frame_pixmap(frame_diff)
-                self.update()
-                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)
         elif event.key() == Qt.Key_BracketRight:
             frame_in_out = self.state.preview_window.frame_in_out
-            if frame_in_out.in_frame > 0 or frame_in_out.out_frame > 0:
+            if frame_in_out.out_frame:
                 self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.out_frame - self.preview_widget.get_cur_frame_no()
-                self.preview_widget.update_frame_pixmap(frame_diff)
-                self.update()
-                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.preview_window.seek_slot.emit(frame_diff, PositionType.RELATIVE)
         elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):

@@ -106,7 +106,7 @@ class ClipListStateItem:
     tags: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame:
+        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame is None:
             raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
 
     def as_dict(self):

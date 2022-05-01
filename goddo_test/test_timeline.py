@@ -42,19 +42,19 @@ def test_drop_clip_in_only(app_thread, windows_container: WindowsContainer, blan
 
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)
 
-    for _ in range(100):
-        pyautogui.press('add')
+    # for _ in range(100):
+    #     pyautogui.press('add')
 
-    _, rect = timeline_window.inner_widget.clip_rects[0]
-    pyautogui.moveTo(int(dest_corner_pt2.x() + rect.x() + rect.width() / 2), int(dest_corner_pt2.y() + rect.y() + rect.height() / 2))
+    # _, rect = timeline_window.inner_widget.clip_rects[0]
+    # pyautogui.moveTo(int(dest_corner_pt2.x() + rect.x() + rect.width() / 2), int(dest_corner_pt2.y() + rect.y() + rect.height() / 2))
 
-    time.sleep(5)
+    # time.sleep(2)
 
-    # generic_assert(app_thread, windows_container, blank_state,
-    #         get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False),
-    #         get_assert_preview_for_test_file_1_fn(in_frame=in_frame),
-    #         get_assert_preview_for_blank_file_fn(is_output_window=True),
-    #         get_assert_timeline_for_test_file_1_fn(in_frame=in_frame))
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False),
+            get_assert_preview_for_test_file_1_fn(in_frame=in_frame),
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_for_test_file_1_fn(in_frame=in_frame))
 
 def test_drop_clip_in_out(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()

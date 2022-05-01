@@ -107,8 +107,8 @@ class TimelineWindow(QMainWindow):
             os.remove(os.path.join(tmp_dir, f))
 
         for i, clip in enumerate(self.state.timeline.clips):
-            start_time = clip.frame_in_out.in_frame / clip.fps
-            end_time = clip.frame_in_out.out_frame / clip.fps
+            start_time = clip.frame_in_out.get_resolved_in_frame() / clip.fps
+            end_time = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) / clip.fps
             file_path = clip.video_path.str()
             output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
             cmd = f"ffmpeg -ss {start_time:.3f} -i {file_path} -to {end_time - start_time:.3f} -cbr 15 {output_path}"

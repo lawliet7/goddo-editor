@@ -16,14 +16,14 @@ from PyQt5.QtWidgets import QListWidget
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.window_util import local_to_global_pos
-from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path, video_folder_path
+from goddo_test.utils.path_util import image_folder_path, path_to_str, my_test_output_folder_path, video_folder_path
 
 
 def grab_screenshot(region_tuple=None):
     if region_tuple:
-        return pyautogui.screenshot(region=region_tuple)
+        return pil_img_to_arr(pyautogui.screenshot(region=region_tuple))
     else:
-        return pyautogui.screenshot()
+        return pil_img_to_arr(pyautogui.screenshot())
 
 
 # img is a pil image in windows
@@ -61,12 +61,14 @@ def grab_all_window_imgs(windows_dict):
 
 
 # todo: test in ubuntu if img type will be different
-def cmp_image(img1, img2):
-    res = cv2.matchTemplate(img1, img2, cv2.TM_CCOEFF_NORMED)
+def cmp_image(baseImg, templateImg) -> float:
+    res = cv2.matchTemplate(baseImg, templateImg, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     logging.info('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
     return max_val
 
+def get_img_asset(file_name):
+    return cv2.imread(str(image_folder_path().joinpath(file_name).resolve()), cv2.COLOR_BGR2RGB)
 
 def qimg_to_arr(img):
     num_of_channels = 4

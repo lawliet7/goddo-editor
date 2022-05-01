@@ -140,7 +140,13 @@ def get_test_vid_2_path():
     file_path = video_folder_path().joinpath("test_vid2.mp4").resolve()
     return VideoPath(file_to_url(file_path))
 
-def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
+# generated via this cmd:
+# ffmpeg -t 900 -f lavfi -i color=c=green:s=640x360 -c:v libx264 -tune stillimage -pix_fmt yuv420p -r 24 blank_15m_vid.mp4
+def get_blank_15m_vid_path():
+    file_path = video_folder_path().joinpath("blank_15m_vid.mp4").resolve()
+    return VideoPath(file_to_url(file_path))    
+
+def click_on_prev_wind_slider(preview_window, pct: float, should_slider_value_change: bool=True):
     old_frame_no = preview_window.state.preview_window.current_frame_no
     
     go_to_prev_wind_slider(preview_window, pct)

@@ -5,7 +5,7 @@ from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_test.utils.path_util import video_folder_path
-from goddo_test.utils.test_utils import get_blank_15m_vid_path, get_current_method_name, get_test_vid_path, qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
+from goddo_test.utils.test_utils import get_blank_1hr_vid_path, get_current_method_name, get_test_vid_path, qimg_to_arr, save_reload_and_assert_state, save_screenshot, wait_until
 
 
 def generic_assert(app_thread, windows_container, blank_state,
@@ -89,8 +89,8 @@ def get_assert_blank_list_fn(is_file_list: bool):
         assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
     return fn1
 
-def get_assert_file_list_for_15m_fn(tags=[]):
-    video_path = get_blank_15m_vid_path()
+def get_assert_file_list_for_1hr_fn(tags=[]):
+    video_path = get_blank_1hr_vid_path()
 
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # assert state
@@ -251,13 +251,13 @@ def get_assert_preview_for_blank_file_fn(is_output_window: bool):
         assert resolved_win_state_dict['restrict_frame_interval'] == restrict_frame_interval
     return fn1
 
-def get_assert_preview_for_15m_file_fn(slider_range=(0.00, 0.01), current_frame_no=None, in_frame=None, out_frame=None, is_max_speed=False,
+def get_assert_preview_for_1hr_file_fn(slider_range=(0.00, 0.01), current_frame_no=None, in_frame=None, out_frame=None, is_max_speed=False,
                                           time_skip_label="5s"):
-    video_path = get_blank_15m_vid_path()
+    video_path = get_blank_1hr_vid_path()
 
-    video_total_frames = 21602
-    fps = 24
-    total_time_str = '0:15:00.02'
+    video_total_frames = 14402
+    fps = 4
+    total_time_str = '1:00:00.02'
 
     if current_frame_no is None:
         from_current_frame_no = int(video_total_frames * slider_range[0])
@@ -390,7 +390,7 @@ def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None, width_
     return fn1
 
 def get_assert_timeline_for_15m_file_fn(in_frame=None, out_frame=None, width_of_one_min = 120, num_of_clips=1):
-    video_path = get_blank_15m_vid_path()
+    video_path = get_blank_1hr_vid_path()
 
     video_total_frames = 21602
     fps = 24

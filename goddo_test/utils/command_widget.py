@@ -104,6 +104,8 @@ class CommandWidget(QWidget):
 
         self.dnd_widget.reset_widget()
 
+        self._monarch.preview_window.dialog.close()
+
         self._reset_all_win_geometry()
 
         self._monarch.tabbed_list_window.showMinimized()

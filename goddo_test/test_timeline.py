@@ -16,7 +16,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_blank_15m_vid_path, get_current_method_name, get_img_asset, get_test_vid_path, grab_screenshot, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_blank_1hr_vid_path, get_current_method_name, get_img_asset, get_test_vid_path, grab_screenshot, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
@@ -177,13 +177,13 @@ def test_zoom_out_on_timeline(app_thread, windows_container: WindowsContainer, b
             get_assert_timeline_for_test_file_1_fn(in_frame=in_frame, width_of_one_min=102))
 
 def test_timeline_width_expand(app_thread, windows_container: WindowsContainer, blank_state):
-    video_path = get_blank_15m_vid_path()
+    video_path = get_blank_1hr_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
     pyautogui.press('i')
     in_frame = app_thread.mon.state.preview_window.current_frame_no
 
-    click_on_prev_wind_slider(windows_container.preview_window, 0.333)
+    click_on_prev_wind_slider(windows_container.preview_window, 0.05)
 
     pyautogui.press('o')
     out_frame = app_thread.mon.state.preview_window.current_frame_no

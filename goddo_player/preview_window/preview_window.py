@@ -1,15 +1,16 @@
 import logging
 
 import cv2
-from PyQt5.QtCore import QRect, Qt, QMimeData
+from PyQt5.QtCore import QRect, Qt, QMimeData, QTime
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
     QResizeEvent, QWheelEvent
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QTimeEdit
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
 from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
+from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
 from goddo_player.preview_window.preview_widget import PreviewWidget
@@ -57,6 +58,19 @@ class PreviewWindow(QWidget):
         vbox.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(vbox)
+
+        self.time_edit = TimeInFramesEdit()
+        dialog_layout = QVBoxLayout()
+        dialog_layout.addWidget(self.time_edit)
+        self.dialog = QDialog(self) 
+        self.dialog.setLayout(dialog_layout)
+        self.time_edit.editingFinished.connect(self.dialog_box_done)
+    
+    def dialog_box_done(self):
+        # print(f'you got it, focus={self.spin.hasFocus()}')
+        if self.time_edit.hasFocus():
+            self.signals.preview_window.seek_slot.emit(self.time_edit.value(), PositionType.ABSOLUTE)    
+            self.dialog.close()
 
     def update(self):
         super().update()
@@ -179,14 +193,17 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.update_skip_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.preview_window.update_skip_slot.emit(IncDec.DEC)
+        elif event.key() == Qt.Key_G:
+            if self.preview_widget.cap is not None:
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.time_edit.reset(self.state.preview_window.fps, self.state.preview_window.total_frames, self.state.preview_window.current_frame_no)
+                self.dialog.exec_()  # blocks all other windows until this window is closed.
         else:
             super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Left:
             self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-            # self.preview_widget.update_frame_pixmap(-5)
-            # self.update()
             self.signals.preview_window.seek_slot.emit(-5, PositionType.RELATIVE)
         else:
             super().keyPressEvent(event)
@@ -208,6 +225,11 @@ class PreviewWindow(QWidget):
         else:
             return False
 
+class TimeSelectWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.show()
 
 class FrameInOutSlider(ClickSlider):
     def __init__(self, get_wheel_skip_n_frames, parent=None):

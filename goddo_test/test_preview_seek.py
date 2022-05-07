@@ -117,3 +117,73 @@ def test_go_to_dialog_with_keyboard(app_thread, windows_container: WindowsContai
                 get_assert_preview_for_1hr_file_fn(slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
+
+def test_go_to_dialog_with_mouse(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    pyautogui.press('g')
+    wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
+
+    # reset back to frame 1
+    pyautogui.press('end')
+    pyautogui.press('backspace')
+    pyautogui.press('backspace')
+    pyautogui.press('0')
+    pyautogui.press('1')
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+
+    font_metrics = windows_container.preview_window.time_edit.fontMetrics()
+    hour_right = font_metrics.width("0:")
+    min_width = font_metrics.width("00:")
+    min_right = hour_right + min_width
+    sec_width = font_metrics.width("00.")
+    sec_right = min_right + sec_width
+
+    pt = local_to_global_pos(windows_container.preview_window.time_edit, windows_container.preview_window.dialog)
+    y = int(pt.y() + windows_container.preview_window.time_edit.height() / 2)
+
+    # test hour
+    pyautogui.moveTo(int(pt.x() + hour_right / 2), y )
+    pyautogui.scroll(1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '1:00:00.01')
+    pyautogui.scroll(-1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+
+    # test min
+    pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
+    pyautogui.scroll(1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:01:00.01')
+    pyautogui.scroll(-1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+
+    # test sec
+    pyautogui.moveTo(int(pt.x() + min_right + sec_width / 2), y )
+    pyautogui.scroll(1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:01.01')
+    pyautogui.scroll(-1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+
+    # test frames
+    pyautogui.moveTo(int(pt.x() + sec_right + 5), y )
+    pyautogui.scroll(1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+    pyautogui.scroll(-1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+
+    pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
+    for _ in range(4):
+        pyautogui.scroll(1)
+    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:04:00.01')
+
+    expected_cur_frame_no = 4 * 60 * 4 + 1
+
+    pyautogui.press('enter')
+    wait_until(lambda: windows_container.preview_window.dialog.isHidden())
+    assert app_thread.mon.state.preview_window.current_frame_no == expected_cur_frame_no
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_1hr_file_fn(slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no),
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)         

@@ -180,22 +180,39 @@ def test_timeline_width_expand(app_thread, windows_container: WindowsContainer, 
     video_path = get_blank_1hr_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    pyautogui.press('i')
-    in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    click_on_prev_wind_slider(windows_container.preview_window, 0.05)
+    pyautogui.press('g')
+    pyautogui.press('right')
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('1')
+    pyautogui.press('right')
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('delete')
+    pyautogui.press('0')
+    pyautogui.press('0')
+    pyautogui.press('right')
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('delete')
+    pyautogui.press('0')
+    pyautogui.press('0')
+    pyautogui.press('enter')
 
     pyautogui.press('o')
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     drop_cur_to_timeline(windows_container)
-    drop_cur_to_timeline(windows_container)
+
+    expected_out_frame = 4 * 60 * 10
+
+    # time.sleep(3)
 
     generic_assert(app_thread, windows_container, blank_state,
-            get_assert_file_list_for_15m_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_15m_file_fn(slider_range=(0.32,0.34), in_frame=in_frame, out_frame=out_frame), 
-            get_assert_preview_for_blank_file_fn(is_output_window=True), 
-            get_assert_timeline_for_15m_file_fn(in_frame=in_frame, out_frame=out_frame, num_of_clips=2))
+            get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.15,0.19), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame))
     
 
 def hover_over_rect_and_assert(timeline_window, idx: int = 0, assert_threshold: int = 0.9):

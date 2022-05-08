@@ -47,6 +47,7 @@ class StateStoreSignals(QObject):
     save_slot = pyqtSignal(VideoPath)
     load_slot = pyqtSignal(VideoPath)
     close_file_slot = pyqtSignal()
+    timeline_select_clip = pyqtSignal(int)
     timeline_delete_selected_clip_slot = pyqtSignal()
     timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
     timeline_clip_double_click_slot = pyqtSignal(int, TimelineClip, QRect)

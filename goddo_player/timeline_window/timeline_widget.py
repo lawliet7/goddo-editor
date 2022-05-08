@@ -80,12 +80,10 @@ class TimelineWidget(QWidget):
             _, rect = t
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
-                self.state.timeline.selected_clip_index = i
-                self.update()
+                self.signals.timeline_select_clip.emit(i)
                 return
 
-        self.state.timeline.selected_clip_index = -1
-        self.update()
+        self.signals.timeline_select_clip.emit(-1)
 
     def resize_timeline_widget(self):
         required_total_secs = 0
@@ -96,7 +94,7 @@ class TimelineWidget(QWidget):
         cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
         logging.debug(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
         if required_total_secs + 60 > cur_total_secs:
-            x = (required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min
+            x = int(round((required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min))
             self.resize(x, self.height())
         elif required_total_secs + 60 < cur_total_secs:
             self.resize(PlayerConfigs.timeline_initial_width, self.height())

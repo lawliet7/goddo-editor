@@ -63,6 +63,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
         self.signals.preview_window_output.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip)
+        self.signals.timeline_select_clip.connect(self.__on_timeline_select_clip)
         self.signals.remove_video_tag_slot.connect(self.__on_remove_video_tag)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek)
         self.signals.preview_window_output.seek_slot.connect(self.__on_preview_window_seek)
@@ -76,6 +77,10 @@ class MonarchSystem(QObject):
         self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
+
+    def __on_timeline_select_clip(self, idx):
+        self.state.timeline.selected_clip_index = idx
+        self.timeline_window.update()
 
     def __on_remove_video_tag(self, video_path: VideoPath, tag: str):
         self.state.file_list.files_dict[video_path.str()].delete_tag(tag)
@@ -363,6 +368,9 @@ class MonarchSystem(QObject):
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for i in range(iterations):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
+            
+            if timeline_dict.get('selected_clip_index') > -1:
+                StateStoreSignals().timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
 
         self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 

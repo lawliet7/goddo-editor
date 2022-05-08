@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "module": "pytest",
-            "args": ["goddo_test\\test_preview_playback.py::test_while_playing_seek_on_slider"],
+            "args": ["goddo_test\\test_preview_playback.py::test_skip_ahead_10s"],
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -39,6 +39,16 @@
             "program": "goddo_player\\main.py",
             // "module": "pytest",
             "args": ["--save-file","saves\\blank.json"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Run Custom Save",
+            "type": "python",
+            "request": "launch",
+            "program": "goddo_player\\main.py",
+            // "module": "pytest",
+            "args": ["--save-file","goddo_test\\assets\\.output\\test_timeline.test_delete_clip_and_retract_width.json"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

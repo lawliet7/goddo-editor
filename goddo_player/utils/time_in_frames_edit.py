@@ -1,3 +1,4 @@
+import logging
 import re
 import typing
 from PyQt5.QtGui import QValidator, QWheelEvent, QKeyEvent
@@ -41,32 +42,32 @@ class TimeInFramesEdit(QSpinBox):
 
     def validate(self, input: str, pos: int) -> typing.Tuple[QValidator.State, str, int]:
         if re.match('^[0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9][0-9]$', input):
-            print('validate success')
+            logging.debug('validate success')
             return QValidator.Acceptable, input, pos
         elif re.match('^[0-9]?:[0-9]{0,2}:[0-9]{0,2}\\.[0-9]{0,2}$', input):
-            print('validate intermediate')
+            logging.debug('validate intermediate')
             return QValidator.Intermediate, input, pos
         else:
-            print('validate failed')
+            logging.debug('validate failed')
             return QValidator.Invalid, input, pos
 
     def wheelEvent(self, event: QWheelEvent):
-        print(f'wheel {event}')
+        logging.debug(f'wheel {event}')
         
         self._hour_right
 
         x = event.pos().x()
         if x <= self._hour_right:
-            print('increment hour')
+            logging.debug('increment hour')
             offset = int(round(60 * 60 * self._fps))
         elif x <= self._min_right:
-            print('increment min')
+            logging.debug('increment min')
             offset = int(round(60 * self._fps))
         elif x <= self._sec_right:
-            print('increment sec')
+            logging.debug('increment sec')
             offset = int(round(self._fps))
         else:
-            print('increment ms')
+            logging.debug('increment ms')
             offset = 1
 
         if event.angleDelta().y() > 0:
@@ -83,16 +84,16 @@ class TimeInFramesEdit(QSpinBox):
             idx_of_last_dot = self.text().rindex('.')
 
             if cursor_pos <= idx_of_1st_colon:
-                print('increment hour')
+                logging.debug('increment hour')
                 offset = int(round(60 * 60 * self._fps))
             elif cursor_pos <= idx_of_2nd_colon:
-                print('increment min')
+                logging.debug('increment min')
                 offset = int(round(60 * self._fps))
             elif cursor_pos <= idx_of_last_dot:
-                print('increment sec')
+                logging.debug('increment sec')
                 offset = int(round(self._fps))
             else:
-                print('increment ms')
+                logging.debug('increment ms')
                 offset = 1
 
             if event.key() == Qt.Key_Up:

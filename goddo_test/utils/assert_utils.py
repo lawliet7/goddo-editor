@@ -1,5 +1,6 @@
 
 import logging
+from typing import List
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
@@ -389,7 +390,8 @@ def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None, width_
 
     return fn1
 
-def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_one_min = 120, num_of_clips=1):
+def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_one_min = 120, num_of_clips=1, selected_clip_index=-1,
+                                        clip_rect_widths: List[int] = [0], scroll_area_width=PlayerConfigs.timeline_initial_width):
     video_path = get_blank_1hr_vid_path()
 
     video_total_frames = 14402
@@ -407,7 +409,7 @@ def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_
             assert clip['frame_in_out']['in_frame'] == in_frame
             assert clip['frame_in_out']['out_frame'] == out_frame
             assert state_dict['timeline']['width_of_one_min'] == width_of_one_min
-            assert state_dict['timeline']['selected_clip_index'] == -1
+            assert state_dict['timeline']['selected_clip_index'] == selected_clip_index
             assert state_dict['timeline']['opened_clip_index'] == -1
             assert state_dict['timeline']['clipboard_clip'] is None
         
@@ -416,25 +418,22 @@ def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_
         assert win_state_dict['timeline_window']['geometry']['y'] == 525
         assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
         assert win_state_dict['timeline_window']['geometry']['height'] == 393
-        assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == 1319
+        assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == scroll_area_width
         assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
-        assert len(win_state_dict['timeline_window']['clip_rects']) == 1
+        assert len(win_state_dict['timeline_window']['clip_rects']) == num_of_clips
 
-        clip, rect = win_state_dict['timeline_window']['clip_rects'][0]
-        assert clip['video_path'] == str(video_path)
-        assert clip['fps'] == fps
-        assert clip['total_frames'] == video_total_frames
-        assert clip['frame_in_out']['in_frame'] == in_frame
-        assert clip['frame_in_out']['out_frame'] == out_frame
+        x = 0
+        for i, (clip, rect) in enumerate(win_state_dict['timeline_window']['clip_rects']):
+            assert clip['video_path'] == str(video_path)
+            assert clip['fps'] == fps
+            assert clip['total_frames'] == video_total_frames
+            assert clip['frame_in_out']['in_frame'] == in_frame
+            assert clip['frame_in_out']['out_frame'] == out_frame
 
-        resolved_in_frame = in_frame if in_frame else 1
-        resolved_out_frame = out_frame if out_frame else video_total_frames
-        total_clip_frames = resolved_out_frame - resolved_in_frame + 1
-        est_no_of_pixels = total_clip_frames / fps / 60 * width_of_one_min
-
-        assert rect['x'] == 0
-        assert rect['y'] == 68
-        assert est_no_of_pixels - 1 <= rect['width'] <= est_no_of_pixels + 1
-        assert rect['height'] == 100
+            assert rect['x'] == x
+            assert rect['y'] == 68
+            assert rect['width'] == clip_rect_widths[i]
+            assert rect['height'] == 100
+            x = x + clip_rect_widths[i]
 
     return fn1

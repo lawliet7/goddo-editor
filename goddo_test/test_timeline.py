@@ -16,7 +16,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_blank_1hr_vid_path, get_current_method_name, get_img_asset, get_test_vid_path, grab_screenshot, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import *
 from goddo_test.utils.windows_container import WindowsContainer
 
 
@@ -180,24 +180,7 @@ def test_timeline_width_expand(app_thread, windows_container: WindowsContainer, 
     video_path = get_blank_1hr_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    pyautogui.press('g')
-    pyautogui.press('right')
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('1')
-    pyautogui.press('right')
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.press('0')
-    pyautogui.press('0')
-    pyautogui.press('right')
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.press('0')
-    pyautogui.press('0')
-    pyautogui.press('enter')
+    enter_time_in_go_to_dialog_box(app_thread, '0:10:00.00')
 
     pyautogui.press('o')
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
@@ -206,13 +189,63 @@ def test_timeline_width_expand(app_thread, windows_container: WindowsContainer, 
 
     expected_out_frame = 4 * 60 * 10
 
-    # time.sleep(3)
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.15,0.19), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame, clip_rect_widths=[1200], scroll_area_width=1320))
+
+def test_timeline_double_width_expand(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:10:00.00')
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+
+    drop_cur_to_timeline(windows_container)
+    drop_cur_to_timeline(windows_container)
+
+    expected_out_frame = 4 * 60 * 10
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
             get_assert_preview_for_1hr_file_fn(slider_range=(0.15,0.19), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
             get_assert_preview_for_blank_file_fn(is_output_window=True),
-            get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame))
+            get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame, num_of_clips=2, clip_rect_widths=[1200, 1200], scroll_area_width=2519))
+
+def test_delete_clip_and_retract_width(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:05:00.00')
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+
+    drop_cur_to_timeline(windows_container)
+    drop_cur_to_timeline(windows_container)
+    wait_until(lambda: windows_container.timeline_window.inner_widget.width() == 1319)
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.moveTo(pt.x() + 600 + 10, pt.y() + 68 + 10)
+    pyautogui.click()
+    pyautogui.press('delete')
+    wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) == 1)
+
+    expected_out_frame = 4 * 60 * 5
+
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.08,0.09), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame, clip_rect_widths=[600], selected_clip_index=0))
+
+# clips from 2 different videos, order is maintain
+# cut and paste clip
+# copy and paste
     
 
 def hover_over_rect_and_assert(timeline_window, idx: int = 0, assert_threshold: int = 0.9):

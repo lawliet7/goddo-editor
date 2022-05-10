@@ -244,6 +244,50 @@ def test_delete_clip_and_retract_width(app_thread, windows_container: WindowsCon
             get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame, clip_rect_widths=[600], selected_clip_index=0))
 
 # clips from 2 different videos, order is maintain
+def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path1 = get_blank_15m_vid_path()
+    video_path2 = get_blank_1hr_vid_path()
+    drop_video_on_file_list(app_thread, windows_container, [video_path1, video_path2])
+
+    video_tab_list_widget = app_thread.mon.tabbed_list_window.videos_tab.list_widget
+    item = video_tab_list_widget.get_all_items()[0]
+    item_widget = video_tab_list_widget.itemWidget(item)
+    pt = local_to_global_pos(item_widget, video_tab_list_widget)
+    pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
+    pyautogui.doubleClick()
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:03:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    video_tab_list_widget = app_thread.mon.tabbed_list_window.videos_tab.list_widget
+    item = video_tab_list_widget.get_all_items()[1]
+    item_widget = video_tab_list_widget.itemWidget(item)
+    pt = local_to_global_pos(item_widget, video_tab_list_widget)
+    pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
+    pyautogui.doubleClick()
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:04:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    expected_out_frame = 4 * 60 * 4
+
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_fn([(video_path1, []),(video_path2, [])]), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.05,0.07), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_fn([(get_timeline_clip_for_15m_vid(out_frame=4320),360),(get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame),480)]))
+
+
 # cut and paste clip
 # copy and paste
     

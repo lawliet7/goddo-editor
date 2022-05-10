@@ -16,41 +16,19 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import assert_blank_timeline, generic_assert, get_assert_blank_list_fn, get_assert_file_list_for_test_file_1_fn, get_assert_preview_for_blank_file_fn, get_assert_preview_for_test_file_1_fn
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_file_list, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
 def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, blank_state):
-    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
-
     video_path = get_test_vid_path()
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+    drop_video_on_file_list(app_thread, windows_container, [video_path])
 
-    dnd_widget = app_thread.cmd.dnd_widget
+    new_total_count_expected = 1
 
-    item_idx = dnd_widget.get_count() - 1
-    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
-
-    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
-    src_pt_x = src_corner_pt.x() + 10
-    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
-
-    videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.list_widget
-    dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
-    dest_pt_x = dest_corner_pt.x() + 10
-    dest_pt_y = dest_corner_pt.y() + 10
-
-    cur_file_count = video_tab_list_widget.count()
-
-    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
-
-    new_total_count_expected = cur_file_count + 1
-
-    wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
-    wait_until(lambda: videos_tab.thread_pool.activeThreadCount() == 0)
-
-    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+    video_tab_list_widget = app_thread.mon.tabbed_list_window.videos_tab.list_widget
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
     item = video_tab_list_widget.get_all_items()[0]
     item_widget = video_tab_list_widget.itemWidget(item)

@@ -1,7 +1,8 @@
 
 import logging
-from typing import List
+from typing import List, Tuple
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.app.state_store import TimelineClip
 from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
@@ -117,6 +118,43 @@ def get_assert_file_list_for_1hr_fn(tags=[]):
 
         assert clips[0]['name'] == video_path.file_name()
         assert clips[0]['tags'] == tags
+
+        # wait for screenshot to finish loading
+        wait_until(lambda: app_thread.cmd.queue_is_empty())
+        videos_tab = windows_container.tabbed_list_window.videos_tab
+        video_tab_list_widget = videos_tab.list_widget
+        item = video_tab_list_widget.item(video_tab_list_widget.count() - 1)
+        item_widget = video_tab_list_widget.itemWidget(item)
+        pixmap = item_widget.screenshot_label.pixmap()
+        assert pixmap != videos_tab.black_pixmap
+
+    return fn1
+
+def get_assert_file_list_fn(videos: List[Tuple[VideoPath,List[str]]]):
+    def fn1(app_thread, windows_container, state_dict, win_state_dict):
+        # assert state
+        assert len(state_dict['file_list']['files']) == len(videos)
+        assert len(state_dict['file_list']['files_dict']) == len(videos)
+
+        for i, (video_path, tags) in enumerate(videos):
+            assert state_dict['file_list']['files'][i]['name'] == str(video_path)
+            assert state_dict['file_list']['files'][i]['tags'] == tags
+
+            assert state_dict['file_list']['files_dict'][str(video_path)]['name'] == str(video_path)
+            assert state_dict['file_list']['files_dict'][str(video_path)]['tags'] == tags
+
+        # assert win state
+        assert win_state_dict['tabbed_list_window']['geometry']['x'] == 0
+        assert win_state_dict['tabbed_list_window']['geometry']['y'] == 27
+        assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
+        assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
+
+        clips = win_state_dict['tabbed_list_window']['videos_tab']['clips']
+        assert len(clips) == len(videos)
+
+        for i, (video_path, tags) in enumerate(videos):
+            assert clips[i]['name'] == video_path.file_name()
+            assert clips[i]['tags'] == tags
 
         # wait for screenshot to finish loading
         wait_until(lambda: app_thread.cmd.queue_is_empty())
@@ -435,5 +473,44 @@ def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_
             assert rect['width'] == clip_rect_widths[i]
             assert rect['height'] == 100
             x = x + clip_rect_widths[i]
+
+    return fn1
+
+def get_assert_timeline_fn(expected_timeline_clips: List[Tuple[TimelineClip,int]], width_of_one_min = 120, selected_clip_index=-1,
+                                        scroll_area_width=PlayerConfigs.timeline_initial_width):
+    def fn1(app_thread, windows_container, state_dict, win_state_dict):
+        # assert timeline
+        assert len(state_dict['timeline']['clips']) == len(expected_timeline_clips)
+
+        for i, (timeline_clip, _) in enumerate(expected_timeline_clips):
+            clip = state_dict['timeline']['clips'][i]
+            assert clip == timeline_clip.as_dict()
+
+        assert state_dict['timeline']['width_of_one_min'] == width_of_one_min
+        assert state_dict['timeline']['selected_clip_index'] == selected_clip_index
+        assert state_dict['timeline']['opened_clip_index'] == -1
+        assert state_dict['timeline']['clipboard_clip'] is None
+        
+        # assert win state timeline
+        assert win_state_dict['timeline_window']['geometry']['x'] == 546
+        assert win_state_dict['timeline_window']['geometry']['y'] == 525
+        assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
+        assert win_state_dict['timeline_window']['geometry']['height'] == 393
+
+        assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == scroll_area_width
+        assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
+        assert len(win_state_dict['timeline_window']['clip_rects']) == len(expected_timeline_clips)
+
+        x = 0
+        for i, (timeline_clip, clip_width) in enumerate(expected_timeline_clips):
+            clip, rect = win_state_dict['timeline_window']['clip_rects'][i]
+
+            assert clip == timeline_clip.as_dict()
+
+            assert rect['x'] == x
+            assert rect['y'] == 68
+            assert rect['width'] == clip_width
+            assert rect['height'] == 100
+            x = x + clip_width
 
     return fn1

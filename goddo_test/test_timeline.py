@@ -11,7 +11,7 @@ from goddo_player.utils.time_frame_utils import time_str_to_frames
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.url_utils import file_to_url
-from goddo_player.utils.window_util import local_to_global_pos
+from goddo_player.utils.window_util import get_center_pos_of_widget, local_to_global_pos
 from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
@@ -243,7 +243,6 @@ def test_delete_clip_and_retract_width(app_thread, windows_container: WindowsCon
             get_assert_preview_for_blank_file_fn(is_output_window=True),
             get_assert_timeline_for_1hr_file_fn(out_frame=expected_out_frame, clip_rect_widths=[600], selected_clip_index=0))
 
-# clips from 2 different videos, order is maintain
 def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsContainer, blank_state):
     video_path1 = get_blank_15m_vid_path()
     video_path2 = get_blank_1hr_vid_path()
@@ -279,18 +278,155 @@ def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsConta
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
     drop_cur_to_timeline(windows_container)
 
-    expected_out_frame = 4 * 60 * 4
+    expected_out_frame1 = 3 * 60 * 24
+    timeline_clip1 = get_timeline_clip_for_15m_vid(out_frame=expected_out_frame1)
+
+    expected_out_frame2 = 4 * 60 * 4
+    timeline_clip2 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame2)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_fn([(video_path1, []),(video_path2, [])]), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_1hr_file_fn(slider_range=(0.05,0.07), current_frame_no=expected_out_frame, out_frame=expected_out_frame), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.05,0.07), current_frame_no=expected_out_frame2, out_frame=expected_out_frame2), 
             get_assert_preview_for_blank_file_fn(is_output_window=True),
-            get_assert_timeline_fn([(get_timeline_clip_for_15m_vid(out_frame=4320),360),(get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame),480)]))
+            get_assert_timeline_fn([(timeline_clip1,360),(timeline_clip2,480)]))
 
+def test_cut_and_paste_clips(app_thread, windows_container: WindowsContainer, blank_state):
+    preview_window = windows_container.preview_window
+    pw_pt_x, pw_pt_y = get_center_pos_of_widget(preview_window.preview_widget, preview_window)
 
-# cut and paste clip
-# copy and paste
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_file_list(app_thread, windows_container, [video_path])
+
+    video_tab_list_widget = app_thread.mon.tabbed_list_window.videos_tab.list_widget
+    item = video_tab_list_widget.get_all_items()[0]
+    item_widget = video_tab_list_widget.itemWidget(item)
+    pt = local_to_global_pos(item_widget, video_tab_list_widget)
+    pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
     
+    pyautogui.click(x=pw_pt_x + 10, y=pw_pt_y + 10)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+    enter_time_in_go_to_dialog_box(app_thread, '0:02:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    pyautogui.click(x=pw_pt_x + 10, y=pw_pt_y + 10)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+    enter_time_in_go_to_dialog_box(app_thread, '0:03:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.click(x=pt.x() + 300 + 10, y=pt.y() + 68 + 10)
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('x')
+    wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) == 2)
+
+    pyautogui.click(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('v')
+        pyautogui.press('v')
+    wait_until(lambda: len(timeline_window.inner_widget.clip_rects) == 4)
+
+    expected_out_frame1 = 1 * 60 * 4
+    timeline_clip1 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame1)
+
+    expected_out_frame2 = 2 * 60 * 4
+    timeline_clip2 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
+
+    expected_out_frame3 = 3 * 60 * 4
+    timeline_clip3 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
+
+    expected_timeline_clips = [(timeline_clip3,120),(timeline_clip3,120),(timeline_clip1,120),(timeline_clip2,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_fn([(video_path, [])]), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.04,0.06), current_frame_no=expected_out_frame3, in_frame=expected_out_frame2, out_frame=expected_out_frame3), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, clipboard_clip=timeline_clip3))
+
+def test_copy_and_paste_clips(app_thread, windows_container: WindowsContainer, blank_state):
+    preview_window = windows_container.preview_window
+    pw_pt_x, pw_pt_y = get_center_pos_of_widget(preview_window.preview_widget, preview_window)
+
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_file_list(app_thread, windows_container, [video_path])
+
+    video_tab_list_widget = app_thread.mon.tabbed_list_window.videos_tab.list_widget
+    item = video_tab_list_widget.get_all_items()[0]
+    item_widget = video_tab_list_widget.itemWidget(item)
+    pt = local_to_global_pos(item_widget, video_tab_list_widget)
+    pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+    
+    pyautogui.click(x=pw_pt_x + 10, y=pw_pt_y + 10)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+    enter_time_in_go_to_dialog_box(app_thread, '0:02:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    pyautogui.click(x=pw_pt_x + 10, y=pw_pt_y + 10)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+    enter_time_in_go_to_dialog_box(app_thread, '0:03:00.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    drop_cur_to_timeline(windows_container)
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.click(x=pt.x() + 300 + 10, y=pt.y() + 68 + 10)
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('c')
+    wait_until(lambda: app_thread.mon.state.timeline.clipboard_clip is not None)
+
+    pyautogui.click(x=pt.x() + 200 + 10, y=pt.y() + 68 + 10)
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('v')
+        pyautogui.press('v')
+    wait_until(lambda: len(timeline_window.inner_widget.clip_rects) == 5)
+
+    expected_out_frame1 = 1 * 60 * 4
+    timeline_clip1 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame1)
+
+    expected_out_frame2 = 2 * 60 * 4
+    timeline_clip2 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
+
+    expected_out_frame3 = 3 * 60 * 4
+    timeline_clip3 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
+
+    expected_timeline_clips = [(timeline_clip1,120),(timeline_clip3,120),(timeline_clip3,120),(timeline_clip2,120),(timeline_clip3,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_fn([(video_path, [])]), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_1hr_file_fn(slider_range=(0.04,0.06), current_frame_no=expected_out_frame3, in_frame=expected_out_frame2, out_frame=expected_out_frame3), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True),
+            get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=1, clipboard_clip=timeline_clip3))
 
 def hover_over_rect_and_assert(timeline_window, idx: int = 0, assert_threshold: int = 0.9):
     _, rect = timeline_window.inner_widget.clip_rects[idx]

@@ -218,7 +218,7 @@ class TimelineState:
             "width_of_one_min": self.width_of_one_min,
             "selected_clip_index": self.selected_clip_index,
             "opened_clip_index": self.opened_clip_index,
-            "clipboard_clip": self.clipboard_clip,
+            "clipboard_clip": self.clipboard_clip.as_dict() if self.clipboard_clip else None,
         }
 
     @staticmethod
@@ -228,6 +228,7 @@ class TimelineState:
             width_of_one_min=json_dict['width_of_one_min'],
             selected_clip_index=json_dict['selected_clip_index'],
             opened_clip_index=json_dict['opened_clip_index'],
+            clipboard_clip=TimelineClip.from_dict(json_dict['clipboard_clip']),
             )
 
 

@@ -477,7 +477,7 @@ def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_
     return fn1
 
 def get_assert_timeline_fn(expected_timeline_clips: List[Tuple[TimelineClip,int]], width_of_one_min = 120, selected_clip_index=-1,
-                                        scroll_area_width=PlayerConfigs.timeline_initial_width):
+                                        clipboard_clip: TimelineClip = None, scroll_area_width=PlayerConfigs.timeline_initial_width):
     def fn1(app_thread, windows_container, state_dict, win_state_dict):
         # assert timeline
         assert len(state_dict['timeline']['clips']) == len(expected_timeline_clips)
@@ -489,7 +489,7 @@ def get_assert_timeline_fn(expected_timeline_clips: List[Tuple[TimelineClip,int]
         assert state_dict['timeline']['width_of_one_min'] == width_of_one_min
         assert state_dict['timeline']['selected_clip_index'] == selected_clip_index
         assert state_dict['timeline']['opened_clip_index'] == -1
-        assert state_dict['timeline']['clipboard_clip'] is None
+        assert state_dict['timeline']['clipboard_clip'] == (clipboard_clip.as_dict() if clipboard_clip else None)
         
         # assert win state timeline
         assert win_state_dict['timeline_window']['geometry']['x'] == 546

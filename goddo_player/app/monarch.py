@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+from time import time
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
@@ -76,7 +77,15 @@ class MonarchSystem(QObject):
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click)
         self.signals.preview_window.reset_slot.connect(self.__on_preview_window_reset)
         self.signals.preview_window_output.reset_slot.connect(self.__on_preview_window_reset)
+        self.signals.timeline_set_clipboard_clip_slot.connect(self.__on_timeline_set_clipboard_clip)
+        self.signals.timeline_clear_clipboard_clip_slot.connect(self.__on_timeline_clear_clipboard_clip)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
+
+    def __on_timeline_set_clipboard_clip(self, clip):
+        self.state.timeline.clipboard_clip = clip
+    
+    def __on_timeline_clear_clipboard_clip(self):
+        self.state.timeline.clipboard_clip = None
 
     def __on_timeline_select_clip(self, idx):
         self.state.timeline.selected_clip_index = idx
@@ -366,11 +375,14 @@ class MonarchSystem(QObject):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
                 elif width_of_one_min < PlayerConfigs.timeline_initial_width_of_one_min:
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
-                    for i in range(iterations):
+                    for _ in range(iterations):
                         StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
             
             if timeline_dict.get('selected_clip_index') > -1:
                 StateStoreSignals().timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
+
+            if timeline_dict.get('clipboard_clip'):
+                StateStoreSignals().timeline_set_clipboard_clip_slot.emit(TimelineClip.from_dict(timeline_dict.get('clipboard_clip')))
 
         self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
 

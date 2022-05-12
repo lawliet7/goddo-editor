@@ -283,6 +283,8 @@ def drop_video_on_file_list(app_thread, windows_container, video_paths: List[Vid
 
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
+    wait_until(lambda: video_tab_list_widget.count() == len(video_paths))
+
 def drop_video_on_preview(app_thread, windows_container, video_path):
     from goddo_test.utils.command_widget import Command, CommandType
 

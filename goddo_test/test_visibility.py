@@ -7,6 +7,8 @@ from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.test_utils import wait_until, cmp_image, pil_img_to_arr
 from goddo_test.utils.windows_container import WindowsContainer
 
+from PyQt5.QtWidgets import QApplication
+
 
 def test_all_visible(app_thread):
     assert app_thread.mon.tabbed_list_window.isVisible()
@@ -87,6 +89,8 @@ def test_show_all_file_window_main(app_thread, windows_container: WindowsContain
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_new.png', new_img)
         # save_screenshot(f'visibility_cmp_after_win_{test_win_key}_{k}_base.png', base_img)
         assert cmp_image(new_img, base_img) > comparison_threshold
+
+    assert QApplication.activeWindow() == getattr(windows_container, test_win_key)
 
 
 @pytest.mark.parametrize("test_win_key", ["tabbed_list_window", "preview_window",

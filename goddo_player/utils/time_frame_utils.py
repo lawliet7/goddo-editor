@@ -63,7 +63,14 @@ def build_time_ms_str_least_chars(hours=0, mins=0, secs=0, ms=0):
 
 # hours, mins, secs, frames
 def time_str_to_components(time_str: str):
-    return int(time_str[0]), int(time_str[2:4]), int(time_str[5:7]), int(time_str[8:])
+    idx_of_1st_colon = time_str.index(':')
+    idx_of_2nd_colon = time_str.index(':', idx_of_1st_colon+1)
+    idx_of_last_dot = time_str.rindex('.')
+    hours = int(time_str[:idx_of_1st_colon])
+    mins = int(time_str[idx_of_1st_colon+1:idx_of_2nd_colon])
+    secs = int(time_str[idx_of_2nd_colon+1:idx_of_last_dot])
+    frames = int(time_str[idx_of_last_dot+1:])
+    return hours, mins, secs, frames
 
 # last component_type is either frames or ms
 def time_str_to_frames(time_str: str, fps, last_component_type='frames'):

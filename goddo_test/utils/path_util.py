@@ -18,6 +18,10 @@ def video_folder_path() -> pathlib.Path:
     return assets_folder_path().joinpath('videos')
 
 
+def image_folder_path() -> pathlib.Path:
+    return assets_folder_path().joinpath('images')    
+
+
 def my_test_output_folder_path() -> pathlib.Path:
     return assets_folder_path().joinpath('.output')
 

@@ -69,10 +69,10 @@ class TimelineWindow(QMainWindow):
             self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
         elif is_key_with_modifiers(event, Qt.Key_C, ctrl=True):
             if self.state.timeline.selected_clip_index > -1:
-                self.state.timeline.clipboard_clip = self.state.timeline.clips[self.state.timeline.selected_clip_index]
+                self.signals.timeline_set_clipboard_clip_slot.emit(self.state.timeline.clips[self.state.timeline.selected_clip_index])
         elif is_key_with_modifiers(event, Qt.Key_X, ctrl=True):
             if self.state.timeline.selected_clip_index > -1:
-                self.state.timeline.clipboard_clip = self.state.timeline.clips[self.state.timeline.selected_clip_index]
+                self.signals.timeline_set_clipboard_clip_slot.emit(self.state.timeline.clips[self.state.timeline.selected_clip_index])
                 self.signals.timeline_delete_selected_clip_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_V, ctrl=True):
             selected_clip_index = self.state.timeline.selected_clip_index
@@ -107,8 +107,8 @@ class TimelineWindow(QMainWindow):
             os.remove(os.path.join(tmp_dir, f))
 
         for i, clip in enumerate(self.state.timeline.clips):
-            start_time = clip.frame_in_out.in_frame / clip.fps
-            end_time = clip.frame_in_out.out_frame / clip.fps
+            start_time = clip.frame_in_out.get_resolved_in_frame() / clip.fps
+            end_time = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) / clip.fps
             file_path = clip.video_path.str()
             output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
             cmd = f"ffmpeg -ss {start_time:.3f} -i {file_path} -to {end_time - start_time:.3f} -cbr 15 {output_path}"

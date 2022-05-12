@@ -31,3 +31,9 @@ def clone_rect(rect: QRect) -> QRect:
 def local_to_global_pos(widget, parent=None):
     parent_widget = parent if parent is not None else widget
     return parent_widget.mapToGlobal(widget.pos())
+
+def get_center_pos_of_widget(widget, parent=None):
+    pw_corner_pt1 = local_to_global_pos(widget, parent)
+    pw_pt_x = int(pw_corner_pt1.x() + widget.width() / 2)
+    pw_pt_y = int(pw_corner_pt1.y() + widget.height() / 2)
+    return pw_pt_x, pw_pt_y

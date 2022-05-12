@@ -88,6 +88,7 @@
   | preview | [  |  go to in |
   | preview | ]  |  go to out |
   | preview | s  | switch between normal speed and max speed  |
+  | preview | g  | open dialog for going to particular time  |
   | preview (slider) | mouse wheel down  |  advance 1 min |
   | preview (slider) | mouse wheel up  |  go back 1 min |
   | preview | ->  |  advance 1 frame |

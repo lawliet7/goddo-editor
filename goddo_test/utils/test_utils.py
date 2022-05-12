@@ -1,9 +1,10 @@
+import inspect
 import logging
 import math
 import os
 import time
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, List
 
 import cv2
 import numpy as np
@@ -11,18 +12,21 @@ import pyautogui
 from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QListWidget
+from goddo_player.app.state_store import TimelineClip
+from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.utils.time_frame_utils import time_str_to_components
 
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.window_util import local_to_global_pos
-from goddo_test.utils.path_util import path_to_str, my_test_output_folder_path, video_folder_path
+from goddo_test.utils.path_util import image_folder_path, path_to_str, my_test_output_folder_path, video_folder_path
 
 
 def grab_screenshot(region_tuple=None):
     if region_tuple:
-        return pyautogui.screenshot(region=region_tuple)
+        return pil_img_to_arr(pyautogui.screenshot(region=region_tuple))
     else:
-        return pyautogui.screenshot()
+        return pil_img_to_arr(pyautogui.screenshot())
 
 
 # img is a pil image in windows
@@ -60,12 +64,14 @@ def grab_all_window_imgs(windows_dict):
 
 
 # todo: test in ubuntu if img type will be different
-def cmp_image(img1, img2):
-    res = cv2.matchTemplate(img1, img2, cv2.TM_CCOEFF_NORMED)
+def cmp_image(baseImg, templateImg) -> float:
+    res = cv2.matchTemplate(baseImg, templateImg, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     logging.info('{}, {}, {}, {}'.format(min_val, max_val, min_loc, max_loc))
     return max_val
 
+def get_img_asset(file_name):
+    return cv2.imread(str(image_folder_path().joinpath(file_name).resolve()), cv2.COLOR_BGR2RGB)
 
 def qimg_to_arr(img):
     num_of_channels = 4
@@ -137,7 +143,23 @@ def get_test_vid_2_path():
     file_path = video_folder_path().joinpath("test_vid2.mp4").resolve()
     return VideoPath(file_to_url(file_path))
 
-def click_on_prev_wind_slider(preview_window, pct, should_slider_value_change=True):
+# generated via this cmd:
+# ffmpeg -t 900 -f lavfi -i color=c=green:s=640x360 -c:v libx264 -tune stillimage -pix_fmt yuv420p -r 24 blank_15m_vid.mp4
+def get_blank_15m_vid_path():
+    file_path = video_folder_path().joinpath("blank_15m_vid.mp4").resolve()
+    return VideoPath(file_to_url(file_path))
+
+def get_blank_1hr_vid_path():
+    file_path = video_folder_path().joinpath("blank_1hr_vid.mp4").resolve()
+    return VideoPath(file_to_url(file_path))
+
+def get_timeline_clip_for_1hr_vid(in_frame=None, out_frame=None):
+    return TimelineClip(get_blank_1hr_vid_path(), 4.0, 14402, FrameInOut(in_frame,out_frame))
+
+def get_timeline_clip_for_15m_vid(in_frame=None, out_frame=None):
+    return TimelineClip(get_blank_15m_vid_path(), 24.0, 21602, FrameInOut(in_frame,out_frame))
+
+def click_on_prev_wind_slider(preview_window, pct: float, should_slider_value_change: bool=True):
     old_frame_no = preview_window.state.preview_window.current_frame_no
     
     go_to_prev_wind_slider(preview_window, pct)
@@ -234,3 +256,101 @@ def qsize_as_dict(size: QSize):
         'height': size.height(),
         'width': size.width()
     }
+
+def drop_video_on_file_list(app_thread, windows_container, video_paths: List[VideoPath]):
+    from goddo_test.utils.command_widget import Command, CommandType
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    for video_path in video_paths:
+        app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))    
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    _, item_widget = dnd_widget.get_item_and_widget(0)
+
+    src_corner_pt = dnd_widget.item_widget_pos(0)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    videos_tab = windows_container.tabbed_list_window.videos_tab
+    video_tab_list_widget = videos_tab.list_widget
+    dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: video_tab_list_widget.count() == len(video_paths))
+
+def drop_video_on_preview(app_thread, windows_container, video_path):
+    from goddo_test.utils.command_widget import Command, CommandType
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    # win_rect = windows_container.preview_window.geometry().getRect()
+    # base_img = pil_img_to_arr(pyautogui.screenshot(region=win_rect))
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+
+    pyautogui.press('space')
+
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+def get_current_method_name(levels=1):
+    cur_frame = inspect.currentframe()
+    try:
+        for _ in range(levels):
+            cur_frame = cur_frame.f_back
+        return inspect.getmodulename(cur_frame.f_code.co_filename), cur_frame.f_code.co_name
+    finally:
+        del cur_frame
+
+def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_frame: bool = True):
+    pyautogui.press('g')
+    pyautogui.press('home')
+    pyautogui.press('delete')
+    logging.info(f'=== write 1 {time_label[0]}')
+    pyautogui.typewrite(time_label[0])
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('delete')
+    pyautogui.typewrite(time_label[2:4])
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('delete')
+    pyautogui.typewrite(time_label[5:7])
+    pyautogui.press('right')
+    pyautogui.press('delete')
+    pyautogui.press('delete')
+    pyautogui.typewrite(time_label[-2:])
+
+    if should_go_to_frame:
+        pyautogui.press('enter')
+
+        frame_no = app_thread.mon.preview_window.time_edit.value()
+        wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no == frame_no)
+    else:
+        wait_until(lambda: app_thread.mon.preview_window.time_edit.text() == time_label)
+

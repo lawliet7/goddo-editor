@@ -80,23 +80,21 @@ class TimelineWidget(QWidget):
             _, rect = t
             if rect.contains(event.pos()):
                 logging.info(f'{rect} found clip at index {i}')
-                self.state.timeline.selected_clip_index = i
-                self.update()
+                self.signals.timeline_select_clip.emit(i)
                 return
 
-        self.state.timeline.selected_clip_index = -1
-        self.update()
+        self.signals.timeline_select_clip.emit(-1)
 
     def resize_timeline_widget(self):
         required_total_secs = 0
-        for i, c in enumerate(self.state.timeline.clips):
-            final_in_frame = c.frame_in_out.in_frame if c.frame_in_out.in_frame is not None else 1
-            final_out_frame = c.frame_in_out.out_frame if c.frame_in_out.out_frame is not None else c.total_frames
+        for _, c in enumerate(self.state.timeline.clips):
+            final_in_frame = c.frame_in_out.get_resolved_in_frame()
+            final_out_frame = c.frame_in_out.get_resolved_out_frame(c.total_frames)
             required_total_secs += (final_out_frame - final_in_frame) / c.fps
         cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
         logging.debug(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
         if required_total_secs + 60 > cur_total_secs:
-            x = (required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min
+            x = int(round((required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min))
             self.resize(x, self.height())
         elif required_total_secs + 60 < cur_total_secs:
             self.resize(PlayerConfigs.timeline_initial_width, self.height())
@@ -151,7 +149,7 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_path.file_name()
-            logging.debug(f'in_frame={in_frame} out_frame={out_frame} fps={clip.fps}')
+            logging.info(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
@@ -169,13 +167,12 @@ class TimelineWidget(QWidget):
         return build_time_str_least_chars(*frames_to_time_components(no_of_frames, fps))
 
     def mouseMoveEvent(self, event):
-        for i, t in enumerate(self.clip_rects):
-            c, rect = t
+        for c, rect in self.clip_rects:
             if rect.contains(event.pos()):
                 filename = c.video_path.file_name()
-                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.in_frame, c.fps))
-                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.out_frame, c.fps))
-                frame_diff = c.frame_in_out.out_frame - c.frame_in_out.in_frame
+                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_in_frame(), c.fps))
+                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_out_frame(c.total_frames), c.fps))
+                frame_diff = c.frame_in_out.get_resolved_out_frame(c.total_frames) - c.frame_in_out.get_resolved_in_frame()
                 duration = build_time_ms_str_least_chars(*frames_to_time_components(frame_diff, c.fps))
                 msg = f'{filename}\n{in_frame_ts} - {out_frame_ts}\nduration: {duration}'
                 QToolTip.showText(self.mapToGlobal(event.pos()), msg)

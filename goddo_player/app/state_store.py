@@ -106,7 +106,7 @@ class ClipListStateItem:
     tags: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame:
+        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame is None:
             raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
 
     def as_dict(self):
@@ -195,7 +195,7 @@ class TimelineClip:
             "video_path": self.video_path.str(),
             "fps": self.fps,
             "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out)
+            "frame_in_out": asdict(self.frame_in_out),
         }
 
     @staticmethod
@@ -218,6 +218,7 @@ class TimelineState:
             "width_of_one_min": self.width_of_one_min,
             "selected_clip_index": self.selected_clip_index,
             "opened_clip_index": self.opened_clip_index,
+            "clipboard_clip": self.clipboard_clip.as_dict() if self.clipboard_clip else None,
         }
 
     @staticmethod
@@ -227,6 +228,7 @@ class TimelineState:
             width_of_one_min=json_dict['width_of_one_min'],
             selected_clip_index=json_dict['selected_clip_index'],
             opened_clip_index=json_dict['opened_clip_index'],
+            clipboard_clip=TimelineClip.from_dict(json_dict['clipboard_clip']),
             )
 
 

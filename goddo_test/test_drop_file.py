@@ -11,7 +11,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import get_test_vid_2_path, get_test_vid_path, wait_until, drag_and_drop
+from goddo_test.utils.test_utils import drop_video_on_file_list, get_test_vid_2_path, get_test_vid_path, wait_until, drag_and_drop
 
 
 def get_list_of_test_file_exts():
@@ -23,76 +23,34 @@ FILE_EXT_PARAMS = get_list_of_test_file_exts()
 
 @pytest.mark.parametrize("test_file_ext", FILE_EXT_PARAMS)
 def test_drop_vid_file(app_thread, windows_container, blank_state, test_file_ext):
-    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
-
     video_path = get_test_vid_path(test_file_ext)
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+    drop_video_on_file_list(app_thread, windows_container, [video_path])
 
-    dnd_widget = app_thread.cmd.dnd_widget
+    new_total_count_expected = 1
 
-    item_idx = dnd_widget.get_count() - 1
-    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
-
-    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
-    src_pt_x = src_corner_pt.x() + 10
-    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
-
-    videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.list_widget
-    dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
-    dest_pt_x = dest_corner_pt.x() + 10
-    dest_pt_y = dest_corner_pt.y() + 10
-
-    cur_file_count = video_tab_list_widget.count()
-
-    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
-
-    new_total_count_expected = cur_file_count+1
-
-    wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
-    generic_assert(app_thread, windows_container, blank_state, f'drop_{test_file_ext}_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(ext=test_file_ext), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
-                assert_blank_timeline)
+                assert_blank_timeline,
+                save_file=f'<file_name>.<method_name>_{test_file_ext}.json')
 
 
 
 def test_drop_multiple_vid_file(app_thread, windows_container, blank_state):
-    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
-
     video_path1 = get_test_vid_path()
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path1.str()]))
-
     video_path2 = get_test_vid_2_path()
-    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path2.str()]))
+    drop_video_on_file_list(app_thread, windows_container, [video_path1, video_path2])
 
-    dnd_widget = app_thread.cmd.dnd_widget
+    new_total_count_expected = 2
 
-    _, item_widget = dnd_widget.get_item_and_widget(0)
-
-    src_corner_pt = dnd_widget.item_widget_pos(0)
-    src_pt_x = src_corner_pt.x() + 10
-    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
-
-    videos_tab = windows_container.tabbed_list_window.videos_tab
-    video_tab_list_widget = videos_tab.list_widget
-    dest_corner_pt = local_to_global_pos(video_tab_list_widget, videos_tab)
-    dest_pt_x = dest_corner_pt.x() + 10
-    dest_pt_y = dest_corner_pt.y() + 10
-
-    cur_file_count = video_tab_list_widget.count()
-
-    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
-
-    new_total_count_expected = cur_file_count+2
-
-    wait_until(lambda: video_tab_list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
-    generic_assert(app_thread, windows_container, blank_state, 'drop_multiple_save.json',
+    generic_assert(app_thread, windows_container, blank_state,
                 assert_file_list_for_multiple_files, get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=False), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 

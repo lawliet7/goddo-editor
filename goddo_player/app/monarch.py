@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QWidget
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
-from goddo_player.app.state_store import StateStore, TimelineClip
+from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.preview_window.preview_window import PreviewWindow
@@ -124,7 +124,7 @@ class MonarchSystem(QObject):
         self.timeline_window.update()
         preview_window.update()
 
-    def __on_timeline_clip_double_click(self, idx, clip, _):
+    def __on_timeline_clip_double_click(self, idx, clip):
         self.state.timeline.opened_clip_index = idx
 
         if idx > -1:
@@ -245,7 +245,7 @@ class MonarchSystem(QObject):
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
-    def __on_add_timeline_clip(self, clip: TimelineClip, idx: int):
+    def __on_add_timeline_clip(self, clip: VideoClip, idx: int):
         logging.info(f'monarch on add timeline clip for idx {idx}')
 
         if idx == -1 or idx == len(self.state.timeline.clips):
@@ -281,6 +281,7 @@ class MonarchSystem(QObject):
 
         preview_window_state.video_path = video_path
         preview_window_state.frame_in_out = FrameInOut()
+        preview_window_state.restrict_frame_interval = True if self.sender() == self.signals.preview_window_output else False
         preview_window.switch_video(video_path)
         if should_play:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
@@ -374,9 +375,36 @@ class MonarchSystem(QObject):
                     for i in range(cur_multiplier - new_multiplier):
                         pw_signals.update_skip_slot.emit(IncDec.DEC)
 
+        def handle_prev_wind_output_fn(prev_wind_out_dict):
+            pw_signals = StateStoreSignals().preview_window_output
+
+            if self.state.timeline.opened_clip_index > -1:
+
+                if prev_wind_out_dict['current_frame_no'] > 0:
+                    pw_signals.seek_slot.emit(prev_wind_out_dict['current_frame_no'], PositionType.ABSOLUTE)
+                else:
+                    pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
+
+                if prev_wind_out_dict.get('is_max_speed'):
+                    pw_signals.switch_speed_slot.emit()
+
+                if prev_wind_out_dict.get('time_skip_multiplier'):
+                    new_multiplier = prev_wind_out_dict['time_skip_multiplier']
+                    cur_multiplier = self.state.preview_window.time_skip_multiplier
+
+                    if new_multiplier > cur_multiplier:
+                        for i in range(new_multiplier - cur_multiplier):
+                            pw_signals.update_skip_slot.emit(IncDec.INC)
+                    elif new_multiplier < cur_multiplier:
+                        for i in range(cur_multiplier - new_multiplier):
+                            pw_signals.update_skip_slot.emit(IncDec.DEC)
+
+                # if prev_wind_out_dict.get('time_skip_multiplier'):
+
+
         def handle_timeline_fn(timeline_dict):
             for clip_dict in timeline_dict['clips']:
-                StateStoreSignals().add_timeline_clip_slot.emit(TimelineClip.from_dict(clip_dict), -1)
+                StateStoreSignals().add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
 
             if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
@@ -393,9 +421,15 @@ class MonarchSystem(QObject):
                 StateStoreSignals().timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
 
             if timeline_dict.get('clipboard_clip'):
-                StateStoreSignals().timeline_set_clipboard_clip_slot.emit(TimelineClip.from_dict(timeline_dict.get('clipboard_clip')))
+                StateStoreSignals().timeline_set_clipboard_clip_slot.emit(VideoClip.from_dict(timeline_dict.get('clipboard_clip')))
 
-        self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_timeline_fn)
+            if timeline_dict.get('opened_clip_index') > -1:
+                idx = timeline_dict.get('opened_clip_index')
+                opened_clip = VideoClip.from_dict(timeline_dict['clips'][idx])
+                self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip)
+                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+
+        self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
@@ -413,7 +447,7 @@ class MonarchSystem(QObject):
 
             if timeline_in_frame != new_pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = VideoClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -434,7 +468,7 @@ class MonarchSystem(QObject):
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
             if timeline_out_frame != new_pos:
-                new_clip = TimelineClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = VideoClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -444,7 +478,9 @@ class MonarchSystem(QObject):
         preview_window = self.get_preview_window_from_signal(self.sender())
         before_toggle_is_playing = preview_window.preview_widget.is_playing()
 
+        preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+
         preview_window.toggle_play_pause(play_cmd)
 
         if play_cmd == PlayCommand.PAUSE or before_toggle_is_playing:
-            self.state.preview_window.current_frame_no = self.preview_window.preview_widget.get_cur_frame_no()
+            preview_window_state.current_frame_no = preview_window.preview_widget.get_cur_frame_no()

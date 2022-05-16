@@ -12,7 +12,7 @@ import pyautogui
 from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
 from PyQt5.QtWidgets import QListWidget
-from goddo_player.app.state_store import TimelineClip
+from goddo_player.app.state_store import VideoClip
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.time_frame_utils import time_str_to_components
 
@@ -153,11 +153,11 @@ def get_blank_1hr_vid_path():
     file_path = video_folder_path().joinpath("blank_1hr_vid.mp4").resolve()
     return VideoPath(file_to_url(file_path))
 
-def get_timeline_clip_for_1hr_vid(in_frame=None, out_frame=None):
-    return TimelineClip(get_blank_1hr_vid_path(), 4.0, 14402, FrameInOut(in_frame,out_frame))
+def get_video_clip_for_1hr_vid(in_frame=None, out_frame=None):
+    return VideoClip(get_blank_1hr_vid_path(), 4.0, 14402, FrameInOut(in_frame,out_frame))
 
-def get_timeline_clip_for_15m_vid(in_frame=None, out_frame=None):
-    return TimelineClip(get_blank_15m_vid_path(), 24.0, 21602, FrameInOut(in_frame,out_frame))
+def get_video_clip_for_15m_vid(in_frame=None, out_frame=None):
+    return VideoClip(get_blank_15m_vid_path(), 24.0, 21602, FrameInOut(in_frame,out_frame))
 
 def click_on_prev_wind_slider(preview_window, pct: float, should_slider_value_change: bool=True):
     old_frame_no = preview_window.state.preview_window.current_frame_no
@@ -354,3 +354,17 @@ def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_fra
     else:
         wait_until(lambda: app_thread.mon.preview_window.time_edit.text() == time_label)
 
+def drop_cur_to_timeline(windows_container):
+    preview_window = windows_container.preview_window
+    src_corner_pt1 = local_to_global_pos(preview_window.preview_widget, preview_window)
+    src_pt_x = int(src_corner_pt1.x() + preview_window.width() / 2)
+    src_pt_y = int(src_corner_pt1.y() + preview_window.height() / 2)
+
+    timeline_window = windows_container.timeline_window
+    dest_corner_pt2 = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    dest_pt_x = int(dest_corner_pt2.x() + timeline_window.width() / 2)
+    dest_pt_y = int(dest_corner_pt2.y() + timeline_window.height() / 2)
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)

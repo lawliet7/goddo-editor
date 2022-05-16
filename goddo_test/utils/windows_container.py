@@ -33,7 +33,6 @@ class WindowsContainer:
                   'value': self.preview_window.slider.value(),
                   'isEnabled': self.preview_window.slider.isEnabled()
               },
-              'restrict_frame_interval': self.preview_window.preview_widget.restrict_frame_interval
           },
           'output_window': {
               'windowTitle': self.output_window.windowTitle(),
@@ -43,7 +42,6 @@ class WindowsContainer:
                   'value': self.output_window.slider.value(),
                   'isEnabled': self.output_window.slider.isEnabled()
               },
-              'restrict_frame_interval': self.output_window.preview_widget.restrict_frame_interval
           },
           'timeline_window': {
               'windowTitle': self.timeline_window.windowTitle(),

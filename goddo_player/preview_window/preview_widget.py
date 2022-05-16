@@ -34,7 +34,6 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
 
         self.frame_pixmap = None
-        self.restrict_frame_interval = True if window_name == WINDOW_NAME_OUTPUT else False
 
     def get_cur_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else 0
@@ -118,7 +117,7 @@ class PreviewWidget(QWidget):
         in_frame = preview_window_state.frame_in_out.get_resolved_in_frame()
         out_frame = preview_window_state.frame_in_out.get_resolved_out_frame(total_frames)
 
-        if self.restrict_frame_interval:
+        if preview_window_state.restrict_frame_interval:
             return in_frame, out_frame
         else:
             return preview_window_state.cur_start_frame, preview_window_state.cur_end_frame
@@ -133,11 +132,11 @@ class PreviewWidget(QWidget):
                 if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
             elif to_frame < start_frame or to_frame > end_frame:
-                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+                self.signals.get_preview_window(self.window_name).play_cmd_slot.emit(PlayCommand.PAUSE)
             elif 0 < num_of_frames_to_advance <= 10:
                 logging.debug(f'num frames {num_of_frames_to_advance}')
                 frame = None
-                for i in range(num_of_frames_to_advance):
+                for _ in range(num_of_frames_to_advance):
                     logging.debug('advancing frame')
                     frame = self.get_next_frame()
                 scaled_frame = cv2.resize(frame, (self.width(), self.height()),

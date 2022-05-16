@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
-from goddo_player.app.state_store import StateStore, TimelineClip
+from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.timeline_window.timeline_widget import TimelineWidget
 from goddo_player.utils.enums import IncDec
 
@@ -82,7 +82,7 @@ class TimelineWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    def add_rect_for_new_clip(self, clip: TimelineClip):
+    def add_rect_for_new_clip(self, clip: VideoClip):
         self.inner_widget.add_rect_for_new_clip(clip)
         self.resize_timeline_widget()
 
@@ -136,6 +136,6 @@ class TimelineWindow(QMainWindow):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         pw_state = self.state.preview_window
-        clip = TimelineClip(pw_state.video_path, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
+        clip = VideoClip(pw_state.video_path, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
 
         self.signals.add_timeline_clip_slot.emit(clip, -1)

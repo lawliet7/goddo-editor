@@ -3,7 +3,7 @@ from enum import Enum, auto, unique
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
-from goddo_player.app.state_store import TimelineClip
+from goddo_player.app.state_store import VideoClip
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.enums import PositionType, IncDec
 from goddo_player.utils.singleton_meta import singleton
@@ -40,7 +40,7 @@ class PreviewWindowSignals(QObject):
 class StateStoreSignals(QObject):
     preview_window = PreviewWindowSignals(WINDOW_NAME_SOURCE)
     preview_window_output = PreviewWindowSignals(WINDOW_NAME_OUTPUT)
-    add_timeline_clip_slot = pyqtSignal(TimelineClip, int)
+    add_timeline_clip_slot = pyqtSignal(VideoClip, int)
     add_file_slot = pyqtSignal(VideoPath)
     add_video_tag_slot = pyqtSignal(VideoPath, str)
     remove_video_tag_slot = pyqtSignal(QUrl, str)
@@ -50,8 +50,8 @@ class StateStoreSignals(QObject):
     timeline_select_clip = pyqtSignal(int)
     timeline_delete_selected_clip_slot = pyqtSignal()
     timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
-    timeline_clip_double_click_slot = pyqtSignal(int, TimelineClip, QRect)
-    timeline_set_clipboard_clip_slot = pyqtSignal(TimelineClip)
+    timeline_clip_double_click_slot = pyqtSignal(int, VideoClip)
+    timeline_set_clipboard_clip_slot = pyqtSignal(VideoClip)
     timeline_clear_clipboard_clip_slot = pyqtSignal()
     activate_all_windows_slot = pyqtSignal()
 

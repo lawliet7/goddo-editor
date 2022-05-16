@@ -27,10 +27,22 @@ def activate_window(window, restore_minimized=True):
 def clone_rect(rect: QRect) -> QRect:
     return QRect(rect.topLeft(), rect.bottomRight())
 
+def is_top_level_window(widget):
+    from goddo_player.list_window.tabbed_list_window import TabbedListWindow
+    from goddo_player.preview_window.preview_window import PreviewWindow
+    from goddo_player.preview_window.preview_window_output import PreviewWindowOutput
+    from goddo_player.timeline_window.timeline_window import TimelineWindow
+
+    return type(widget) in (TabbedListWindow,PreviewWindow,PreviewWindowOutput,TimelineWindow)
 
 def local_to_global_pos(widget, parent=None):
-    parent_widget = parent if parent is not None else widget
-    return parent_widget.mapToGlobal(widget.pos())
+    if parent is not None:
+        return parent.mapToGlobal(widget.pos())
+    else:
+        if is_top_level_window(widget):
+            return widget.pos()
+        else:
+            return widget.mapToGlobal(widget.pos())
 
 def get_center_pos_of_widget(widget, parent=None):
     pw_corner_pt1 = local_to_global_pos(widget, parent)

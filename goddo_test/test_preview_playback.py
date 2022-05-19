@@ -16,7 +16,7 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_test_vid_path, go_to_prev_wind_slider, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_test_vid_path, go_to_prev_wind_slider, grab_screenshot, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):
@@ -48,10 +48,6 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
 
     assert cmp_image(img_base, img_new) < 0.98
 
-    _, _, secs, frames = time_str_to_components(windows_container.preview_window.label.text()[:10])
-    assert secs == 6
-    assert 5 <= frames <= 15
-
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.89, 1)), 
@@ -62,18 +58,16 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    img_base = pil_img_to_arr(pyautogui.screenshot())
+    img_base = grab_screenshot()
+    save_screenshot('before.png', img_base)
 
     click_on_prev_wind_slider(windows_container.preview_window, 0.9)
 
     logging.info(f'slider value {windows_container.preview_window.slider.value()}')
-    img_new = pil_img_to_arr(pyautogui.screenshot())
+    img_new = grab_screenshot()
+    save_screenshot('after.png', img_new)
 
     assert cmp_image(img_base, img_new) < 0.98
-
-    _, _, secs, frames = time_str_to_components(windows_container.preview_window.label.text()[:10])
-    assert secs == 6
-    assert 5 <= frames <= 15
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 

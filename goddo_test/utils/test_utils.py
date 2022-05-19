@@ -368,3 +368,11 @@ def drop_cur_to_timeline(windows_container):
     drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
 
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)
+
+def press_space_to_pause(windows_container):
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+def press_space_to_play(windows_container):
+    pyautogui.press('space')
+    wait_until(lambda: windows_container.preview_window.preview_widget.timer.isActive())

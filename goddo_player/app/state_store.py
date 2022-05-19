@@ -29,6 +29,7 @@ class PreviewWindowState:
     is_max_speed: bool = field(default=False)
     time_skip_multiplier: int = field(default=1)
     cur_total_frames: int = field(default=0)
+    # start/end frame on output window, in_frame - extra left frames, out_frame + extra right frames
     cur_start_frame: int = field(default=0)
     cur_end_frame: int = field(default=0)
     restrict_frame_interval: bool = field(default=False)
@@ -210,9 +211,9 @@ class VideoClip:
         return VideoClip(VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
                             json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
 
-    def get_total_time_str(self):
-        return build_time_str(*frames_to_time_components(self.total_frames, self.fps))
-
+    def get_total_time_str(self, overridden_total_frames=None):
+        final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
+        return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
 
 @dataclass
 class TimelineState:

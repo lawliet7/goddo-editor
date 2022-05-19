@@ -25,12 +25,13 @@ class FrameInOut:
         return FrameInOut(in_frame, out_frame)
 
     def get_no_of_frames(self, total_frames):
+        # frame start from 1
         if self.out_frame and self.in_frame:
-            return self.out_frame - self.in_frame
+            return self.out_frame - self.in_frame + 1
         elif self.in_frame:
-            return total_frames - self.in_frame
+            return total_frames - self.in_frame + 1
         elif self.out_frame:
-            return self.out_frame
+            return self.out_frame + 1
         else:
             return 0
 

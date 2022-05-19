@@ -33,7 +33,7 @@ def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: Windo
     pyautogui.press('g')
     wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
 
-    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no, 'initial state should be current timeframe'
+    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # test letters are ignored
     pyautogui.press('a')
@@ -223,13 +223,13 @@ def test_preview_output_go_to_dialog_with_keyboard(app_thread, windows_container
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
 
-    assert windows_container.output_window.time_edit.value() == 1
+    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # test letters are ignored
     pyautogui.press('home')
     pyautogui.press('a')
     time.sleep(0.5)
-    assert windows_container.output_window.time_edit.value() == 1
+    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # test min is frame 1
     pyautogui.press('down')
@@ -298,12 +298,12 @@ def test_preview_output_go_to_dialog_with_keyboard(app_thread, windows_container
     assert app_thread.mon.state.preview_window_output.current_frame_no == expected_cur_frame_no
 
     clip = get_video_clip_for_1hr_vid(in_frame=1)
-    expected_timeline_clips = [(clip,7200)]
+    expected_timeline_clips = [(clip,7201)]
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_1hr_file_fn(slider_range=(0, 0.01), current_frame_no=1, in_frame=1),
-                get_assert_preview_fn(clip, slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no, in_frame=1, is_output_window=True), 
+                get_assert_preview_fn(clip, slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no, is_output_window=True), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0, scroll_area_width=7320))
 
 def test_preview_output_go_to_dialog_with_mouse(app_thread, windows_container: WindowsContainer, blank_state):
@@ -394,10 +394,10 @@ def test_preview_output_go_to_dialog_with_mouse(app_thread, windows_container: W
     assert app_thread.mon.state.preview_window_output.current_frame_no == expected_cur_frame_no
 
     clip = get_video_clip_for_1hr_vid(in_frame=1)
-    expected_timeline_clips = [(clip,7200)]
+    expected_timeline_clips = [(clip,7201)]
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_1hr_file_fn(slider_range=(0, 0.01), current_frame_no=1, in_frame=1),
-                get_assert_preview_fn(clip, slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no, in_frame=1, is_output_window=True), 
+                get_assert_preview_fn(clip, slider_range=(0.05, 0.08), current_frame_no=expected_cur_frame_no, is_output_window=True), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0, scroll_area_width=7320))

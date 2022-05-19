@@ -45,7 +45,7 @@ def test_out_frame(app_thread, windows_container: WindowsContainer, blank_state)
 
     pyautogui.press('o')
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 

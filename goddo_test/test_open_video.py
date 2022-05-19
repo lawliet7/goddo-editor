@@ -40,8 +40,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-
-    time.sleep(0.5)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
     generic_assert(app_thread, windows_container, blank_state,
                    get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 

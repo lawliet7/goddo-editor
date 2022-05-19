@@ -148,7 +148,7 @@ class MonarchSystem(QObject):
             leftover_frames_in_secs = int(round(leftover_frames / pw_state.fps))
             extra_frames_on_left = extra_frames_config \
                 if in_frame_in_secs > extra_frames_in_secs_config \
-                else in_frame
+                else in_frame - 1
             extra_frames_on_right = extra_frames_config \
                 if leftover_frames_in_secs > extra_frames_in_secs_config \
                 else leftover_frames
@@ -291,10 +291,10 @@ class MonarchSystem(QObject):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
         preview_window_state.fps = fps
         preview_window_state.total_frames = total_frames
-        preview_window_state.current_frame_no = 0
-        preview_window_state.cur_total_frames = total_frames
-        preview_window_state.cur_start_frame = 0
-        preview_window_state.cur_end_frame = total_frames
+        preview_window_state.current_frame_no = 1 if total_frames > 0 else 0
+        preview_window_state.cur_total_frames = preview_window_state.total_frames
+        preview_window_state.cur_start_frame = preview_window_state.current_frame_no
+        preview_window_state.cur_end_frame = preview_window_state.total_frames
 
     def __on_add_file(self, video_path: VideoPath):
         cap = cv2.VideoCapture(video_path.str())

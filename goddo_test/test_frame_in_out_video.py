@@ -73,7 +73,7 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer, blank_sta
 
     pyautogui.press('o')
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     time.sleep(0.5)
 

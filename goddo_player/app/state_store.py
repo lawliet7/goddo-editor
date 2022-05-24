@@ -2,7 +2,7 @@ import logging
 import os
 import pathlib
 import shutil
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 from typing import List, Dict
 
 from PyQt5.QtCore import QObject, QUrl
@@ -242,7 +242,6 @@ class TimelineState:
             clipboard_clip=VideoClip.from_dict(json_dict['clipboard_clip']),
             )
 
-
 @singleton
 class StateStore(QObject):
     def __init__(self):
@@ -256,7 +255,37 @@ class StateStore(QObject):
         self.timeline = TimelineState()
         self.cur_save_file = VideoPath(file_to_url(PlayerConfigs.default_save_file))
 
+        self.empty_state_loader = self.EmptyStateLoader()
+
         logging.info(f'cur save file: {self.cur_save_file}')
+
+    class EmptyStateLoader:
+        def __init__(self):
+            self.blank_pw_state: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
+            self.blank_pw_output_state: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
+            self.blank_app_config: AppConfig = AppConfig()
+            self.blank_file_list = FileListState()
+            self.blank_clip_list = ClipListState()
+            self.blank_timeline = TimelineState()
+
+        def _copy_fields_from_blank(self, state_obj, blank_obj):
+            for dc_field in fields(state_obj):
+                field_name = dc_field.name
+                value = getattr(blank_obj,field_name)
+                if isinstance(value, list):
+                    setattr(state_obj,field_name,value[:])
+                elif isinstance(value, dict):
+                    setattr(state_obj,field_name,value.copy())
+                else:
+                    setattr(state_obj,field_name,value)
+
+        def reset_state(self, state_store):
+            self._copy_fields_from_blank(state_store.preview_window, self.blank_pw_state)
+            self._copy_fields_from_blank(state_store.preview_window_output, self.blank_pw_output_state)
+            self._copy_fields_from_blank(state_store.app_config, self.blank_app_config)
+            self._copy_fields_from_blank(state_store.file_list, self.blank_file_list)
+            self._copy_fields_from_blank(state_store.clip_list, self.blank_clip_list)
+            self._copy_fields_from_blank(state_store.timeline, self.blank_timeline)
 
     def as_dict(self):
         d = {}
@@ -311,11 +340,7 @@ class StateStore(QObject):
         logging.info(f'loading {video_path}')
         # todo msg box to select save file
 
-        self.preview_window: PreviewWindowState = PreviewWindowState(WINDOW_NAME_SOURCE)
-        self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
-        self.app_config: AppConfig = AppConfig()
-        self.file_list = FileListState()
-        self.timeline = TimelineState()
+        self.empty_state_loader.reset_state(self)
 
         if not video_path.is_empty():
             load_file_name = video_path.str()

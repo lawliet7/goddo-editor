@@ -16,7 +16,7 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_test_vid_path, go_to_prev_wind_slider, grab_screenshot, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, go_to_prev_wind_slider, grab_screenshot, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):
@@ -32,7 +32,8 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    img_base = pil_img_to_arr(pyautogui.screenshot())
+    # img_base = pil_img_to_arr(pyautogui.screenshot())
+    old_frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
 
     pyautogui.press('space')
     wait_until(lambda: windows_container.preview_window.preview_widget.timer.isActive())
@@ -44,9 +45,11 @@ def test_while_playing_seek_on_slider(app_thread, windows_container: WindowsCont
 
     time.sleep(0.5)
 
-    img_new = pil_img_to_arr(pyautogui.screenshot())
+    # img_new = pil_img_to_arr(pyautogui.screenshot())
 
-    assert cmp_image(img_base, img_new) < 0.98
+    # assert cmp_image(img_base, img_new) < 0.98
+
+    wait_until(lambda: old_frame_pixmap != windows_container.preview_window.preview_widget.frame_pixmap)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -58,16 +61,22 @@ def test_while_paused_seek_on_slider(app_thread, windows_container: WindowsConta
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    img_base = grab_screenshot()
-    save_screenshot('before.png', img_base)
+    old_frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
+
+    # img_base = grab_screenshot()
+    # save_screenshot('before.png', img_base)
 
     click_on_prev_wind_slider(windows_container.preview_window, 0.9)
 
-    logging.info(f'slider value {windows_container.preview_window.slider.value()}')
-    img_new = grab_screenshot()
-    save_screenshot('after.png', img_new)
+    # logging.info(f'slider value {windows_container.preview_window.slider.value()}')
+    # img_new = grab_screenshot()
+    # save_screenshot('after.png', img_new)
 
-    assert cmp_image(img_base, img_new) < 0.98
+    # new_frame_pixmap = windows_container.preview_window.preview_widget.frame_pixmap
+
+    wait_until(lambda: old_frame_pixmap != windows_container.preview_window.preview_widget.frame_pixmap)
+
+    # assert cmp_image(img_base, img_new) < 0.98
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -201,6 +210,8 @@ def test_skip_ahead_10s(app_thread, windows_container: WindowsContainer, blank_s
 
     pyautogui.scroll(-1)
 
+    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 210)
+
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_for_test_file_1_fn(slider_range=(0.99, 1), current_frame_no=210, time_skip_label="10s"), 
@@ -211,10 +222,9 @@ def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    go_to_prev_wind_slider(windows_container.preview_window, 0.9)
+    click_on_prev_wind_slider(windows_container.preview_window, 0.9)
     pyautogui.scroll(-1)
-
-    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no <= 209)
+    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 210)
     
     assert check_skip_label(windows_container) == 'skip=5s'
 
@@ -223,6 +233,8 @@ def test_skip_before_10s(app_thread, windows_container: WindowsContainer, blank_
     wait_until(lambda: check_skip_label(windows_container) == 'skip=10s')
 
     pyautogui.scroll(1)
+
+    wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 1)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -341,9 +353,8 @@ def test_advance_next_frame_at_end_should_do_nothing(app_thread, windows_contain
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    click_on_prev_wind_slider(windows_container.preview_window, 0.95)
-    pyautogui.scroll(-1)
-
+    enter_time_in_go_to_dialog_box(app_thread, "0:00:06.29")
+    pyautogui.press('right')
     wait_until(lambda: windows_container.preview_window.state.preview_window.current_frame_no == 210)
 
     pyautogui.press('right')

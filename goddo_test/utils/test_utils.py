@@ -329,6 +329,7 @@ def get_current_method_name(levels=1):
 
 def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_frame: bool = True):
     pyautogui.press('g')
+    wait_until(lambda: not app_thread.mon.preview_window.dialog.isHidden())
     pyautogui.press('home')
     pyautogui.press('delete')
     logging.info(f'=== write 1 {time_label[0]}')

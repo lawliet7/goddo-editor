@@ -13,7 +13,7 @@ from goddo_player.app.state_store import StateStore
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
-from goddo_player.preview_window.preview_widget import PreviewWidget
+from goddo_player.preview_window.preview_widget_new import PreviewWidgetNew
 from goddo_player.utils.enums import IncDec
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 
@@ -49,7 +49,7 @@ class PreviewWindow(QWidget):
         self.label.setText("you suck")
         self.label.setFixedHeight(15)
 
-        self.preview_widget = PreviewWidget(self.__on_update_pos, WINDOW_NAME_SOURCE)
+        self.preview_widget = PreviewWidgetNew(self.update, self.state.preview_window, self.signals.preview_window)
         vbox = QVBoxLayout()
         vbox.addWidget(self.preview_widget)
         vbox.addWidget(self.slider)
@@ -76,6 +76,7 @@ class PreviewWindow(QWidget):
         super().update()
 
         self.update_label_text()
+        self.update_slider()
 
     def get_wheel_skip_n_frames(self):
         return self.state.preview_window.time_skip_multiplier * 5 * self.state.preview_window.fps
@@ -83,19 +84,12 @@ class PreviewWindow(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
 
-        self.preview_widget.update_frame_pixmap(0)
+        self.preview_widget.go_to_frame(0, PositionType.RELATIVE)
+        self.update()
 
     def go_to_frame(self, frame_no: int, pos_type: PositionType):
-        if self.preview_widget.cap:
-            if pos_type is PositionType.ABSOLUTE:
-                target_frame_no = frame_no - 1
-            else:
-                target_frame_no = self.preview_widget.get_cur_frame_no() + frame_no - 1
-            target_frame_no = min(max(0, target_frame_no), self.state.preview_window.total_frames - 1)
-
-            self.preview_widget.cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame_no)
-            self.preview_widget.update_frame_pixmap(1)
-            self.update()
+        self.preview_widget.go_to_frame(frame_no, pos_type)
+        self.update()
 
     def __on_update_pos(self, cur_frame_no: int, _):
         total_frames = self.state.preview_window.total_frames
@@ -120,6 +114,21 @@ class PreviewWindow(QWidget):
             self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
         else:
             self.label.setText('you suck')
+
+    def update_slider(self):
+        if self.preview_widget.cap is not None:
+            if not self.slider.isEnabled:
+                self.slider.setEnabled(True)
+            
+            total_frames = self.state.preview_window.total_frames
+            cur_frame_no = self.preview_widget.get_cur_frame_no()
+
+            slider_value = int(round(cur_frame_no / total_frames * self.slider.maximum()))
+
+            if self.slider.value() != slider_value:
+                self.slider.blockSignals(True)
+                self.slider.setValue(slider_value)
+                self.slider.blockSignals(False)
 
     def __build_skip_label_txt(self):
         num_secs = self.state.preview_window.time_skip_multiplier * 5 % 60

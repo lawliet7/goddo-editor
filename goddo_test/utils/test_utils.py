@@ -11,7 +11,7 @@ import numpy as np
 import pyautogui
 from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
-from PyQt5.QtWidgets import QListWidget
+from PyQt5.QtWidgets import QListWidget, QApplication
 from goddo_player.app.state_store import VideoClip
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.time_frame_utils import time_str_to_components
@@ -328,8 +328,20 @@ def get_current_method_name(levels=1):
         del cur_frame
 
 def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_frame: bool = True):
+    active_prev_window = QApplication.activeWindow()
+
+    assert active_prev_window == app_thread.mon.preview_window or active_prev_window == app_thread.mon.preview_window_output
+
+    if active_prev_window == app_thread.mon.preview_window:
+        pw_state = app_thread.mon.state.preview_window
+        pw_window = app_thread.mon.preview_window
+    else:
+        pw_state = app_thread.mon.state.preview_window_output
+        pw_window = app_thread.mon.preview_window_output
+    
+
     pyautogui.press('g')
-    wait_until(lambda: not app_thread.mon.preview_window.dialog.isHidden())
+    wait_until(lambda: not pw_window.dialog.isHidden())
     pyautogui.press('home')
     pyautogui.press('delete')
     logging.info(f'=== write 1 {time_label[0]}')
@@ -350,10 +362,10 @@ def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_fra
     if should_go_to_frame:
         pyautogui.press('enter')
 
-        frame_no = app_thread.mon.preview_window.time_edit.value()
-        wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no == frame_no)
+        frame_no = pw_window.time_edit.value()
+        wait_until(lambda: pw_state.current_frame_no == frame_no)
     else:
-        wait_until(lambda: app_thread.mon.preview_window.time_edit.text() == time_label)
+        wait_until(lambda: pw_window.time_edit.text() == time_label)
 
 def drop_cur_to_timeline(windows_container):
     preview_window = windows_container.preview_window

@@ -16,7 +16,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import assert_blank_timeline, generic_assert, get_assert_blank_list_fn, get_assert_file_list_for_test_file_1_fn, get_assert_preview_for_blank_file_fn, get_assert_preview_for_test_file_1_fn
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_file_list, get_test_vid_path, save_reload_and_assert_state, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_file_list, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
@@ -76,8 +76,6 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-
-    time.sleep(0.5)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 

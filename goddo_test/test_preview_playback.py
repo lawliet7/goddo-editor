@@ -16,7 +16,7 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, go_to_prev_wind_slider, grab_screenshot, save_reload_and_assert_state, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, go_to_prev_wind_slider, grab_screenshot, save_screenshot, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 def test_slider_disabled_initially(windows_container: WindowsContainer):

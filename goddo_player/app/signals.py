@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.state_store import VideoClip
+from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.enums import PositionType, IncDec
 from goddo_player.utils.singleton_meta import singleton
@@ -21,7 +22,7 @@ class PreviewWindowSignals(QObject):
         super().__init__()
         self.setObjectName(name)
 
-    switch_video_slot = pyqtSignal(VideoPath, bool)
+    switch_video_slot = pyqtSignal(VideoPath, FrameInOut)
     switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
     out_frame_slot = pyqtSignal(int)

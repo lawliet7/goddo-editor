@@ -11,6 +11,7 @@ from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand
 from goddo_player.app.state_store import StateStore
+from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
@@ -62,7 +63,8 @@ class PreviewWidget(QWidget):
         video_path = VideoPath(event.mimeData().urls()[0])
 
         preview_window_signals = self.signals.get_preview_window(self.window_name)
-        preview_window_signals.switch_video_slot.emit(video_path, True)
+        preview_window_signals.switch_video_slot.emit(video_path, FrameInOut())
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
         self.signals.add_file_slot.emit(video_path)
 
     def switch_video(self, video_path: VideoPath):

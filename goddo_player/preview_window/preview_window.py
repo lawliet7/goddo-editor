@@ -1,12 +1,15 @@
 import logging
+import os
 
 import cv2
 from PyQt5.QtCore import QRect, Qt, QMimeData, QTime
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
-    QResizeEvent, QWheelEvent
+    QResizeEvent, QWheelEvent, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QTimeEdit
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
+from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
@@ -91,23 +94,14 @@ class PreviewWindow(QWidget):
         self.preview_widget.go_to_frame(frame_no, pos_type)
         self.update()
 
-    def __on_update_pos(self, cur_frame_no: int, _):
-        total_frames = self.state.preview_window.total_frames
-        pos = self.slider.pct_to_slider_value(cur_frame_no / total_frames)
-        self.slider.blockSignals(True)
-        self.slider.setValue(pos)
-        self.slider.blockSignals(False)
-
-        self.update()
-
     def update_label_text(self):
         if self.preview_widget.cap is not None:
-            total_frames = self.state.preview_window.total_frames
+            cur_total_frames = self.state.preview_window.cur_total_frames
             cur_frame_no = self.preview_widget.get_cur_frame_no()
 
             fps = self.state.preview_window.fps
             cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
-            total_time_str = build_time_str(*frames_to_time_components(total_frames, fps))
+            total_time_str = build_time_str(*frames_to_time_components(cur_total_frames, fps))
             speed_txt = 'max' if self.state.preview_window.is_max_speed else 'normal'
             skip_txt = self.__build_skip_label_txt()
 
@@ -138,23 +132,47 @@ class PreviewWindow(QWidget):
         return f'{min_txt}{sec_txt}'
 
     def on_value_changed(self, value):
-        logging.info('begin on value change')
         frame_no = int(round(self.slider.slider_value_to_pct(value) * self.state.preview_window.total_frames))
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
                       f'total_frames={self.state.preview_window.total_frames}')
         self.signals.preview_window.seek_slot.emit(frame_no, PositionType.ABSOLUTE)
-        logging.info('finished on value change')
 
-    def switch_video(self, video_path: VideoPath):
+    def _update_state_for_new_video(self, video_path: VideoPath, frame_in_out: FrameInOut):
+        preview_window_state = self.state.preview_window
+        preview_window_state.video_path = video_path
+        preview_window_state.frame_in_out = frame_in_out
+        preview_window_state.restrict_frame_interval = False
+        preview_window_state.fps = self.preview_widget.get_fps()
+        preview_window_state.total_frames = self.preview_widget.get_total_frames()
+        preview_window_state.current_frame_no = frame_in_out.get_resolved_in_frame()
+        preview_window_state.cur_total_frames = preview_window_state.total_frames
+        preview_window_state.cur_start_frame = 1
+        preview_window_state.cur_end_frame = preview_window_state.total_frames
+
+    def _update_state_for_blank_video(self, video_path: VideoPath):
+        preview_window_state = self.state.preview_window
+        preview_window_state.video_path = video_path
+        preview_window_state.frame_in_out = FrameInOut()
+        preview_window_state.restrict_frame_interval = False
+        preview_window_state.fps = 0
+        preview_window_state.total_frames = 0
+        preview_window_state.current_frame_no = 0
+        preview_window_state.cur_total_frames = 0
+        preview_window_state.cur_start_frame = 0
+        preview_window_state.cur_end_frame = 0
+
+    def switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut):
         self.preview_widget.switch_video(video_path)
 
         if video_path.is_empty():
+            self._update_state_for_blank_video(video_path)
             self.slider.blockSignals(True)
             self.slider.setValue(0)
             self.slider.blockSignals(False)
             self.slider.setDisabled(True)
             self.setWindowTitle(f'{self.base_title}')
         else:
+            self._update_state_for_new_video(video_path, frame_in_out)
             self.setWindowTitle(self.base_title + ' - ' + video_path.file_name(include_ext=False))
             self.slider.setDisabled(False)
 
@@ -227,6 +245,24 @@ class PreviewWindow(QWidget):
             mime_data.setText('source')
             drag.setMimeData(mime_data)
             drag.exec()
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        urls = event.mimeData().urls()
+
+        if len(urls) == 1:
+            filename = urls[0].fileName()
+            _, ext = os.path.splitext(filename)
+            if ext in PlayerConfigs.supported_video_exts:
+                event.accept()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        logging.info(f'drop {event.mimeData().urls()}')
+
+        video_path = VideoPath(event.mimeData().urls()[0])
+
+        self.signals.preview_window.switch_video_slot.emit(video_path, FrameInOut())
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
+        self.signals.add_file_slot.emit(video_path)
 
     def is_playing(self):
         if self.preview_widget.timer and self.preview_widget.timer.isActive():

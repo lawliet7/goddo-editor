@@ -50,38 +50,22 @@ class PreviewWidgetNew(QWidget):
                 else:
                     return frame
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        urls = event.mimeData().urls()
+    def get_fps(self):
+        return self.cap.get(cv2.CAP_PROP_FPS) if self.cap else 0
 
-        if len(urls) == 1:
-            filename = urls[0].fileName()
-            _, ext = os.path.splitext(filename)
-            if ext in PlayerConfigs.supported_video_exts:
-                event.accept()
-
-    def dropEvent(self, event: QDropEvent) -> None:
-        logging.info(f'drop {event.mimeData().urls()}')
-
-        video_path = VideoPath(event.mimeData().urls()[0])
-
-        self.pw_signal.switch_video_slot.emit(video_path, True)
-        self.signals.add_file_slot.emit(video_path)
+    def get_total_frames(self):
+        return self.cap.get(cv2.CAP_PROP_FRAME_COUNT) if self.cap else 0
 
     def switch_video(self, video_path: VideoPath):
         if not video_path.is_empty():
             self.cap = cv2.VideoCapture(video_path.str())
-
-            fps = self.cap.get(cv2.CAP_PROP_FPS)
-            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.pw_signal.update_file_details_slot.emit(fps, total_frames)
-            logging.info(f'=== total frames {total_frames} fps {fps}')
 
             if self.timer:
                 self.timer.stop()
                 self.timer.deleteLater()
 
             self.timer = QTimer(self)
-            self.timer.setInterval(fps_to_num_millis(fps))
+            self.timer.setInterval(fps_to_num_millis(self.get_fps()))
             self.timer.setTimerType(QtCore.Qt.PreciseTimer)
             self.timer.timeout.connect(self.play_callback)
             # self.timer.start()
@@ -98,7 +82,7 @@ class PreviewWidgetNew(QWidget):
     def play_callback(self):
         cur_frame_no = self.get_cur_frame_no()
         frame_no = self.go_to_frame(1, PositionType.RELATIVE)
-        logging.info(f'callback {frame_no}')
+        logging.debug(f'callback {frame_no}')
         
         _, end_frame = self.get_start_and_end_frames()
 
@@ -108,7 +92,6 @@ class PreviewWidgetNew(QWidget):
             logging.info(f'=== pausing since frame no {frame_no} has reach the end frame {end_frame}')
             self.pw_signal.play_cmd_slot.emit(PlayCommand.PAUSE)
 
-        # self.on_update_cb(frame_no, self.frame_pixmap)
         self.pw_update_fn()
 
     def switch_speed(self):
@@ -150,7 +133,7 @@ class PreviewWidgetNew(QWidget):
                 if self.frame_pixmap and (self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height()):
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
             elif target_frame_no <= start_frame:
-                self.set_cap_pos(0)
+                self.set_cap_pos(start_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
             elif target_frame_no >= end_frame:
                 if 0 < (end_frame - cur_frame_no - 1) <= 10:

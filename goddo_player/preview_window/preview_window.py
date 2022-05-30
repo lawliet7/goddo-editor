@@ -17,7 +17,7 @@ from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
-from goddo_player.preview_window.preview_widget_new import PreviewWidgetNew
+from goddo_player.preview_window.preview_widget import PreviewWidgetNew
 from goddo_player.utils.enums import IncDec
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 
@@ -62,7 +62,7 @@ class PreviewWindow(QWidget):
         vbox.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(vbox)
-        
+
         self.dialog = GoToFrameDialog(self)
         self.dialog.submit_slot.connect(self.dialog_box_done)
     

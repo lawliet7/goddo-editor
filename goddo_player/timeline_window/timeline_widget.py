@@ -149,7 +149,7 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_path.file_name()
-            logging.info(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
+            logging.debug(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')

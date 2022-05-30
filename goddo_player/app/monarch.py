@@ -203,10 +203,7 @@ class MonarchSystem(QObject):
         preview_window.go_to_frame(frame_no, pos_type)
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
 
-        if pos_type == PositionType.ABSOLUTE:
-            preview_window_state.current_frame_no = frame_no
-        else:
-            preview_window_state.current_frame_no = min(max(frame_no + preview_window_state.current_frame_no,1), preview_window_state.total_frames)
+        preview_window_state.current_frame_no = preview_window.preview_widget.get_cur_frame_no()
 
         if is_playing:
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)

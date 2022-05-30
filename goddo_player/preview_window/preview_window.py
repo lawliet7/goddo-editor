@@ -13,6 +13,7 @@ from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
+from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
@@ -61,19 +62,12 @@ class PreviewWindow(QWidget):
         vbox.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(vbox)
-
-        self.time_edit = TimeInFramesEdit()
-        dialog_layout = QVBoxLayout()
-        dialog_layout.addWidget(self.time_edit)
-        self.dialog = QDialog(self) 
-        self.dialog.setLayout(dialog_layout)
-        self.time_edit.editingFinished.connect(self.dialog_box_done)
+        
+        self.dialog = GoToFrameDialog(self)
+        self.dialog.submit_slot.connect(self.dialog_box_done)
     
-    def dialog_box_done(self):
-        # print(f'you got it, focus={self.spin.hasFocus()}')
-        if self.time_edit.hasFocus():
-            self.signals.preview_window.seek_slot.emit(self.time_edit.value(), PositionType.ABSOLUTE)    
-            self.dialog.close()
+    def dialog_box_done(self, value):
+        self.signals.preview_window.seek_slot.emit(value, PositionType.ABSOLUTE)
 
     def update(self):
         super().update()
@@ -222,9 +216,8 @@ class PreviewWindow(QWidget):
             self.signals.preview_window.update_skip_slot.emit(IncDec.DEC)
         elif event.key() == Qt.Key_G:
             if self.preview_widget.cap is not None:
-                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
-                self.time_edit.reset(self.state.preview_window.fps, self.state.preview_window.total_frames, self.state.preview_window.current_frame_no)
-                self.dialog.exec_()  # blocks all other windows until this window is closed.
+                pw_state = self.state.preview_window
+                self.dialog.show_dialog(pw_state.fps, current_frame=pw_state.current_frame_no, max_frame=pw_state.total_frames, min_frame=1)
         else:
             super().keyPressEvent(event)
 

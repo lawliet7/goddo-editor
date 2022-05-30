@@ -100,7 +100,7 @@ class TimelineWindow(QMainWindow):
     def __process(self):
         import os
 
-        tmp_dir = os.path.join('', '..', 'output', 'tmp')
+        tmp_dir = os.path.join('', 'output', 'tmp')
         from pathlib import Path
         Path(tmp_dir).mkdir(parents=True, exist_ok=True)
         for f in os.listdir(tmp_dir):
@@ -111,7 +111,7 @@ class TimelineWindow(QMainWindow):
             end_time = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) / clip.fps
             file_path = clip.video_path.str()
             output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
-            cmd = f"ffmpeg -ss {start_time:.3f} -i {file_path} -to {end_time - start_time:.3f} -cbr 15 {output_path}"
+            cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -cbr 15 "{output_path}"'
             logging.info(f'executing cmd: {cmd}')
             subprocess.call(cmd, shell=True)
 
@@ -125,7 +125,7 @@ class TimelineWindow(QMainWindow):
         logging.info('\n'.join(tmp_vid_files))
 
         output_file_path = os.path.join(tmp_dir, '..',  f'output_{time.time()}.mp4')
-        cmd = f"ffmpeg -f concat -safe 0 -i {concat_file_path} -c copy {output_file_path}"
+        cmd = f'ffmpeg -f concat -safe 0 -i "{concat_file_path}" -c copy "{output_file_path}"'
         logging.info(f'executing cmd: {cmd}')
         subprocess.call(cmd, shell=True)
         logging.info('output generated!!')

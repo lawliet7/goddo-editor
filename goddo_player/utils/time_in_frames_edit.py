@@ -21,10 +21,11 @@ class TimeInFramesEdit(QSpinBox):
         self._min_right = self._hour_right + self.fontMetrics().width("00:")
         self._sec_right = self._min_right + self.fontMetrics().width("00.")
 
-    def reset(self, fps, total_frames, current_frames):
-        self.setMaximum(total_frames)
+    def reset(self, fps, current_frame, min_frame, max_frame):
         self._fps = fps
-        self.setValue(current_frames)
+        self.setMinimum(min_frame)
+        self.setMaximum(max_frame)
+        self.setValue(current_frame)
 
     def valueFromText(self, text: str) -> int:
         hours, mins, secs, frames = time_str_to_components(text)

@@ -8,9 +8,11 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog
 
 from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.utils.draw_utils import text_with_color
 from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
+from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
@@ -60,17 +62,11 @@ class PreviewWindowOutput(QWidget):
 
         self.setLayout(vbox)
 
-        self.time_edit = TimeInFramesEdit()
-        dialog_layout = QVBoxLayout()
-        dialog_layout.addWidget(self.time_edit)
-        self.dialog = QDialog(self) 
-        self.dialog.setLayout(dialog_layout)
-        self.time_edit.editingFinished.connect(self.dialog_box_done)
+        self.dialog = GoToFrameDialog(self)
+        self.dialog.submit_slot.connect(self.dialog_box_done)
     
-    def dialog_box_done(self):
-        if self.time_edit.hasFocus():
-            self.signals.preview_window_output.seek_slot.emit(self.time_edit.value(), PositionType.ABSOLUTE)    
-            self.dialog.close()
+    def dialog_box_done(self, value):
+        self.signals.preview_window_output.seek_slot.emit(value, PositionType.ABSOLUTE)
 
     def update(self):
         super().update()
@@ -93,17 +89,26 @@ class PreviewWindowOutput(QWidget):
 
     def update_label_text(self):
         if self.preview_widget.cap is not None:
-            start_frame = self.state.preview_window_output.cur_start_frame
-            cur_total_frames = self.state.preview_window_output.cur_total_frames
             cur_frame_no = self.preview_widget.get_cur_frame_no()
+            frame_in_out = self.state.preview_window_output.frame_in_out
+            in_frame = frame_in_out.get_resolved_in_frame()
+            clip_total_frames = frame_in_out.get_no_of_frames(self.state.preview_window_output.total_frames)
 
+            highlight_text_color = 'blue'
             fps = self.state.preview_window_output.fps
-            cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no - start_frame, fps))
-            total_time_str = build_time_str(*frames_to_time_components(cur_total_frames, fps))
+            abs_cur_time_str = build_time_str(*frames_to_time_components(cur_frame_no, fps))
+            total_rel_frames = cur_frame_no - in_frame
+            if total_rel_frames < 0:
+                rel_cur_time_str = text_with_color('-'+build_time_str(*frames_to_time_components(total_rel_frames * -1, fps)), highlight_text_color)
+            elif total_rel_frames > clip_total_frames:
+                rel_cur_time_str = text_with_color(build_time_str(*frames_to_time_components(total_rel_frames, fps)), highlight_text_color)
+            else:
+                rel_cur_time_str = build_time_str(*frames_to_time_components(total_rel_frames, fps))
+            total_time_str = build_time_str(*frames_to_time_components(clip_total_frames, fps))
             speed_txt = 'max' if self.state.preview_window_output.is_max_speed else 'normal'
             skip_txt = self.__build_skip_label_txt()
 
-            self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
+            self.label.setText(f'{abs_cur_time_str} ~ {rel_cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}'
                                f'  restrict={self.state.preview_window_output.restrict_frame_interval}')
         else:
             self.label.setText('you suck')
@@ -242,8 +247,11 @@ class PreviewWindowOutput(QWidget):
         elif event.key() == Qt.Key_G:
             if self.preview_widget.cap is not None:
                 self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
-                self.time_edit.reset(self.state.preview_window_output.fps, self.state.preview_window_output.cur_total_frames, self.state.preview_window_output.current_frame_no)
-                self.dialog.exec_()  # blocks all other windows until this window is closed.
+                pw_state = self.state.preview_window_output
+                start_frame = pw_state.frame_in_out.get_resolved_in_frame() if pw_state.restrict_frame_interval else pw_state.cur_start_frame
+                end_frame = pw_state.frame_in_out.get_resolved_out_frame(pw_state.total_frames) if pw_state.restrict_frame_interval else pw_state.cur_end_frame
+                fps = self.state.preview_window_output.fps
+                self.dialog.show_dialog(fps, self.preview_widget.get_cur_frame_no(), start_frame, end_frame)
         else:
             super().keyPressEvent(event)
 

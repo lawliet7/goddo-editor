@@ -362,7 +362,7 @@ def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_fra
     if should_go_to_frame:
         pyautogui.press('enter')
 
-        frame_no = pw_window.time_edit.value()
+        frame_no = pw_window.time_edit.value() if active_prev_window == app_thread.mon.preview_window else pw_window.time_edit.value() + app_thread.mon.state.preview_window_output.cur_start_frame
         wait_until(lambda: pw_state.current_frame_no == frame_no)
     else:
         wait_until(lambda: pw_window.time_edit.text() == time_label)
@@ -382,10 +382,31 @@ def drop_cur_to_timeline(windows_container):
 
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)
 
-def press_space_to_pause(windows_container):
+def press_space_to_pause(preview_window):
     pyautogui.press('space')
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+    wait_until(lambda: not preview_window.preview_widget.timer.isActive())
 
-def press_space_to_play(windows_container):
+def press_space_to_play(preview_window):
     pyautogui.press('space')
-    wait_until(lambda: windows_container.preview_window.preview_widget.timer.isActive())
+    wait_until(lambda: preview_window.preview_widget.timer.isActive())
+
+def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_time_str, video_path):
+    # video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, from_time_str)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+
+    enter_time_in_go_to_dialog_box(app_thread, to_time_str)
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+
+    drop_cur_to_timeline(windows_container)
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
+    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)

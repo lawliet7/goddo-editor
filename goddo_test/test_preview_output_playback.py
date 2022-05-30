@@ -87,13 +87,15 @@ def test_video_stops_at_out_with_restrict_with_playing(app_thread, windows_conta
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
     wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
 
-    enter_time_in_go_to_dialog_box(app_thread, '0:01:08.00')
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:58.00')
 
     expected_in_frame = 4 * 60 * 1
     expected_out_frame = 4 * 60 * 2
 
     press_space_to_play(windows_container.output_window)
     time.sleep(3)
+
+    logging.info(f'=== out frame {app_thread.mon.state.preview_window_output.current_frame_no}')
 
     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame)
 
@@ -127,7 +129,7 @@ def test_video_stops_at_out_with_restrict_with_keyboard(app_thread, windows_cont
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
     wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
 
-    enter_time_in_go_to_dialog_box(app_thread, '0:01:09.02')
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:59.02')
     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60 * 2 - 2)
 
     pyautogui.press('right')
@@ -173,7 +175,7 @@ def test_video_stops_at_out_with_restrict_with_mouse(app_thread, windows_contain
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
     wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
 
-    enter_time_in_go_to_dialog_box(app_thread, '0:01:09.00')
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:59.00')
     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60 * 2 - 4)
     
     go_to_prev_wind_slider(windows_container.output_window, 0.5)

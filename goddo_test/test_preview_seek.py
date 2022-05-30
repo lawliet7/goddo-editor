@@ -33,11 +33,11 @@ def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: Windo
     pyautogui.press('g')
     wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
 
-    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
+    assert windows_container.preview_window.dialog.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # test letters are ignored
     pyautogui.press('a')
-    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
+    assert windows_container.preview_window.dialog.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # reset back to frame 1
     pyautogui.press('end')
@@ -45,68 +45,68 @@ def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: Windo
     pyautogui.press('backspace')
     pyautogui.press('0')
     pyautogui.press('1')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     # test min is frame 1
     pyautogui.press('home')
     pyautogui.press('down')
     time.sleep(0.5)
-    assert windows_container.preview_window.time_edit.text() == '0:00:00.01'
+    assert windows_container.preview_window.dialog.text() == '0:00:00.01'
 
     # test hour increased
     pyautogui.press('up')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '1:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '1:00:00.01')
 
     # test max is video total length
     pyautogui.press('up')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '1:00:00.02')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '1:00:00.02')
 
     # test hour decreased
     pyautogui.press('down')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
 
     # test pos 2, hour increased
     pyautogui.press('right')
     pyautogui.press('up')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '1:00:00.02')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '1:00:00.02')
     pyautogui.press('down')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, min increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:01:00.02')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:01:00.02')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, secs increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:01.02')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:01.02')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, frames increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.03')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.03')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
 
     # test min is 1 frame
     pyautogui.press('down')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
     pyautogui.press('down')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     for _ in range(6):
         pyautogui.press('left')
     for _ in range(4):
         pyautogui.press('up')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:04:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:04:00.01')
 
     expected_cur_frame_no = 4 * 60 * 4 + 1
 
@@ -133,50 +133,50 @@ def test_preview_go_to_dialog_with_mouse(app_thread, windows_container: WindowsC
     pyautogui.press('backspace')
     pyautogui.press('0')
     pyautogui.press('1')
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
-    font_metrics = windows_container.preview_window.time_edit.fontMetrics()
+    font_metrics = windows_container.preview_window.dialog.time_edit.fontMetrics()
     hour_right = font_metrics.width("0:")
     min_width = font_metrics.width("00:")
     min_right = hour_right + min_width
     sec_width = font_metrics.width("00.")
     sec_right = min_right + sec_width
 
-    pt = local_to_global_pos(windows_container.preview_window.time_edit, windows_container.preview_window.dialog)
-    y = int(pt.y() + windows_container.preview_window.time_edit.height() / 2)
+    pt = local_to_global_pos(windows_container.preview_window.dialog.time_edit, windows_container.preview_window.dialog.dialog)
+    y = int(pt.y() + windows_container.preview_window.dialog.time_edit.height() / 2)
 
     # test hour
     pyautogui.moveTo(int(pt.x() + hour_right / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '1:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '1:00:00.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     # test min
     pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:01:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:01:00.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     # test sec
     pyautogui.moveTo(int(pt.x() + min_right + sec_width / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:01.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:01.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     # test frames
     pyautogui.moveTo(int(pt.x() + sec_right + 5), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.02')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
 
     pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
     for _ in range(4):
         pyautogui.scroll(1)
-    wait_until(lambda: windows_container.preview_window.time_edit.text() == '0:04:00.01')
+    wait_until(lambda: windows_container.preview_window.dialog.text() == '0:04:00.01')
 
     expected_cur_frame_no = 4 * 60 * 4 + 1
 
@@ -223,73 +223,73 @@ def test_preview_output_go_to_dialog_with_keyboard(app_thread, windows_container
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
 
-    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
+    assert windows_container.output_window.dialog.value() == app_thread.mon.state.preview_window_output.current_frame_no
 
     # test letters are ignored
     pyautogui.press('home')
     pyautogui.press('a')
     time.sleep(0.5)
-    assert windows_container.preview_window.time_edit.value() == app_thread.mon.state.preview_window.current_frame_no
+    assert windows_container.output_window.dialog.value() == app_thread.mon.state.preview_window_output.current_frame_no
 
     # test min is frame 1
     pyautogui.press('down')
     time.sleep(0.5)
-    assert windows_container.output_window.time_edit.text() == '0:00:00.01'
+    assert windows_container.output_window.dialog.text() == '0:00:00.01'
 
     # test hour increased
     pyautogui.press('up')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '1:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '1:00:00.01')
 
     # test max is video total length
     pyautogui.press('up')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '1:00:00.02')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '1:00:00.02')
 
     # test hour decreased
     pyautogui.press('down')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
 
     # test pos 2, hour increased
     pyautogui.press('right')
     pyautogui.press('up')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '1:00:00.02')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '1:00:00.02')
     pyautogui.press('down')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, min increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:01:00.02')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:01:00.02')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, secs increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:01.02')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:01.02')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
 
     # test pos 3, frames increased/decreased
     for _ in range(3):
         pyautogui.press('right')
         pyautogui.press('up')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.03')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.03')
         pyautogui.press('down')
-        wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+        wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
 
     # test min is 1 frame
     pyautogui.press('down')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
     pyautogui.press('down')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
 
     for _ in range(6):
         pyautogui.press('left')
     for _ in range(4):
         pyautogui.press('up')
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:04:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:04:00.01')
 
     expected_cur_frame_no = 4 * 60 * 4 + 1
 
@@ -339,53 +339,53 @@ def test_preview_output_go_to_dialog_with_mouse(app_thread, windows_container: W
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
 
-    assert windows_container.output_window.time_edit.value() == 1
+    assert windows_container.output_window.dialog.value() == 1
 
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
 
-    font_metrics = windows_container.output_window.time_edit.fontMetrics()
+    font_metrics = windows_container.output_window.dialog.time_edit.fontMetrics()
     hour_right = font_metrics.width("0:")
     min_width = font_metrics.width("00:")
     min_right = hour_right + min_width
     sec_width = font_metrics.width("00.")
     sec_right = min_right + sec_width
 
-    pt = local_to_global_pos(windows_container.output_window.time_edit, windows_container.output_window.dialog)
-    y = int(pt.y() + windows_container.output_window.time_edit.height() / 2)
+    pt = local_to_global_pos(windows_container.output_window.dialog.time_edit, windows_container.output_window.dialog.dialog)
+    y = int(pt.y() + windows_container.output_window.dialog.time_edit.height() / 2)
 
     # test hour
     pyautogui.moveTo(int(pt.x() + hour_right / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '1:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '1:00:00.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
 
     # test min
     pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:01:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:01:00.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
 
     # test sec
     pyautogui.moveTo(int(pt.x() + min_right + sec_width / 2), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:01.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:01.01')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
 
     # test frames
     pyautogui.moveTo(int(pt.x() + sec_right + 5), y )
     pyautogui.scroll(1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.02')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.02')
     pyautogui.scroll(-1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:00:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:00:00.01')
 
     pyautogui.moveTo(int(pt.x() + hour_right + min_width / 2), y )
     for _ in range(4):
         pyautogui.scroll(1)
-    wait_until(lambda: windows_container.output_window.time_edit.text() == '0:04:00.01')
+    wait_until(lambda: windows_container.output_window.dialog.text() == '0:04:00.01')
 
     expected_cur_frame_no = 4 * 60 * 4 + 1
 

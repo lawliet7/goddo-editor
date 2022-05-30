@@ -33,7 +33,7 @@ class GoToFrameDialog(QObject):
     def _on_dialog_box_done(self):
         if self.time_edit.hasFocus():
             self.submit_slot.emit(self.time_edit.value())
-            self.dialog.close()
+            self.close()
 
     def show_dialog(self, fps, current_frame, min_frame, max_frame):
         self.time_edit.reset(fps, current_frame=current_frame, min_frame=min_frame, max_frame=max_frame)
@@ -41,3 +41,18 @@ class GoToFrameDialog(QObject):
         end_time_str = build_time_str(*frames_to_time_components(max_frame, fps))
         self.dialog_help_text.setText(f'{start_time_str}-{end_time_str}')
         self.dialog.exec_()  # blocks all other windows until this window is closed.
+
+    def close(self):
+        self.dialog.close()
+
+    def isHidden(self):
+        return self.dialog.isHidden()
+
+    def value(self):
+        if not self.isHidden():
+            return self.time_edit.value()
+
+    def text(self):
+        if not self.isHidden():
+            return self.time_edit.text()
+        

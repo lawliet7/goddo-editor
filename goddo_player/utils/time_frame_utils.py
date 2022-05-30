@@ -1,3 +1,4 @@
+import re
 import time
 
 
@@ -87,3 +88,6 @@ def time_str_to_frames(time_str: str, fps, last_component_type='frames'):
         last_component_total_frames = ms / 1000 * fps
 
     return int(round(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames))
+
+def is_time_label(text):
+    return re.match('^[0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9][0-9]$', text)

@@ -115,7 +115,7 @@ def list_widget_to_test_drag_and_drop(show=True):
 def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10):
     itr = int(math.ceil(timeout_secs / check_interval_secs))
 
-    for i in range(itr):
+    for _ in range(itr):
         ret_val = func()
         logging.info(f'got val {ret_val}')
         if ret_val:
@@ -360,12 +360,14 @@ def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_fra
     pyautogui.typewrite(time_label[-2:])
 
     if should_go_to_frame:
+        frame_no = pw_window.dialog.value() #pw_window.dialog.value() if active_prev_window == app_thread.mon.preview_window else pw_window.dialog.value()
         pyautogui.press('enter')
+        # time.sleep(0.5)
+        # logging.info(f'=== compare {pw_state.current_frame_no} == {frame_no}')
 
-        frame_no = pw_window.time_edit.value() if active_prev_window == app_thread.mon.preview_window else pw_window.time_edit.value() + app_thread.mon.state.preview_window_output.cur_start_frame
         wait_until(lambda: pw_state.current_frame_no == frame_no)
     else:
-        wait_until(lambda: pw_window.time_edit.text() == time_label)
+        wait_until(lambda: pw_window.dialog.text() == time_label)
 
 def drop_cur_to_timeline(windows_container):
     preview_window = windows_container.preview_window

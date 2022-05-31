@@ -21,11 +21,14 @@ class TimeInFramesEdit(QSpinBox):
         self._min_right = self._hour_right + self.fontMetrics().width("00:")
         self._sec_right = self._min_right + self.fontMetrics().width("00.")
 
+        self.is_valid = True
+
     def reset(self, fps, current_frame, min_frame, max_frame):
         self._fps = fps
         self.setMinimum(min_frame)
         self.setMaximum(max_frame)
         self.setValue(current_frame)
+        self.is_valid = True
 
     def valueFromText(self, text: str) -> int:
         hours, mins, secs, frames = time_str_to_components(text)
@@ -42,14 +45,36 @@ class TimeInFramesEdit(QSpinBox):
             return "0:00:00.00"
 
     def validate(self, input: str, pos: int) -> typing.Tuple[QValidator.State, str, int]:
-        if re.match('^[0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9][0-9]$', input):
-            logging.debug('validate success')
-            return QValidator.Acceptable, input, pos
+        good_style_sheet = 'background-color: white;'
+        fail_style_sheet = 'background-color: rgba(255,0,0,0.5);'
+
+        if re.match('^[0-9]:[0-5][0-9]:[0-5][0-9]\\.[0-9][0-9]$', input):
+            fps_section = int(input[-2:])
+            logging.info(f'=== validate fps {fps_section} - {int(round(self._fps))}')
+            if fps_section >= int(round(self._fps)):
+                logging.info('validate failed')
+                self.setStyleSheet(fail_style_sheet)
+                self.is_valid = False
+                return QValidator.Intermediate, input, pos
+            elif self.minimum() > self.valueFromText(input) or self.maximum() < self.valueFromText(input):
+                logging.info('validate intermediate')
+                self.setStyleSheet(fail_style_sheet)
+                self.is_valid = False
+                return QValidator.Intermediate, input, pos
+            else:
+                logging.info(f'validate success {input}')
+                self.setStyleSheet(good_style_sheet)
+                self.is_valid = True
+                return QValidator.Acceptable, input, pos
         elif re.match('^[0-9]?:[0-9]{0,2}:[0-9]{0,2}\\.[0-9]{0,2}$', input):
-            logging.debug('validate intermediate')
+            logging.info('validate intermediate')
+            self.setStyleSheet(fail_style_sheet)
+            self.is_valid = False
             return QValidator.Intermediate, input, pos
         else:
-            logging.debug('validate failed')
+            logging.info('validate failed')
+            self.setStyleSheet(fail_style_sheet)
+            self.is_valid = False
             return QValidator.Invalid, input, pos
 
     def wheelEvent(self, event: QWheelEvent):
@@ -101,5 +126,8 @@ class TimeInFramesEdit(QSpinBox):
                 self.setValue(self.value() + offset)
             else:
                 self.setValue(self.value() - offset)
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            if self.is_valid:
+                super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)

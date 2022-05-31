@@ -209,7 +209,7 @@ class MonarchSystem(QObject):
             self.sender().play_cmd_slot.emit(PlayCommand.PLAY)
 
     def __on_add_timeline_clip(self, clip: VideoClip, idx: int):
-        logging.info(f'monarch on add timeline clip for idx {idx}')
+        logging.debug(f'monarch on add timeline clip for idx {idx}')
 
         if idx == -1 or idx == len(self.state.timeline.clips):
             self.state.timeline.clips.append(clip)

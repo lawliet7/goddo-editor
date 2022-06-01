@@ -628,3 +628,8 @@ def get_assert_timeline_fn(expected_timeline_clips: List[Tuple[VideoClip,int]], 
             x = x + clip_width
 
     return fn1
+
+def assert_go_to_frame_dialog(preview_window, fps, start, end):
+    assert preview_window.dialog.dialog_fps_text.text() == f'fps:   {round(fps,3)}'
+    assert preview_window.dialog.dialog_start_text.text() == f'start: {start}'
+    assert preview_window.dialog.dialog_end_text.text() == f'end:  {end}'

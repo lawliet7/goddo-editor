@@ -73,8 +73,6 @@ class TimeInFramesEdit(QSpinBox):
             return QValidator.Intermediate, input, pos
         else:
             logging.info('validate failed')
-            self.setStyleSheet(fail_style_sheet)
-            self.is_valid = False
             return QValidator.Invalid, input, pos
 
     def wheelEvent(self, event: QWheelEvent):

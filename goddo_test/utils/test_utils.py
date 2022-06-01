@@ -412,3 +412,7 @@ def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
     wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+
+def select_line_edit_text(line_edit, start_pos, num_of_chars_to_select):
+    line_edit.setSelection(start_pos, num_of_chars_to_select)
+    wait_until(lambda: line_edit.hasSelectedText())

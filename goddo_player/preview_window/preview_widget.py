@@ -54,7 +54,7 @@ class PreviewWidgetNew(QWidget):
         return self.cap.get(cv2.CAP_PROP_FPS) if self.cap else 0
 
     def get_total_frames(self):
-        return self.cap.get(cv2.CAP_PROP_FRAME_COUNT) if self.cap else 0
+        return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)) if self.cap else 0
 
     def switch_video(self, video_path: VideoPath):
         if not video_path.is_empty():

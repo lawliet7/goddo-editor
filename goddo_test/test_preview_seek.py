@@ -16,10 +16,10 @@ from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
 from goddo_test.utils.qt_app_thread import QtAppThread
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_cur_to_timeline, drop_video_on_file_list, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, get_video_clip_for_1hr_vid, go_to_prev_wind_slider, save_screenshot, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_cur_to_timeline, drop_video_on_file_list, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, get_video_clip_for_1hr_vid, go_to_prev_wind_slider, save_screenshot, select_line_edit_text, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
-def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: WindowsContainer, blank_state):
+def test_preview_go_to_dialog_neg_testcases(app_thread, windows_container: WindowsContainer, blank_state):
     # test nothing happens if we push g without video loaded
     pyautogui.click(*get_center_pos_of_widget(windows_container.preview_window))
     wait_until(lambda: windows_container.preview_window.isActiveWindow())
@@ -33,6 +33,97 @@ def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: Windo
     pyautogui.press('g')
     wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
 
+    time_edit = windows_container.preview_window.dialog.time_edit
+    line_edit = time_edit.lineEdit()
+
+    pyautogui.press('home')
+    select_line_edit_text(line_edit,0,1)
+    pyautogui.press('9')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('backspace')
+    pyautogui.press('1')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('backspace')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('0')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('right')
+    select_line_edit_text(line_edit,2,1)
+    wait_until(lambda: line_edit.hasSelectedText())
+    pyautogui.press('9')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('backspace')
+    pyautogui.press('0')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('delete')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+    pyautogui.press('9')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('right')
+    select_line_edit_text(line_edit,5,1)
+    pyautogui.press('9')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('backspace')
+    pyautogui.press('0')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('delete')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+    pyautogui.press('9')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    pyautogui.press('right')
+    select_line_edit_text(line_edit,8,1)
+    pyautogui.press('1')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('backspace')
+    pyautogui.press('0')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+
+    select_line_edit_text(line_edit,9,1)
+    pyautogui.press('4')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);')
+
+    pyautogui.press('enter')
+    time.sleep(0.5)
+    wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
+
+    pyautogui.press('backspace')
+    pyautogui.press('3')
+    wait_until(lambda: time_edit.styleSheet() == 'background-color: white;')
+    
+    expected_cur_frame_no = 4 * 60 * 9 + 4 * 9 + 3
+
+    pyautogui.press('enter')
+    wait_until(lambda: windows_container.preview_window.dialog.isHidden())
+    assert app_thread.mon.state.preview_window.current_frame_no == expected_cur_frame_no
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_1hr_file_fn(slider_range=(0.145, 0.155), current_frame_no=expected_cur_frame_no),
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+
+def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    pyautogui.press('g')
+    wait_until(lambda: not windows_container.preview_window.dialog.isHidden())
+
+    assert_go_to_frame_dialog(windows_container.preview_window, 4.0, '0:00:00.01', '1:00:00.02')
+    assert windows_container.preview_window.dialog.time_edit.styleSheet() == 'background-color: white;'
+
     assert windows_container.preview_window.dialog.value() == app_thread.mon.state.preview_window.current_frame_no
 
     # test letters are ignored
@@ -43,9 +134,11 @@ def test_preview_go_to_dialog_with_keyboard(app_thread, windows_container: Windo
     pyautogui.press('end')
     pyautogui.press('backspace')
     pyautogui.press('backspace')
+    assert windows_container.preview_window.dialog.time_edit.styleSheet() == 'background-color: rgba(255,0,0,0.5);'
     pyautogui.press('0')
     pyautogui.press('1')
     wait_until(lambda: windows_container.preview_window.dialog.text() == '0:00:00.01')
+    assert windows_container.preview_window.dialog.time_edit.styleSheet() == 'background-color: white;'
 
     # test min is frame 1
     pyautogui.press('home')

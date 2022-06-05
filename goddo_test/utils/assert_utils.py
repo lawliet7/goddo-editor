@@ -375,12 +375,26 @@ def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_d
     assert len(win_state_dict['timeline_window']['clip_rects']) == 0
 
 def parse_preview_window_label(label_text: str, window_name: str):
+    clean_label_text = label_text
+    if '<span' in clean_label_text:
+        idx1 = clean_label_text.find('<span')
+        idx2 = clean_label_text.find('>', idx1)
+
+        clean_label_text = clean_label_text[:idx1] + clean_label_text[idx2+1:]
+
+    if '</span>' in clean_label_text:
+        idx1 = clean_label_text.find('</span>')
+        clean_label_text = clean_label_text[:idx1] + clean_label_text[idx1+7:]
+
+    logging.info(f'label parsed {clean_label_text}')
+
     if window_name == WINDOW_NAME_OUTPUT:
-        cur_abs_time, _, tmp_rel_total_time, speed, skip, restrict = [x for x in label_text.split(' ') if x.strip() != '']
+        logging.info(f'=== label {clean_label_text}')
+        cur_abs_time, _, tmp_rel_total_time, speed, skip, restrict = [x for x in clean_label_text.split(' ') if x.strip() != '']
         cur_rel_time, total_time = tmp_rel_total_time.split('/')
         return cur_abs_time, cur_rel_time, total_time, speed, skip, restrict
     elif window_name == WINDOW_NAME_SOURCE:
-        tmp_rel_total_time, speed, skip = [x for x in label_text.split(' ') if x.strip() != '']
+        tmp_rel_total_time, speed, skip = [x for x in clean_label_text.split(' ') if x.strip() != '']
         cur_abs_time, total_time = tmp_rel_total_time.split('/')
         return cur_abs_time, '', total_time, speed, skip, ''
     else:
@@ -417,8 +431,8 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             defaulted_restrict_label = f'restrict={defaulted_restrict_frame_interval}' if restrict_label is None else restrict_label
             clip_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
             cur_total_frames = clip_total_frames + extra_frames_left + extra_frames_right
-            cur_start_frame = (clip.frame_in_out.in_frame or 1) - extra_frames_left
-            cur_end_frame = (clip.frame_in_out.out_frame or clip.total_frames) + extra_frames_right
+            cur_start_frame = clip.frame_in_out.get_resolved_in_frame() - extra_frames_left
+            cur_end_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) + extra_frames_right
             expected_total_time_label = clip.get_total_time_str(clip_total_frames)
         else:
             geometry_dict = {
@@ -451,9 +465,11 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             assert resolved_state_dict['current_frame_no'] == current_frame_no
             assert cur_abs_frames_in_time_label == current_frame_no
         else:
-            assert int(clip.total_frames * slider_range[0]) <= resolved_state_dict['current_frame_no'] <= int(clip.total_frames * slider_range[1])
-            assert int(clip.total_frames * slider_range[0]) <= cur_abs_frames_in_time_label <= int(clip.total_frames * slider_range[1])
-            
+            from_slider_value = int(resolved_state_dict['cur_total_frames'] * slider_range[0] + resolved_state_dict['cur_start_frame'] - 1)
+            to_slider_value = int(resolved_state_dict['cur_total_frames'] * slider_range[1] + resolved_state_dict['cur_start_frame'] - 1)
+            logging.debug(f"=== cur {resolved_state_dict['current_frame_no']} start {resolved_state_dict['cur_start_frame']} total {resolved_state_dict['cur_total_frames']} range {slider_range}")
+            assert from_slider_value <= resolved_state_dict['current_frame_no'] <= to_slider_value
+            assert from_slider_value <= cur_abs_frames_in_time_label <= to_slider_value
 
         assert resolved_state_dict['is_max_speed'] == is_max_speed
         assert resolved_state_dict['cur_total_frames'] == cur_total_frames
@@ -476,6 +492,9 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
         if is_output_window:
             cur_rel_frames_in_time_label = time_str_to_frames(cur_rel_time_label, clip.fps)
             assert cur_abs_frames_in_time_label == (cur_rel_frames_in_time_label + clip.frame_in_out.get_resolved_in_frame())
+
+            if current_frame_no < clip.frame_in_out.get_resolved_in_frame():
+                assert cur_rel_frames_in_time_label < 0
 
         slider_max = preview_window.slider.maximum()
         assert resolved_win_state_dict['slider']['isEnabled'] == True

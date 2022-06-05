@@ -72,6 +72,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.switch_speed_slot.connect(self.__on_switch_speed)
         self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip)
         self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip)
+        self.signals.preview_window_output.switch_restrict_frame_slot.connect(self.__on_switch_restrict_frame_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip)
         self.signals.timeline_update_width_of_one_min_slot.connect(self.__on_timeline_update_width_of_one_min)
         self.signals.timeline_clip_double_click_slot.connect(self.__on_timeline_clip_double_click)
@@ -80,6 +81,10 @@ class MonarchSystem(QObject):
         self.signals.timeline_set_clipboard_clip_slot.connect(self.__on_timeline_set_clipboard_clip)
         self.signals.timeline_clear_clipboard_clip_slot.connect(self.__on_timeline_clear_clipboard_clip)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
+
+    def __on_switch_restrict_frame_slot(self):
+        self.state.preview_window_output.restrict_frame_interval = not self.state.preview_window_output.restrict_frame_interval
+        self.preview_window_output.update()
 
     def __on_timeline_set_clipboard_clip(self, clip):
         self.state.timeline.clipboard_clip = clip
@@ -306,14 +311,6 @@ class MonarchSystem(QObject):
             pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_path'])), frame_in_out)
             logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
 
-            # frame_in_out_dict = prev_wind_dict['frame_in_out']
-
-            # if frame_in_out_dict.get('in_frame'):
-                # pw_signals.in_frame_slot.emit(frame_in_out_dict['in_frame'])
-
-            # if frame_in_out_dict.get('out_frame'):
-                # pw_signals.out_frame_slot.emit(frame_in_out_dict['out_frame'])
-
             if prev_wind_dict['current_frame_no'] > 0:
                 pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
             else:
@@ -337,6 +334,9 @@ class MonarchSystem(QObject):
             pw_signals = StateStoreSignals().preview_window_output
 
             if self.state.timeline.opened_clip_index > -1:
+
+                if not prev_wind_out_dict['restrict_frame_interval']:
+                    pw_signals.switch_restrict_frame_slot.emit()
 
                 if prev_wind_out_dict['current_frame_no'] > 0:
                     pw_signals.seek_slot.emit(prev_wind_out_dict['current_frame_no'], PositionType.ABSOLUTE)

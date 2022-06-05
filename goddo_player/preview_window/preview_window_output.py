@@ -242,8 +242,7 @@ class PreviewWindowOutput(QWidget):
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.signals.preview_window_output.update_skip_slot.emit(IncDec.DEC)
         elif event.key() == Qt.Key_F:
-            self.state.preview_window_output.restrict_frame_interval = not self.state.preview_window_output.restrict_frame_interval
-            self.update()
+            self.signals.preview_window_output.switch_restrict_frame_slot.emit()
         elif event.key() == Qt.Key_G:
             if self.preview_widget.cap is not None:
                 self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)

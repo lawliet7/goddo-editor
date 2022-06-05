@@ -328,43 +328,48 @@ def get_current_method_name(levels=1):
         del cur_frame
 
 def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_frame: bool = True):
-    active_prev_window = QApplication.activeWindow()
+    active_window = QApplication.activeWindow()
 
-    assert active_prev_window == app_thread.mon.preview_window or active_prev_window == app_thread.mon.preview_window_output
+    # assert active_prev_window == app_thread.mon.preview_window or active_prev_window == app_thread.mon.preview_window_output
 
-    if active_prev_window == app_thread.mon.preview_window:
+    if active_window == app_thread.mon.preview_window:
         pw_state = app_thread.mon.state.preview_window
         pw_window = app_thread.mon.preview_window
-    else:
+
+        pyautogui.press('g')
+        wait_until(lambda: not pw_window.dialog.isHidden())
+
+    elif active_window == app_thread.mon.preview_window_output:
         pw_state = app_thread.mon.state.preview_window_output
         pw_window = app_thread.mon.preview_window_output
-    
 
-    pyautogui.press('g')
-    wait_until(lambda: not pw_window.dialog.isHidden())
-    pyautogui.press('home')
-    pyautogui.press('delete')
-    logging.info(f'=== write 1 {time_label[0]}')
-    pyautogui.typewrite(time_label[0])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[2:4])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[5:7])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[-2:])
+        pyautogui.press('g')
+        wait_until(lambda: not pw_window.dialog.isHidden())
+
+    elif active_window == app_thread.mon.preview_window.dialog.dialog:
+        pw_state = app_thread.mon.state.preview_window
+        pw_window = app_thread.mon.preview_window
+    elif active_window == app_thread.mon.preview_window_output.dialog.dialog:
+        pw_state = app_thread.mon.state.preview_window_output
+        pw_window = app_thread.mon.preview_window_output
+    else:
+        assert False, f'window is not a preview window or its dialog box.  it is {active_window}'
+    
+    line_edit = pw_window.dialog.time_edit.lineEdit()
+
+    time_edit_text = pw_window.dialog.text()
+    for i in [0,2,3,5,6,8,9]:
+        if time_edit_text[i] != time_label[i]:
+            line_edit.setSelection(i,1)
+            pyautogui.typewrite(time_label[i])
+            wait_until(lambda: pw_window.dialog.text()[i] == time_label[i])
+            time.sleep(0.2) # sometimes it doesn't work so putting a small wait here to see if it helps
 
     if should_go_to_frame:
-        frame_no = pw_window.dialog.value() #pw_window.dialog.value() if active_prev_window == app_thread.mon.preview_window else pw_window.dialog.value()
+        frame_no = pw_window.dialog.value()
         pyautogui.press('enter')
-        # time.sleep(0.5)
-        # logging.info(f'=== compare {pw_state.current_frame_no} == {frame_no}')
 
+        wait_until(lambda: pw_window.dialog.isHidden())
         wait_until(lambda: pw_state.current_frame_no == frame_no)
     else:
         wait_until(lambda: pw_window.dialog.text() == time_label)
@@ -412,6 +417,8 @@ def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
     wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+
+    press_space_to_pause(windows_container.output_window)
 
 def select_line_edit_text(line_edit, start_pos, num_of_chars_to_select):
     line_edit.setSelection(start_pos, num_of_chars_to_select)

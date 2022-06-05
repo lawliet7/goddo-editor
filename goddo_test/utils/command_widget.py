@@ -100,12 +100,12 @@ class CommandWidget(QWidget):
 
     def _reset(self):
         logging.info('resetting windows')
+        self._monarch.preview_window.dialog.close()
+        self._monarch.preview_window_output.dialog.close()
+
         self._max_widget.reset_widget()
 
         self.dnd_widget.reset_widget()
-
-        self._monarch.preview_window.dialog.close()
-        self._monarch.preview_window_output.dialog.close()
 
         self._reset_all_win_geometry()
 

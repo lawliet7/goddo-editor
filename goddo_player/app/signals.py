@@ -31,6 +31,7 @@ class PreviewWindowSignals(QObject):
     seek_slot = pyqtSignal(int, PositionType)
     update_file_details_slot = pyqtSignal(float, int)
     update_skip_slot = pyqtSignal(IncDec)
+    switch_restrict_frame_slot = pyqtSignal()
     reset_slot = pyqtSignal()
 
     def __repr__(self):

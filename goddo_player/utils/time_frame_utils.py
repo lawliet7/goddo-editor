@@ -63,14 +63,17 @@ def build_time_ms_str_least_chars(hours=0, mins=0, secs=0, ms=0):
 
 
 # hours, mins, secs, frames
+# leading - is ignored as it makes no sense in terms of splitting to components
 def time_str_to_components(time_str: str):
-    idx_of_1st_colon = time_str.index(':')
-    idx_of_2nd_colon = time_str.index(':', idx_of_1st_colon+1)
-    idx_of_last_dot = time_str.rindex('.')
-    hours = int(time_str[:idx_of_1st_colon])
-    mins = int(time_str[idx_of_1st_colon+1:idx_of_2nd_colon])
-    secs = int(time_str[idx_of_2nd_colon+1:idx_of_last_dot])
-    frames = int(time_str[idx_of_last_dot+1:])
+    cleaned_time_str = time_str if time_str[0] != '-' else time_str[1:]
+
+    idx_of_1st_colon = cleaned_time_str.index(':')
+    idx_of_2nd_colon = cleaned_time_str.index(':', idx_of_1st_colon+1)
+    idx_of_last_dot = cleaned_time_str.rindex('.')
+    hours = int(cleaned_time_str[:idx_of_1st_colon])
+    mins = int(cleaned_time_str[idx_of_1st_colon+1:idx_of_2nd_colon])
+    secs = int(cleaned_time_str[idx_of_2nd_colon+1:idx_of_last_dot])
+    frames = int(cleaned_time_str[idx_of_last_dot+1:])
     return hours, mins, secs, frames
 
 # last component_type is either frames or ms
@@ -87,7 +90,8 @@ def time_str_to_frames(time_str: str, fps, last_component_type='frames'):
             raise Exception(f"Please pass correct fps in, we cannot divide by {fps}")
         last_component_total_frames = ms / 1000 * fps
 
-    return int(round(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames))
+    total_frames = int(round(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames))
+    return total_frames if time_str[0] != '-' else -total_frames
 
 def is_time_label(text):
     return re.match('^[0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9][0-9]$', text)

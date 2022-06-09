@@ -376,9 +376,14 @@ def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_d
 
 def parse_preview_window_label(label_text: str, window_name: str):
     clean_label_text = label_text
+    time_color = ''
     if '<span' in clean_label_text:
         idx1 = clean_label_text.find('<span')
         idx2 = clean_label_text.find('>', idx1)
+
+        idx3 = clean_label_text.find(':', idx1)
+        idx4 = clean_label_text.find(';', idx3)
+        time_color = clean_label_text[idx3+1:idx4]
 
         clean_label_text = clean_label_text[:idx1] + clean_label_text[idx2+1:]
 
@@ -392,11 +397,11 @@ def parse_preview_window_label(label_text: str, window_name: str):
         logging.info(f'=== label {clean_label_text}')
         cur_abs_time, _, tmp_rel_total_time, speed, skip, restrict = [x for x in clean_label_text.split(' ') if x.strip() != '']
         cur_rel_time, total_time = tmp_rel_total_time.split('/')
-        return cur_abs_time, cur_rel_time, total_time, speed, skip, restrict
+        return cur_abs_time, cur_rel_time, total_time, speed, skip, restrict, time_color
     elif window_name == WINDOW_NAME_SOURCE:
         tmp_rel_total_time, speed, skip = [x for x in clean_label_text.split(' ') if x.strip() != '']
         cur_abs_time, total_time = tmp_rel_total_time.split('/')
-        return cur_abs_time, '', total_time, speed, skip, ''
+        return cur_abs_time, '', total_time, speed, skip, '', time_color
     else:
         raise Exception(f'unhandled window {window_name}')
 
@@ -426,7 +431,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             resolved_state_dict = state_dict['preview_window_output']
             resolved_win_state_dict = win_state_dict['output_window']
             preview_window = windows_container.output_window
-            cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label = \
+            cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label, time_color = \
                 parse_preview_window_label(resolved_win_state_dict['label'], WINDOW_NAME_OUTPUT)
             defaulted_restrict_label = f'restrict={defaulted_restrict_frame_interval}' if restrict_label is None else restrict_label
             clip_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
@@ -445,7 +450,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             resolved_state_dict = state_dict['preview_window']
             resolved_win_state_dict = win_state_dict['preview_window']
             preview_window = windows_container.preview_window
-            cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label = \
+            cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label, time_color = \
                 parse_preview_window_label(resolved_win_state_dict['label'], WINDOW_NAME_SOURCE)
             defaulted_restrict_label = '' if restrict_label is None else restrict_label
             cur_total_frames = clip.total_frames
@@ -491,10 +496,17 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
 
         if is_output_window:
             cur_rel_frames_in_time_label = time_str_to_frames(cur_rel_time_label, clip.fps)
+            cur_total_frames_in_time_label = time_str_to_frames(total_time_label, clip.fps)
             assert cur_abs_frames_in_time_label == (cur_rel_frames_in_time_label + clip.frame_in_out.get_resolved_in_frame())
 
-            if current_frame_no < clip.frame_in_out.get_resolved_in_frame():
+            if resolved_state_dict['current_frame_no'] < clip.frame_in_out.get_resolved_in_frame():
                 assert cur_rel_frames_in_time_label < 0
+                assert time_color == 'blue'
+            if resolved_state_dict['current_frame_no'] > clip.frame_in_out.get_resolved_out_frame(clip.total_frames):
+                assert cur_rel_frames_in_time_label > cur_total_frames_in_time_label
+                assert time_color == 'blue'
+        else:
+            assert time_color == ''
 
         slider_max = preview_window.slider.maximum()
         assert resolved_win_state_dict['slider']['isEnabled'] == True

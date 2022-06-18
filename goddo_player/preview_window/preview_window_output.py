@@ -98,7 +98,7 @@ class PreviewWindowOutput(QWidget):
             cur_frame_no = self.preview_widget.get_cur_frame_no()
             frame_in_out = self.get_preview_window_state().frame_in_out
             in_frame = frame_in_out.get_resolved_in_frame()
-            clip_total_frames = frame_in_out.get_no_of_frames(self.get_preview_window_state().total_frames)
+            clip_total_frames = frame_in_out.get_no_of_frames(self.get_preview_window_state().total_frames) - 1
 
             highlight_text_color = 'blue'
             fps = self.get_preview_window_state().fps

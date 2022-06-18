@@ -406,7 +406,7 @@ def parse_preview_window_label(label_text: str, window_name: str):
         raise Exception(f'unhandled window {window_name}')
 
 def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_frame_no=None, is_max_speed=False, extra_frames_left=0, extra_frames_right=0,
-                          restrict_frame_interval=None, restrict_label=None, time_skip_label="5s", is_output_window=False, expected_color=95.5):
+                          restrict_frame_interval=None, time_skip_label="5s", is_output_window=False, expected_color=95.5):
     if 'm' in time_skip_label:
         idx_of_m = time_skip_label.index("m")
         mins = int(time_skip_label[:idx_of_m])
@@ -433,7 +433,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             preview_window = windows_container.output_window
             cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label, time_color = \
                 parse_preview_window_label(resolved_win_state_dict['label'], WINDOW_NAME_OUTPUT)
-            defaulted_restrict_label = f'restrict={defaulted_restrict_frame_interval}' if restrict_label is None else restrict_label
+            defaulted_restrict_label = f'restrict={defaulted_restrict_frame_interval if restrict_frame_interval is None else restrict_frame_interval}'
             clip_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
             cur_total_frames = clip_total_frames + extra_frames_left + extra_frames_right
             cur_start_frame = clip.frame_in_out.get_resolved_in_frame() - extra_frames_left
@@ -489,6 +489,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
         max_speed_label = "max" if is_max_speed else "normal"
         assert speed_label.strip() == f'speed={max_speed_label}'
         assert skip_label.strip() == f'skip={time_skip_label}'
+        logging.info(f'=== restrict label {restrict_label.strip()} test restrict label {defaulted_restrict_label}')
         assert restrict_label.strip() == defaulted_restrict_label
 
         # cur_time_label, total_time_label = a_time_label.split('/')

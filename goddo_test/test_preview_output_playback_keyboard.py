@@ -39,6 +39,26 @@ def test_restricted_keyboard_move_to_in_frame(app_thread, windows_container: Win
                 get_assert_preview_fn(clip, slider_range=(0.12, 0.13), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
+def test_restricted_keyboard_move_left_and_cap_at_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+
+    expected_in_frame = 4 * 60 * 1
+    expected_out_frame = 4 * 60 * 2
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:00.03')
+
+    pyautogui.press('left')
+    wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_in_frame)
+
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(clip,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(clip, slider_range=(0.12, 0.13), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+
 def test_restricted_keyboard_try_to_move_to_before_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
     open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
 
@@ -416,6 +436,30 @@ def test_unrestricted_keyboard_move_left_to_in_frame(app_thread, windows_contain
                 get_assert_preview_fn(clip, slider_range=(0.12, 0.13), current_frame_no=expected_in_frame, is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
+def test_unrestricted_keyboard_move_left_and_skip_pass_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+
+    pyautogui.press('f')
+    wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
+
+    expected_in_frame = 4 * 60 * 1
+    expected_out_frame = 4 * 60 * 2
+    expected_cur_frame = 4 * 59 + 2
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:00.03')
+
+    pyautogui.press('left')
+    wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_cur_frame)
+
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(clip,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(clip, slider_range=(0.11, 0.12), current_frame_no=expected_cur_frame, is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+
 def test_unrestricted_keyboard_from_in_frame_move_left(app_thread, windows_container: WindowsContainer, blank_state):
     open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
 
@@ -570,6 +614,30 @@ def test_unrestricted_keyboard_move_left_to_out_frame(app_thread, windows_contai
                 get_assert_preview_fn(clip, slider_range=(0.87, 0.88), current_frame_no=expected_out_frame, is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
+def test_unrestricted_keyboard_move_left_and_skip_pass_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+
+    pyautogui.press('f')
+    wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
+
+    expected_in_frame = 4 * 60 * 1
+    expected_out_frame = 4 * 60 * 2
+    expected_cur_frame = 4 * 119 + 2
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:02:00.03')
+
+    pyautogui.press('left')
+    wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_cur_frame)
+
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(clip,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(clip, slider_range=(0.86, 0.87), current_frame_no=expected_cur_frame, is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+
 def test_unrestricted_keyboard_from_out_frame_move_left(app_thread, windows_container: WindowsContainer, blank_state):
     open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
 
@@ -702,98 +770,4 @@ def test_unrestricted_keyboard_try_to_move_pass_end_frame(app_thread, windows_co
                 get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
                 get_assert_preview_fn(clip, slider_range=(0.99, 1), current_frame_no=expected_end_frame, is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
-
-
-# def test_unrestricted_move_with_keyboard(app_thread, windows_container: WindowsContainer, blank_state):
-#     open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
-
-#     pyautogui.press('f')
-#     wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
-
-#     expected_start_frame = 4 * 50
-#     expected_in_frame = 4 * 60 * 1
-#     expected_out_frame = 4 * 60 * 2
-#     expected_end_frame = 4 * (60 * 2 + 10)
-
-#     #   move to start frame, 
-#     enter_time_in_go_to_dialog_box(app_thread, '0:00:50.01')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_start_frame)
-
-#     #   try move to before start frame
-#     pyautogui.press('left')
-#     time.sleep(0.5)
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_start_frame)
-    
-#     #   from start frame move right
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_start_frame + 1)
-
-#     #   in between start and in frame, move left and right 
-#     enter_time_in_go_to_dialog_box(app_thread, '0:00:55.00')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 55 - 5)
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 55 - 4)
-
-#     #   go back and forth on in frame
-#     enter_time_in_go_to_dialog_box(app_thread, '0:01:01.00')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60 - 1)
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60)
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60 + 1)
-#     enter_time_in_go_to_dialog_box(app_thread, '0:01:00.00')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 60 - 5)
-
-#     #   between in frame and out frame, move left and right
-#     enter_time_in_go_to_dialog_box(app_thread, '0:01:30.00')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 90 - 5)
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 90 - 4)
-
-#     #   go back and forth on out frame
-#     enter_time_in_go_to_dialog_box(app_thread, '0:01:59.03')
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame)
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame + 1)
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame - 4)
-#     enter_time_in_go_to_dialog_box(app_thread, '0:02:00.00')
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame - 5)
-
-#     #   in between out frame and end frame, move left and right 
-#     enter_time_in_go_to_dialog_box(app_thread, '0:02:05.00')
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 125 + 1)
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == 4 * 125 - 4)
-
-#     #   move to end frame, 
-#     enter_time_in_go_to_dialog_box(app_thread, '0:02:09.03')
-#     pyautogui.press('right')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_end_frame)
-
-#     pyautogui.press('right')
-#     time.sleep(0.5)
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_end_frame)
-
-#     pyautogui.press('left')
-#     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_end_frame - 5)
-
-#     expected_cur_frame = expected_end_frame - 5
-
-#     clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
-#     expected_timeline_clips = [(clip,120)]
-
-#     generic_assert(app_thread, windows_container, blank_state,
-#                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
-#                 get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
-#                 get_assert_preview_fn(clip, slider_range=(0.975, 0.985), current_frame_no=expected_cur_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
-#                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 

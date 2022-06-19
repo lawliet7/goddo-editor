@@ -515,7 +515,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
 
         slider_max = preview_window.slider.maximum()
         assert resolved_win_state_dict['slider']['isEnabled'] == True
-        assert slider_max * slider_range[0] <= resolved_win_state_dict['slider']['value'] <= slider_max * slider_range[1]
+        assert int(round(slider_max * slider_range[0])) <= resolved_win_state_dict['slider']['value'] <= int(round(slider_max * slider_range[1]))
 
         frame_pixmap = preview_window.preview_widget.frame_pixmap
         assert qimg_to_arr(frame_pixmap.toImage()).mean() != 0

@@ -39,7 +39,7 @@ def test_restricted_keyboard_move_to_in_frame(app_thread, windows_container: Win
                 get_assert_preview_fn(clip, slider_range=(0.12, 0.13), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
-def test_restricted_keyboard_move_left_and_cap_at_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+def test_restricted_keyboard_from_after_in_frame_try_to_move_pass_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
     open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
 
     expected_in_frame = 4 * 60 * 1

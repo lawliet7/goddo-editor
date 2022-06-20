@@ -22,7 +22,6 @@ class ClickSlider(QSlider):
         super().mousePressEvent(event)
         self.blockSignals(False)
         if event.button() == Qt.LeftButton:
-            logging.info(f'=== dath')
             val = self.pixel_pos_to_range_value(event.pos())
             self.setValue(val)
 

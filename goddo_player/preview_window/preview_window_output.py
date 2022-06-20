@@ -393,7 +393,8 @@ class FrameInOutSlider(ClickSlider):
         frame_no = int(round(pct * cur_total_frames)) + start_frame
         in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
         out_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(self.state.preview_window_output.total_frames)
-        if in_frame > frame_no:
-            self.setValue(int(round((in_frame - start_frame) / cur_total_frames * 200)))
-        elif out_frame < frame_no:
-            self.setValue(int(round((out_frame - start_frame) / cur_total_frames * 200)))
+        is_restricted = self.state.preview_window_output.restrict_frame_interval
+        if in_frame > frame_no and is_restricted:
+            self.setValue(int(round((in_frame - start_frame) / cur_total_frames * self.maximum())))
+        elif out_frame < frame_no and is_restricted:
+            self.setValue(int(round((out_frame - start_frame) / cur_total_frames * self.maximum())))

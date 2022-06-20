@@ -161,12 +161,15 @@ def get_video_clip_for_15m_vid(in_frame=None, out_frame=None):
 
 def click_on_prev_wind_slider(preview_window, pct: float, should_slider_value_change: bool=True):
     old_frame_no = preview_window.get_preview_window_state().current_frame_no
+    old_slider_value = preview_window.slider.value()
     
     go_to_prev_wind_slider(preview_window, pct)
     pyautogui.click()
 
     if should_slider_value_change:
         wait_until(lambda: old_frame_no != preview_window.get_preview_window_state().current_frame_no)
+        wait_until(lambda: old_slider_value != preview_window.slider.value())
+        logging.info(f'=== cur frame no inside {preview_window.get_preview_window_state().current_frame_no} old {old_frame_no}')
     else:
         time.sleep(0.5)
 

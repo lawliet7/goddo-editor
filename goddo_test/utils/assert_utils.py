@@ -473,6 +473,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
         else:
             from_slider_value = int(resolved_state_dict['cur_total_frames'] * slider_range[0] + resolved_state_dict['cur_start_frame'] - 1)
             to_slider_value = int(resolved_state_dict['cur_total_frames'] * slider_range[1] + resolved_state_dict['cur_start_frame'] - 1)
+            logging.info(f'=== from slider {from_slider_value} to slider {to_slider_value} cur frame {resolved_state_dict["current_frame_no"]}')
             logging.debug(f"=== cur {resolved_state_dict['current_frame_no']} start {resolved_state_dict['cur_start_frame']} total {resolved_state_dict['cur_total_frames']} range {slider_range}")
             assert from_slider_value <= resolved_state_dict['current_frame_no'] <= to_slider_value
             assert from_slider_value <= cur_abs_frames_in_time_label <= to_slider_value
@@ -500,9 +501,6 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             cur_rel_frames_in_time_label = time_str_to_frames(cur_rel_time_label, clip.fps)
             cur_total_frames_in_time_label = time_str_to_frames(total_time_label, clip.fps)
             assert cur_abs_frames_in_time_label == (cur_rel_frames_in_time_label + clip.frame_in_out.get_resolved_in_frame())
-
-            logging.info(f'cur_rel_time_label {cur_rel_time_label} total_time_label {total_time_label}')
-            logging.info(f'=== cur rel frames {cur_rel_frames_in_time_label} cur total frames {cur_total_frames_in_time_label} cur frame {resolved_state_dict["current_frame_no"]} resolve in frame {clip.frame_in_out.get_resolved_in_frame()} resolve out frame {clip.frame_in_out.get_resolved_out_frame(clip.total_frames)} clip total frames {clip.total_frames}')
 
             if resolved_state_dict['current_frame_no'] < clip.frame_in_out.get_resolved_in_frame():
                 assert cur_rel_frames_in_time_label < 0

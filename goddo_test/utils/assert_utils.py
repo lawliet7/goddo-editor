@@ -479,6 +479,7 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             assert from_slider_value <= cur_abs_frames_in_time_label <= to_slider_value
 
         assert resolved_state_dict['is_max_speed'] == is_max_speed
+        logging.info(f'=== resolved {resolved_state_dict}')
         assert resolved_state_dict['cur_total_frames'] == cur_total_frames
         assert resolved_state_dict['time_skip_multiplier'] == time_skip_multiplier
         assert resolved_state_dict['cur_start_frame'] == cur_start_frame

@@ -329,6 +329,8 @@ class FrameInOutSlider(ClickSlider):
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
 
+        logging.info(f'=== painting')
+
         painter = QPainter()
         painter.begin(self)
 

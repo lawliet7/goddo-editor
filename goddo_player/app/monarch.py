@@ -411,6 +411,8 @@ class MonarchSystem(QObject):
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
+                self._update_preview_window_output_cur_frames(preview_window_state, opened_clip)
+
     def __on_preview_video_out_frame(self, pos: int):
         logging.info(f'update out frame to {pos}')
 
@@ -431,6 +433,25 @@ class MonarchSystem(QObject):
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
+
+                self._update_preview_window_output_cur_frames(preview_window_state, new_clip)
+
+    def _update_preview_window_output_cur_frames(self, preview_window_state, clip):
+        extra_frames_in_secs_config = self.state.app_config.extra_frames_in_secs_config
+        extra_frames_config = int(round(extra_frames_in_secs_config * preview_window_state.fps))
+        in_frame_in_secs = int(round(clip.frame_in_out.get_resolved_in_frame() / preview_window_state.fps)) if preview_window_state.fps > 0 else 0
+        leftover_frames = preview_window_state.total_frames - clip.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames)
+        leftover_frames_in_secs = int(round(leftover_frames / preview_window_state.fps))
+        extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else clip.frame_in_out.in_frame - 1
+        extra_frames_on_right = extra_frames_config if leftover_frames_in_secs > extra_frames_in_secs_config else leftover_frames
+        # preview_window_state.cur_total_frames = preview_window_state.frame_in_out.get_no_of_frames(preview_window_state.total_frames) + extra_frames_on_left + extra_frames_on_right
+        # preview_window_state.cur_start_frame = opened_clip.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+        # preview_window_state.cur_end_frame = opened_clip.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames) + extra_frames_on_right
+
+        preview_window_state.cur_start_frame = preview_window_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
+        preview_window_state.cur_end_frame = preview_window_state.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames) + extra_frames_on_right
+        preview_window_state.cur_total_frames = preview_window_state.cur_end_frame - preview_window_state.cur_start_frame + 1
+        self.preview_window_output.update()
 
     def __on_preview_window_play_cmd(self, play_cmd: PlayCommand):
         preview_window = self.get_preview_window_from_signal(self.sender())

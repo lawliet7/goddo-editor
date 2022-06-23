@@ -112,7 +112,7 @@ def list_widget_to_test_drag_and_drop(show=True):
     return list_widget
 
 
-def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10):
+def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10, error_msg_func=None):
     itr = int(math.ceil(timeout_secs / check_interval_secs))
 
     for _ in range(itr):
@@ -125,7 +125,7 @@ def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=1
             logging.info(f'still waiting')
             time.sleep(check_interval_secs)
 
-    raise Exception(f'wait timed out in {timeout_secs} secs')
+    raise Exception(f'wait timed out in {timeout_secs} secs, {error_msg_func() if error_msg_func else ""}')
 
 
 def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):

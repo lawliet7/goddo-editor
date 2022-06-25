@@ -587,19 +587,59 @@ def test_no_extra_frames_on_left(app_thread, windows_container: WindowsContainer
                 get_assert_preview_fn(prev_clip, slider_range=(0.00, 0.01), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=0, extra_frames_right=40), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
-# def test_not_enough_extra_frames_on_right(app_thread, windows_container: WindowsContainer, blank_state):
-#     open_clip_on_output_window(app_thread, windows_container, '0:58:55.00', '0:59:55.00', get_blank_1hr_vid_path())
+def test_not_enough_extra_frames_on_right(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:58:55.00', '0:59:55.00', get_blank_1hr_vid_path())
 
-#     enter_time_in_go_to_dialog_box(app_thread, '0:58:55.00')
+    enter_time_in_go_to_dialog_box(app_thread, '0:58:55.00')
 
-#     expected_in_frame = 4 * (58 * 60 + 55)
-#     expected_out_frame = 4 * (59 * 60 + 55)
+    expected_in_frame = 4 * (58 * 60 + 55)
+    expected_out_frame = 4 * (59 * 60 + 55)
 
-#     prev_clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
-#     expected_timeline_clips = [(prev_clip,120)]
+    prev_clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(prev_clip,120)]
 
-#     generic_assert(app_thread, windows_container, blank_state,
-#                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
-#                 get_assert_preview_fn(prev_clip, slider_range=(0.99, 1), current_frame_no=expected_out_frame),
-#                 get_assert_preview_fn(prev_clip, slider_range=(0.93, 0.94), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=22), 
-#                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(prev_clip, slider_range=(0.99, 1), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(prev_clip, slider_range=(0.13, 0.14), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=22), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+
+def test_no_extra_frames_on_right(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:59:00.02', '1:00:00.02', get_blank_1hr_vid_path())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:59:00.02')
+
+    expected_in_frame = 4 * 59 * 60 + 2
+    expected_out_frame = 4 * 60 * 60 + 2
+
+    prev_clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(prev_clip,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(prev_clip, slider_range=(0.99, 1), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(prev_clip, slider_range=(0.14, 0.15), current_frame_no=expected_in_frame, is_output_window=True, extra_frames_left=40, extra_frames_right=0), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
+
+def test_delete_clip(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:01:00.00')
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.click(x=pt.x() + 10 + 10, y=pt.y() + 68 + 10)
+    pyautogui.press('delete')
+    wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) == 0)
+    wait_until(lambda: windows_container.output_window.preview_widget.cap is None)
+
+    expected_in_frame = 4 * 60
+    expected_out_frame = 4 * 60 * 2
+
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
+                get_assert_preview_for_blank_file_fn(is_output_window=True),
+                assert_blank_timeline)

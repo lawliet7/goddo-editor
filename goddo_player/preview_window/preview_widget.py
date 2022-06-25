@@ -7,22 +7,21 @@ from PyQt5.QtCore import QRect, Qt, QTimer
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
-from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import StateStoreSignals, PlayCommand
-from goddo_player.app.state_store import StateStore
+from goddo_player.app.signals import PlayCommand, StateStoreSignals
+from goddo_player.utils.enums import PositionType
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
 
 
-class PreviewWidget(QWidget):
-    def __init__(self, on_update_fn, window_name):
+class PreviewWidgetNew(QWidget):
+    def __init__(self, pw_update_fn, pw_state, pw_signal):
         super().__init__()
 
-        self.on_update_cb = on_update_fn
-        self.state = StateStore()
-        self.window_name = window_name
+        self.pw_update_fn = pw_update_fn
+        self.pw_state = pw_state
+        self.pw_signal = pw_signal
         self.signals = StateStoreSignals()
 
         self.cap = None
@@ -34,70 +33,69 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
 
         self.frame_pixmap = None
-        self.restrict_frame_interval = True if window_name == WINDOW_NAME_OUTPUT else False
 
     def get_cur_frame_no(self):
         return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) if self.cap else 0
 
-    def get_next_frame(self, specific_frame=None):
-        if specific_frame:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, specific_frame)
+    def set_cap_pos(self, frame_no):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
 
+    def grab_next_frame(self, convert_to_pixmap=True):
         if self.cap.grab():
             flag, frame = self.cap.retrieve()
             if flag:
-                return frame
+                if convert_to_pixmap:
+                    scaled_frame = cv2.resize(frame, (self.width(), self.height()), interpolation=cv2.INTER_AREA)
+                    return numpy_to_pixmap(scaled_frame)
+                else:
+                    return frame
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        urls = event.mimeData().urls()
+    def get_fps(self):
+        return self.cap.get(cv2.CAP_PROP_FPS) if self.cap else 0
 
-        if len(urls) == 1:
-            filename = urls[0].fileName()
-            name, ext = os.path.splitext(filename)
-            if ext in PlayerConfigs.supported_video_exts:
-                event.accept()
-
-    def dropEvent(self, event: QDropEvent) -> None:
-        logging.info(f'drop {event.mimeData().urls()}')
-
-        video_path = VideoPath(event.mimeData().urls()[0])
-
-        preview_window_signals = self.signals.get_preview_window(self.window_name)
-        preview_window_signals.switch_video_slot.emit(video_path, True)
-        self.signals.add_file_slot.emit(video_path)
+    def get_total_frames(self):
+        return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)) if self.cap else 0
 
     def switch_video(self, video_path: VideoPath):
-        preview_window_signals = self.signals.get_preview_window(self.window_name)
-
         if not video_path.is_empty():
             self.cap = cv2.VideoCapture(video_path.str())
-
-            fps = self.cap.get(cv2.CAP_PROP_FPS)
-            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            preview_window_signals.update_file_details_slot.emit(fps, total_frames)
 
             if self.timer:
                 self.timer.stop()
                 self.timer.deleteLater()
 
             self.timer = QTimer(self)
-            self.timer.setInterval(fps_to_num_millis(fps))
+            self.timer.setInterval(fps_to_num_millis(self.get_fps()))
             self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-            self.timer.timeout.connect(self.update_frame_pixmap)
+            self.timer.timeout.connect(self.play_callback)
             # self.timer.start()
         else:
             self.cap = None
-            preview_window_signals.update_file_details_slot.emit(0, 0)
+            self.pw_signal.update_file_details_slot.emit(0, 0)
             self.frame_pixmap = None
 
             if self.timer:
                 self.timer.stop()
                 self.timer.deleteLater()
                 self.timer = None
+    
+    def play_callback(self):
+        cur_frame_no = self.get_cur_frame_no()
+        frame_no = self.go_to_frame(1, PositionType.RELATIVE)
+        logging.debug(f'callback {frame_no}')
+        
+        _, end_frame = self.get_start_and_end_frames()
+
+        # if cur_frame_no and frame_no is same then opencv is not able to advance to next frame 
+        # so mind as well pause to save on processing power
+        if frame_no == end_frame or cur_frame_no == frame_no:
+            logging.info(f'=== pausing since frame no {frame_no} has reach the end frame {end_frame}')
+            self.pw_signal.play_cmd_slot.emit(PlayCommand.PAUSE)
+
+        self.pw_update_fn()
 
     def switch_speed(self):
-        preview_window_state = self.state.get_preview_window(self.window_name)
-        speed = fps_to_num_millis(preview_window_state.fps) if preview_window_state.is_max_speed else 1
+        speed = fps_to_num_millis(self.pw_state.fps) if self.pw_state.is_max_speed else 1
         logging.info(f'switching speed from {self.timer.interval() if self.timer else 0} to {speed}')
 
         if self.timer:
@@ -107,52 +105,59 @@ class PreviewWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.setInterval(speed)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.timer.timeout.connect(self.update_frame_pixmap)
+        self.timer.timeout.connect(self.play_callback)
         # self.timer.start()
 
         return speed
 
     def get_start_and_end_frames(self):
-        preview_window_state = self.state.get_preview_window(self.window_name)
-        total_frames = preview_window_state.total_frames
-        in_frame = preview_window_state.frame_in_out.get_resolved_in_frame()
-        out_frame = preview_window_state.frame_in_out.get_resolved_out_frame(total_frames)
+        total_frames = self.pw_state.total_frames
+        in_frame = self.pw_state.frame_in_out.get_resolved_in_frame()
+        out_frame = self.pw_state.frame_in_out.get_resolved_out_frame(total_frames)
 
-        if self.restrict_frame_interval:
+        if self.pw_state.restrict_frame_interval:
             return in_frame, out_frame
         else:
-            return preview_window_state.cur_start_frame, preview_window_state.cur_end_frame
+            return self.pw_state.cur_start_frame, self.pw_state.cur_end_frame
 
-    def update_frame_pixmap(self, num_of_frames_to_advance=1):
+    def go_to_frame(self, frame_no: int, pos_type: PositionType):
         if self.cap:
-            to_frame = self.get_cur_frame_no() + num_of_frames_to_advance
+            cur_frame_no = self.get_cur_frame_no()
+            target_frame_no = frame_no if pos_type is PositionType.ABSOLUTE else cur_frame_no + frame_no
             start_frame, end_frame = self.get_start_and_end_frames()
-            logging.debug(f'to_frame={to_frame} start_frame={start_frame} end_frame={end_frame}')
+            # logging.debug(f'to_frame={target_frame_no} start_frame={start_frame} end_frame={end_frame}')
 
-            if num_of_frames_to_advance == 0 and self.frame_pixmap:
-                if self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height():
+            if cur_frame_no == target_frame_no or \
+                target_frame_no <= start_frame == cur_frame_no or \
+                    cur_frame_no == end_frame <= target_frame_no:
+                if self.frame_pixmap and (self.frame_pixmap.width() != self.width() or self.frame_pixmap.height() != self.height()):
                     self.frame_pixmap = self.frame_pixmap.scaled(self.width(), self.height())
-            elif to_frame < start_frame or to_frame > end_frame:
-                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
-            elif 0 < num_of_frames_to_advance <= 10:
-                logging.debug(f'num frames {num_of_frames_to_advance}')
-                frame = None
-                for i in range(num_of_frames_to_advance):
-                    logging.debug('advancing frame')
-                    frame = self.get_next_frame()
-                scaled_frame = cv2.resize(frame, (self.width(), self.height()),
-                                          interpolation=cv2.INTER_AREA)
-                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+            elif target_frame_no <= start_frame:
+                self.set_cap_pos(start_frame - 1)
+                self.frame_pixmap = self.grab_next_frame()
+            elif target_frame_no >= end_frame:
+                if 0 < (end_frame - cur_frame_no - 1) <= 10:
+                    for _ in range(end_frame - cur_frame_no - 1):
+                        self.grab_next_frame(convert_to_pixmap=False)
+                elif cur_frame_no != (end_frame - 1):
+                    self.set_cap_pos(end_frame - 1)
+                self.frame_pixmap = self.grab_next_frame()
+            elif 0 < (target_frame_no - cur_frame_no) <= 10:
+                for _ in range(target_frame_no - cur_frame_no - 1):
+                    self.grab_next_frame(convert_to_pixmap=False)
+                self.frame_pixmap = self.grab_next_frame()
             else:
-                target_frame_no = max(self.get_cur_frame_no() + num_of_frames_to_advance - 1, 0)
-                scaled_frame = cv2.resize(self.get_next_frame(target_frame_no), (self.width(), self.height()),
-                                          interpolation=cv2.INTER_AREA)
-                self.frame_pixmap = numpy_to_pixmap(scaled_frame)
+                if cur_frame_no != (end_frame - 1):
+                    self.set_cap_pos(target_frame_no - 1)
+                self.frame_pixmap = self.grab_next_frame()
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-            self.on_update_cb(cur_frame_no, self.frame_pixmap)
 
-        self.update()
+            self.update()
+
+            return cur_frame_no
+        else:
+            return 0
 
     def paintEvent(self, paint_event: QtGui.QPaintEvent) -> None:
         painter = QPainter()

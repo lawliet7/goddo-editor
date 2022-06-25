@@ -10,8 +10,9 @@ from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLay
                              QScrollArea, QInputDialog)
 
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import StateStoreSignals
+from goddo_player.app.signals import PlayCommand, StateStoreSignals
 from goddo_player.app.state_store import StateStore
+from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.message_box_utils import show_error_box
@@ -206,4 +207,5 @@ class ClipListWindow(BaseQWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.url}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.url, True)
+        self.signals.preview_window.switch_video_slot.emit(item_widget.url, FrameInOut())
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)

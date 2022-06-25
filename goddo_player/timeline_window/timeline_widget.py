@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QToolTip
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
-from goddo_player.app.state_store import StateStore, TimelineClip
+from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
 
@@ -36,7 +36,7 @@ class TimelineWidget(QWidget):
 
         self.setMouseTracking(True)
 
-    def calc_rect_for_clip(self, clip: TimelineClip, x=0):
+    def calc_rect_for_clip(self, clip: VideoClip, x=0):
         n_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
         n_mins = n_frames / clip.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
@@ -65,11 +65,11 @@ class TimelineWidget(QWidget):
             if rect.contains(event.pos()):
                 logging.info(f'double click {rect} clip at index {i}')
 
-                self.signals.timeline_clip_double_click_slot.emit(i, clip, rect)
+                self.signals.timeline_clip_double_click_slot.emit(i, clip)
 
                 return
 
-        self.signals.timeline_clip_double_click_slot.emit(-1, clip, rect)
+        self.signals.timeline_clip_double_click_slot.emit(-1, clip)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # super().mousePressEvent(event)
@@ -149,7 +149,7 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_path.file_name()
-            logging.info(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
+            logging.debug(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
             in_frame_ts = self.build_time_str(in_frame, clip.fps)
             out_frame_ts = self.build_time_str(out_frame, clip.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
@@ -180,7 +180,7 @@ class TimelineWidget(QWidget):
 
         QToolTip.hideText()
 
-    def add_rect_for_new_clip(self, clip: TimelineClip):
+    def add_rect_for_new_clip(self, clip: VideoClip):
         x = self.clip_rects[-1][1].right() + 1 if self.clip_rects else 0
         rect = self.calc_rect_for_clip(clip, x)
         self.clip_rects.append((clip, rect))

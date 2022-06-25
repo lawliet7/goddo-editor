@@ -45,7 +45,7 @@ def test_out_frame(app_thread, windows_container: WindowsContainer, blank_state)
 
     pyautogui.press('o')
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -73,7 +73,7 @@ def test_in_out_frame(app_thread, windows_container: WindowsContainer, blank_sta
 
     pyautogui.press('o')
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     time.sleep(0.5)
 
@@ -102,10 +102,11 @@ def test_unset_in_frame(app_thread, windows_container: WindowsContainer, blank_s
     out_frame = app_thread.mon.state.preview_window.current_frame_no
 
     pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['i'])
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is None)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -132,12 +133,11 @@ def test_unset_out_frame(app_thread, windows_container: WindowsContainer, blank_
     out_frame = app_thread.mon.state.preview_window.current_frame_no
 
     pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['o'])
-
-    time.sleep(0.5)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is None)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
@@ -168,15 +168,11 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer, bla
 
     with pyautogui.hold('shift'):
         pyautogui.press(['o'])
-
-    time.sleep(0.5)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is None)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['i'])
-
     wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is None)
-
-    time.sleep(0.5)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 

@@ -155,3 +155,7 @@ def draw_slider(rect, painter: QPainter, theme, progress, circle_radius=5):
     painter.drawEllipse(convert_to_int(progress*rect.width()+rect.left())-circle_radius,
                         convert_to_int(y)-circle_radius,
                         circle_radius*2, circle_radius*2)
+
+# color is html color name or #rrggbb
+def text_with_color(text, color):
+    return f'<span style="color:{color};">{text}</span>'

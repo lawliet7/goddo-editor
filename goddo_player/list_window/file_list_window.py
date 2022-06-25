@@ -9,10 +9,11 @@ from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
                              QScrollArea, QInputDialog)
+from goddo_player.preview_window.frame_in_out import FrameInOut
 
 from goddo_player.utils.event_helper import is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import StateStoreSignals
+from goddo_player.app.signals import PlayCommand, StateStoreSignals
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
@@ -228,7 +229,8 @@ class FileListWindow(BaseQWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, True)
+        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, FrameInOut())
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if is_key_with_modifiers(event, Qt.Key_W, ctrl=True):

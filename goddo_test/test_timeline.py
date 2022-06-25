@@ -279,10 +279,10 @@ def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsConta
     drop_cur_to_timeline(windows_container)
 
     expected_out_frame1 = 3 * 60 * 24
-    timeline_clip1 = get_timeline_clip_for_15m_vid(out_frame=expected_out_frame1)
+    timeline_clip1 = get_video_clip_for_15m_vid(out_frame=expected_out_frame1)
 
     expected_out_frame2 = 4 * 60 * 4
-    timeline_clip2 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame2)
+    timeline_clip2 = get_video_clip_for_1hr_vid(out_frame=expected_out_frame2)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_fn([(video_path1, []),(video_path2, [])]), get_assert_blank_list_fn(is_file_list=False), 
@@ -343,13 +343,13 @@ def test_cut_and_paste_clips(app_thread, windows_container: WindowsContainer, bl
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) == 4)
 
     expected_out_frame1 = 1 * 60 * 4
-    timeline_clip1 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame1)
+    timeline_clip1 = get_video_clip_for_1hr_vid(out_frame=expected_out_frame1)
 
     expected_out_frame2 = 2 * 60 * 4
-    timeline_clip2 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
+    timeline_clip2 = get_video_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
 
     expected_out_frame3 = 3 * 60 * 4
-    timeline_clip3 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
+    timeline_clip3 = get_video_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
 
     expected_timeline_clips = [(timeline_clip3,120),(timeline_clip3,120),(timeline_clip1,120),(timeline_clip2,120)]
 
@@ -412,13 +412,13 @@ def test_copy_and_paste_clips(app_thread, windows_container: WindowsContainer, b
     wait_until(lambda: len(timeline_window.inner_widget.clip_rects) == 5)
 
     expected_out_frame1 = 1 * 60 * 4
-    timeline_clip1 = get_timeline_clip_for_1hr_vid(out_frame=expected_out_frame1)
+    timeline_clip1 = get_video_clip_for_1hr_vid(out_frame=expected_out_frame1)
 
     expected_out_frame2 = 2 * 60 * 4
-    timeline_clip2 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
+    timeline_clip2 = get_video_clip_for_1hr_vid(in_frame=expected_out_frame1, out_frame=expected_out_frame2)
 
     expected_out_frame3 = 3 * 60 * 4
-    timeline_clip3 = get_timeline_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
+    timeline_clip3 = get_video_clip_for_1hr_vid(in_frame=expected_out_frame2, out_frame=expected_out_frame3)
 
     expected_timeline_clips = [(timeline_clip1,120),(timeline_clip3,120),(timeline_clip3,120),(timeline_clip2,120),(timeline_clip3,120)]
 

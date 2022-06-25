@@ -11,8 +11,8 @@ import numpy as np
 import pyautogui
 from PyQt5.QtCore import QMimeData, QRect, QSize
 from PyQt5.QtGui import QDrag
-from PyQt5.QtWidgets import QListWidget
-from goddo_player.app.state_store import TimelineClip
+from PyQt5.QtWidgets import QListWidget, QApplication
+from goddo_player.app.state_store import VideoClip
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.time_frame_utils import time_str_to_components
 
@@ -112,10 +112,10 @@ def list_widget_to_test_drag_and_drop(show=True):
     return list_widget
 
 
-def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10):
+def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=10, error_msg_func=None):
     itr = int(math.ceil(timeout_secs / check_interval_secs))
 
-    for i in range(itr):
+    for _ in range(itr):
         ret_val = func()
         logging.info(f'got val {ret_val}')
         if ret_val:
@@ -125,7 +125,7 @@ def wait_until(func: Callable[[], bool], check_interval_secs=0.5, timeout_secs=1
             logging.info(f'still waiting')
             time.sleep(check_interval_secs)
 
-    raise Exception(f'wait timed out in {timeout_secs} secs')
+    raise Exception(f'wait timed out in {timeout_secs} secs, {error_msg_func() if error_msg_func else ""}')
 
 
 def drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y):
@@ -153,29 +153,32 @@ def get_blank_1hr_vid_path():
     file_path = video_folder_path().joinpath("blank_1hr_vid.mp4").resolve()
     return VideoPath(file_to_url(file_path))
 
-def get_timeline_clip_for_1hr_vid(in_frame=None, out_frame=None):
-    return TimelineClip(get_blank_1hr_vid_path(), 4.0, 14402, FrameInOut(in_frame,out_frame))
+def get_video_clip_for_1hr_vid(in_frame=None, out_frame=None):
+    return VideoClip(get_blank_1hr_vid_path(), 4.0, 14402, FrameInOut(in_frame,out_frame))
 
-def get_timeline_clip_for_15m_vid(in_frame=None, out_frame=None):
-    return TimelineClip(get_blank_15m_vid_path(), 24.0, 21602, FrameInOut(in_frame,out_frame))
+def get_video_clip_for_15m_vid(in_frame=None, out_frame=None):
+    return VideoClip(get_blank_15m_vid_path(), 24.0, 21602, FrameInOut(in_frame,out_frame))
 
 def click_on_prev_wind_slider(preview_window, pct: float, should_slider_value_change: bool=True):
-    old_frame_no = preview_window.state.preview_window.current_frame_no
+    old_frame_no = preview_window.get_preview_window_state().current_frame_no
+    old_slider_value = preview_window.slider.value()
     
     go_to_prev_wind_slider(preview_window, pct)
     pyautogui.click()
 
     if should_slider_value_change:
-        wait_until(lambda: old_frame_no != preview_window.state.preview_window.current_frame_no)
+        wait_until(lambda: old_frame_no != preview_window.get_preview_window_state().current_frame_no)
+        wait_until(lambda: old_slider_value != preview_window.slider.value())
+        logging.info(f'=== cur frame no inside {preview_window.get_preview_window_state().current_frame_no} old {old_frame_no}')
     else:
         time.sleep(0.5)
 
-def go_to_prev_wind_slider(preview_window, pct):
+def go_to_prev_wind_slider(preview_window, pct, duration=0):
     slider = preview_window.slider
     pos = local_to_global_pos(slider, preview_window)
     x_offset = int(slider.width() * pct)
     y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
+    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset, duration=duration)
 
 
 def save_reload_and_assert_state(app_thread, windows_container, blank_state, save_file_name: str):
@@ -328,29 +331,98 @@ def get_current_method_name(levels=1):
         del cur_frame
 
 def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_frame: bool = True):
-    pyautogui.press('g')
-    pyautogui.press('home')
-    pyautogui.press('delete')
-    logging.info(f'=== write 1 {time_label[0]}')
-    pyautogui.typewrite(time_label[0])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[2:4])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[5:7])
-    pyautogui.press('right')
-    pyautogui.press('delete')
-    pyautogui.press('delete')
-    pyautogui.typewrite(time_label[-2:])
+    active_window = QApplication.activeWindow()
+
+    # assert active_prev_window == app_thread.mon.preview_window or active_prev_window == app_thread.mon.preview_window_output
+
+    if active_window == app_thread.mon.preview_window:
+        pw_state = app_thread.mon.state.preview_window
+        pw_window = app_thread.mon.preview_window
+
+        pyautogui.press('g')
+        wait_until(lambda: not pw_window.dialog.isHidden())
+
+    elif active_window == app_thread.mon.preview_window_output:
+        pw_state = app_thread.mon.state.preview_window_output
+        pw_window = app_thread.mon.preview_window_output
+
+        pyautogui.press('g')
+        wait_until(lambda: not pw_window.dialog.isHidden())
+
+    elif active_window == app_thread.mon.preview_window.dialog.dialog:
+        pw_state = app_thread.mon.state.preview_window
+        pw_window = app_thread.mon.preview_window
+    elif active_window == app_thread.mon.preview_window_output.dialog.dialog:
+        pw_state = app_thread.mon.state.preview_window_output
+        pw_window = app_thread.mon.preview_window_output
+    else:
+        assert False, f'window is not a preview window or its dialog box.  it is {active_window}'
+    
+    line_edit = pw_window.dialog.time_edit.lineEdit()
+
+    time_edit_text = pw_window.dialog.text()
+    for i in [0,2,3,5,6,8,9]:
+        if time_edit_text[i] != time_label[i]:
+            line_edit.setSelection(i,1)
+            pyautogui.typewrite(time_label[i])
+            wait_until(lambda: pw_window.dialog.text()[i] == time_label[i])
+            time.sleep(0.2) # sometimes it doesn't work so putting a small wait here to see if it helps
 
     if should_go_to_frame:
+        frame_no = pw_window.dialog.value()
         pyautogui.press('enter')
 
-        frame_no = app_thread.mon.preview_window.time_edit.value()
-        wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no == frame_no)
+        wait_until(lambda: pw_window.dialog.isHidden())
+        wait_until(lambda: pw_state.current_frame_no == frame_no)
     else:
-        wait_until(lambda: app_thread.mon.preview_window.time_edit.text() == time_label)
+        wait_until(lambda: pw_window.dialog.text() == time_label)
 
+def drop_cur_to_timeline(windows_container):
+    preview_window = windows_container.preview_window
+    src_corner_pt1 = local_to_global_pos(preview_window.preview_widget, preview_window)
+    src_pt_x = int(src_corner_pt1.x() + preview_window.width() / 2)
+    src_pt_y = int(src_corner_pt1.y() + preview_window.height() / 2)
+
+    timeline_window = windows_container.timeline_window
+    dest_corner_pt2 = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    dest_pt_x = int(dest_corner_pt2.x() + timeline_window.width() / 2)
+    dest_pt_y = int(dest_corner_pt2.y() + timeline_window.height() / 2)
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    wait_until(lambda: len(timeline_window.inner_widget.clip_rects) > 0)
+
+def press_space_to_pause(preview_window):
+    pyautogui.press('space')
+    wait_until(lambda: not preview_window.preview_widget.timer.isActive())
+
+def press_space_to_play(preview_window):
+    pyautogui.press('space')
+    wait_until(lambda: preview_window.preview_widget.timer.isActive())
+
+def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_time_str, video_path):
+    # video_path = get_blank_1hr_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, from_time_str)
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+
+    enter_time_in_go_to_dialog_box(app_thread, to_time_str)
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+
+    drop_cur_to_timeline(windows_container)
+
+    timeline_window = windows_container.timeline_window
+    pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
+    pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
+    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+
+    press_space_to_pause(windows_container.output_window)
+
+def select_line_edit_text(line_edit, start_pos, num_of_chars_to_select):
+    line_edit.setSelection(start_pos, num_of_chars_to_select)
+    wait_until(lambda: line_edit.hasSelectedText())

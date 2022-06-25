@@ -4,6 +4,7 @@ import typing
 from PyQt5.QtGui import QValidator, QWheelEvent, QKeyEvent
 from PyQt5.QtWidgets import QSpinBox
 from PyQt5.QtCore import Qt
+from goddo_player.utils.event_helper import is_key_press
 
 from goddo_player.utils.time_frame_utils import time_str_to_components
 
@@ -100,7 +101,7 @@ class TimeInFramesEdit(QSpinBox):
             self.setValue(self.value() - offset)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Up or event.key() == Qt.Key_Down:
+        if is_key_press(event, Qt.Key_Up) or is_key_press(event, Qt.Key_Down):
             cursor_pos = self.lineEdit().cursorPosition()
 
             idx_of_1st_colon = self.text().index(':')
@@ -120,11 +121,11 @@ class TimeInFramesEdit(QSpinBox):
                 logging.debug('increment ms')
                 offset = 1
 
-            if event.key() == Qt.Key_Up:
+            if is_key_press(event, Qt.Key_Up):
                 self.setValue(self.value() + offset)
             else:
                 self.setValue(self.value() - offset)
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+        elif is_key_press(event, Qt.Key_Return) or is_key_press(event, Qt.Key_Enter):
             if self.is_valid:
                 super().keyPressEvent(event)
         else:

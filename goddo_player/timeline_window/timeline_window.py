@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
-from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
 from goddo_player.app.state_store import StateStore, VideoClip
@@ -60,7 +60,7 @@ class TimelineWindow(QMainWindow):
 
         if is_key_with_modifiers(event, Qt.Key_P, ctrl=True):
             self.__process()
-        elif event.key() == Qt.Key_Delete:
+        elif is_key_press(event, Qt.Key_Delete):
             if self.state.timeline.selected_clip_index >= 0:
                 self.signals.timeline_delete_selected_clip_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_Plus, numpad=True):

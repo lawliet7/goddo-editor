@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QTimeEdit
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window.frame_in_out import FrameInOut
-from goddo_player.utils.event_helper import common_event_handling, is_key_with_modifiers
+from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
@@ -185,32 +185,32 @@ class PreviewWindow(QWidget):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)
 
-        if event.key() == Qt.Key_Space:
+        if is_key_press(event,Qt.Key_Space):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.TOGGLE)
-        elif event.key() == Qt.Key_S:
+        elif is_key_press(event,Qt.Key_S):
             self.get_preview_window_signal().switch_speed_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
             self.get_preview_window_signal().in_frame_slot.emit(-1)
             self.get_preview_window_signal().slider_update_slot.emit()
-        elif event.key() == Qt.Key_I:
+        elif is_key_press(event,Qt.Key_I):
             self.get_preview_window_signal().in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
             self.get_preview_window_signal().out_frame_slot.emit(-1)
             self.get_preview_window_signal().slider_update_slot.emit()
-        elif event.key() == Qt.Key_O:
+        elif is_key_press(event,Qt.Key_O):
             self.get_preview_window_signal().out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
             self.get_preview_window_signal().slider_update_slot.emit()
-        elif event.key() == Qt.Key_Right:
+        elif is_key_press(event, Qt.Key_Right):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
             self.get_preview_window_signal().seek_slot.emit(1, PositionType.RELATIVE)
-        elif event.key() == Qt.Key_BracketLeft:
+        elif is_key_press(event, Qt.Key_BracketLeft):
             frame_in_out = self.get_preview_window_state().frame_in_out
             if frame_in_out.in_frame:
                 self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
                 frame_diff = frame_in_out.in_frame - self.preview_widget.get_cur_frame_no()
                 self.get_preview_window_signal().seek_slot.emit(frame_diff, PositionType.RELATIVE)
-        elif event.key() == Qt.Key_BracketRight:
+        elif is_key_press(event, Qt.Key_BracketRight):
             frame_in_out = self.get_preview_window_state().frame_in_out
             if frame_in_out.out_frame:
                 self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -220,7 +220,7 @@ class PreviewWindow(QWidget):
             self.get_preview_window_signal().update_skip_slot.emit(IncDec.INC)
         elif is_key_with_modifiers(event, Qt.Key_Minus, numpad=True):
             self.get_preview_window_signal().update_skip_slot.emit(IncDec.DEC)
-        elif event.key() == Qt.Key_G:
+        elif is_key_press(event, Qt.Key_G):
             if self.preview_widget.cap is not None:
                 pw_state = self.get_preview_window_state()
                 self.dialog.show_dialog(pw_state.fps, current_frame=pw_state.current_frame_no, max_frame=pw_state.total_frames, min_frame=1)
@@ -228,7 +228,7 @@ class PreviewWindow(QWidget):
             super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Left:
+        if is_key_press(event, Qt.Key_Left):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
             self.get_preview_window_signal().seek_slot.emit(-5, PositionType.RELATIVE)
         else:

@@ -643,3 +643,32 @@ def test_delete_clip(app_thread, windows_container: WindowsContainer, blank_stat
                 get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
                 get_assert_preview_for_blank_file_fn(is_output_window=True),
                 assert_blank_timeline)
+
+def test_save_should_not_flip_speed(app_thread, windows_container: WindowsContainer, blank_state):
+    file_name, method_name = get_current_method_name(1)
+    save_file_path = my_test_output_folder_path().joinpath(f'{file_name}.{method_name}.json').resolve()
+    logging.info(save_file_path)
+    save_path_vid_url = VideoPath(file_to_url(str(save_file_path)))
+    app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path_vid_url]))
+
+    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+
+    assert app_thread.mon.state.preview_window_output.is_max_speed == False
+
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('s')
+    time.sleep(0.5)
+
+    assert app_thread.mon.state.preview_window_output.is_max_speed == False
+
+    expected_in_frame = 4 * 60 * 1
+    expected_out_frame = 4 * 60 * 2
+
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    expected_timeline_clips = [(clip,120)]
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
+                get_assert_preview_fn(clip, slider_range=(0.12, 0.15), is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))

@@ -5,10 +5,10 @@ from goddo_player.utils.message_box_utils import show_error_box
 
 
 def common_event_handling(event, signals, state) -> bool:
-    if event.key() == Qt.Key_Escape:
+    if is_key_press(event, Qt.Key_Escape):
         QApplication.exit(0)
         event.accept()
-    elif event.key() == Qt.Key_F2:
+    elif is_key_press(event, Qt.Key_F2):
         signals.activate_all_windows_slot.emit()
         event.accept()
     elif is_key_with_modifiers(event, Qt.Key_S, ctrl=True):
@@ -25,3 +25,6 @@ def is_key_with_modifiers(event, key, ctrl=False, shift=False, numpad=False):
     shift_bool = (event.modifiers() == Qt.ShiftModifier) if shift else True
 
     return event.key() == key and numpad_bool and ctrl_bool and shift_bool
+
+def is_key_press(event, key):
+    return event.key() == key and event.modifiers() == Qt.NoModifier

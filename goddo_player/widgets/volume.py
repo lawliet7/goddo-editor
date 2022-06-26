@@ -134,7 +134,7 @@ class VolumeControl(QWidget):
         painter.setFont(orig_font)
 
     # def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-    #     if event.key() == Qt.Key_Escape:
+    #     if is_key_press(event, Qt.Key_Escape):
     #         QApplication.exit(0)
     #     else:
     #         super().keyPressEvent(event)

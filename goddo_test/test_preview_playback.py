@@ -401,3 +401,51 @@ def get_slider_range(windows_container, old_frame_no, is_fwd, wheel_amt = 5, thr
     logging.info(f'=== slider value {windows_container.preview_window.slider.value()}, range {slider_range},' +
                    ' total_frames {total_frames}, fps {fps} est_frame_pct {est_frame_pct} old_frame_no {old_frame_no}')
     return slider_range
+
+def test_save_should_not_flip_speed(app_thread, windows_container: WindowsContainer, blank_state):
+    file_name, method_name = get_current_method_name(1)
+    save_file_path = my_test_output_folder_path().joinpath(f'{file_name}.{method_name}.json').resolve()
+    logging.info(save_file_path)
+    save_path_vid_url = VideoPath(file_to_url(str(save_file_path)))
+    app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path_vid_url]))
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    video_path = get_test_vid_path()
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    assert app_thread.mon.state.preview_window.is_max_speed == False
+
+    with pyautogui.hold('ctrl'):
+        pyautogui.press('s')
+    time.sleep(0.5)
+
+    assert app_thread.mon.state.preview_window.is_max_speed == False
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)

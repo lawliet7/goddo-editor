@@ -4,7 +4,7 @@ from queue import Queue, Empty
 from typing import List
 
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from goddo_player.app.monarch import MonarchSystem
 from goddo_player.app.signals import PlayCommand
@@ -72,6 +72,7 @@ class CommandWidget(QWidget):
                 self.dnd_widget.show()
             elif cmd.cmd_type == CommandType.HIDE_DND_WINDOW:
                 self.dnd_widget.hide()
+                self.dnd_widget.list_widget.clear()
             elif cmd.cmd_type == CommandType.ADD_ITEM_DND_WINDOW:
                 self.dnd_widget.add_item(cmd.params[0])
             elif cmd.cmd_type == CommandType.LOAD_FILE:
@@ -100,8 +101,12 @@ class CommandWidget(QWidget):
 
     def _reset(self):
         logging.info('resetting windows')
-        self._monarch.preview_window.dialog.close()
-        self._monarch.preview_window_output.dialog.close()
+        active_window = self._monarch.app.activeWindow()
+        if isinstance(active_window, QMessageBox):
+            active_window.close()
+
+        # self._monarch.preview_window.dialog.close()
+        # self._monarch.preview_window_output.dialog.close()
 
         self._max_widget.reset_widget()
 

@@ -82,3 +82,96 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
                 get_assert_preview_for_test_file_1_fn(), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
+
+def test_open_video_already_in_file_list(app_thread, windows_container, blank_state):
+    video_path1 = get_test_vid_path()
+    drop_video_on_file_list(app_thread, windows_container, [video_path1])
+    
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    video_path = get_test_vid_path()
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+
+    wait_until(lambda: app_thread.app.activeWindow().windowTitle() == 'Duplicate Video')
+    pyautogui.press('enter')
+
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    new_total_count_expected = 1
+
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_open_same_video_twice(app_thread, windows_container, blank_state):   
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+
+    video_path = get_test_vid_path()
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+
+    dnd_widget = app_thread.cmd.dnd_widget
+
+    item_idx = dnd_widget.get_count() - 1
+    _, item_widget = dnd_widget.get_item_and_widget(item_idx)
+
+    src_corner_pt = dnd_widget.item_widget_pos(item_idx)
+    src_pt_x = src_corner_pt.x() + 10
+    src_pt_y = src_corner_pt.y() + int(item_widget.size().height() / 2)
+
+    dest_corner_pt = local_to_global_pos(windows_container.preview_window.preview_widget, windows_container.preview_window)
+    dest_pt_x = dest_corner_pt.x() + 10
+    dest_pt_y = dest_corner_pt.y() + 10
+
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    app_thread.cmd.submit_cmd(Command(CommandType.SHOW_DND_WINDOW))
+    app_thread.cmd.submit_cmd(Command(CommandType.ADD_ITEM_DND_WINDOW, [video_path.str()]))
+    drag_and_drop(src_pt_x, src_pt_y, dest_pt_x, dest_pt_y)
+    app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
+
+    wait_until(lambda: app_thread.app.activeWindow().windowTitle() == 'Duplicate Video')
+    pyautogui.press('enter')
+
+    pyautogui.press('space')
+    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
+
+    new_total_count_expected = 1
+
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+    # time.sleep(3)
+

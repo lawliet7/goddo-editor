@@ -105,8 +105,8 @@ class CommandWidget(QWidget):
         if isinstance(active_window, QMessageBox):
             active_window.close()
 
-        # self._monarch.preview_window.dialog.close()
-        # self._monarch.preview_window_output.dialog.close()
+        self._monarch.preview_window.dialog.close()
+        self._monarch.preview_window_output.dialog.close()
 
         self._max_widget.reset_widget()
 

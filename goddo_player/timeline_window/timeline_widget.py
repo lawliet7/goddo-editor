@@ -93,11 +93,10 @@ class TimelineWidget(QWidget):
             required_total_secs += (final_out_frame - final_in_frame) / c.fps
         cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
         logging.debug(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
-        if required_total_secs + 60 > cur_total_secs:
+        if required_total_secs + 60 > cur_total_secs or required_total_secs + 60 < cur_total_secs:
             x = int(round((required_total_secs / 60 + 1) * self.state.timeline.width_of_one_min))
+            x = max(x, PlayerConfigs.timeline_initial_width)
             self.resize(x, self.height())
-        elif required_total_secs + 60 < cur_total_secs:
-            self.resize(PlayerConfigs.timeline_initial_width, self.height())
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QPainter(self)
@@ -179,8 +178,3 @@ class TimelineWidget(QWidget):
                 return
 
         QToolTip.hideText()
-
-    def add_rect_for_new_clip(self, clip: VideoClip):
-        x = self.clip_rects[-1][1].right() + 1 if self.clip_rects else 0
-        rect = self.calc_rect_for_clip(clip, x)
-        self.clip_rects.append((clip, rect))

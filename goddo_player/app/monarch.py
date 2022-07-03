@@ -442,16 +442,16 @@ class MonarchSystem(QObject):
                 self._update_preview_window_output_cur_frames(preview_window_state, new_clip)
 
     def _update_preview_window_output_cur_frames(self, preview_window_state, clip):
+        resolved_in_frame = clip.frame_in_out.get_resolved_in_frame()
+        resolved_out_frame = clip.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames)
+
         extra_frames_in_secs_config = self.state.app_config.extra_frames_in_secs_config
         extra_frames_config = int(round(extra_frames_in_secs_config * preview_window_state.fps))
-        in_frame_in_secs = int(round(clip.frame_in_out.get_resolved_in_frame() / preview_window_state.fps)) if preview_window_state.fps > 0 else 0
-        leftover_frames = preview_window_state.total_frames - clip.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames)
+        in_frame_in_secs = int(round(resolved_in_frame / preview_window_state.fps)) if preview_window_state.fps > 0 else 0
+        leftover_frames = preview_window_state.total_frames - resolved_out_frame
         leftover_frames_in_secs = int(round(leftover_frames / preview_window_state.fps))
-        extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else clip.frame_in_out.in_frame - 1
+        extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else resolved_in_frame - 1
         extra_frames_on_right = extra_frames_config if leftover_frames_in_secs > extra_frames_in_secs_config else leftover_frames
-        # preview_window_state.cur_total_frames = preview_window_state.frame_in_out.get_no_of_frames(preview_window_state.total_frames) + extra_frames_on_left + extra_frames_on_right
-        # preview_window_state.cur_start_frame = opened_clip.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
-        # preview_window_state.cur_end_frame = opened_clip.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames) + extra_frames_on_right
 
         preview_window_state.cur_start_frame = preview_window_state.frame_in_out.get_resolved_in_frame() - extra_frames_on_left
         preview_window_state.cur_end_frame = preview_window_state.frame_in_out.get_resolved_out_frame(preview_window_state.total_frames) + extra_frames_on_right

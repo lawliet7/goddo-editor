@@ -58,15 +58,15 @@ class AudioThread(QObject):
 
 
 class AudioPlayer(QObject):
-    audio_path = 'audio.wav'
+    audio_path = r'output\audio\miaa638.wav'
 
     def __init__(self, state, video_fps):
         super().__init__()
 
         self.state = state
-        import subprocess
-        command = "ffmpeg -y -i {} -vn {}".format(self.state.video_path, self.audio_path)
-        subprocess.call(command, shell=True)
+        # import subprocess
+        # command = "ffmpeg -y -i {} -vn {}".format(self.state.video_path, self.audio_path)
+        # subprocess.call(command, shell=True)
 
         self.worker = AudioThread(self.state, self.audio_path, video_fps)
 

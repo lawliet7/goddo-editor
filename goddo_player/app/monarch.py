@@ -416,7 +416,7 @@ class MonarchSystem(QObject):
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
 
-                self._update_preview_window_output_cur_frames(preview_window_state, opened_clip)
+                self._update_preview_window_output_cur_frames(preview_window_state, new_clip)
 
     def __on_preview_video_out_frame(self, pos: int):
         logging.info(f'update out frame to {pos}')

@@ -174,6 +174,7 @@ class PreviewWindowOutput(QWidget):
         extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else resolved_in_frame - 1
         extra_frames_on_right = extra_frames_config if leftover_frames_in_secs > extra_frames_in_secs_config else leftover_frames
 
+        logging.info(f'=== test1 no_of_frames {no_of_frames} left {extra_frames_on_left} right {extra_frames_on_right}')
         preview_window_state.cur_total_frames = no_of_frames + extra_frames_on_left + extra_frames_on_right
         preview_window_state.cur_start_frame = resolved_in_frame - extra_frames_on_left
         preview_window_state.cur_end_frame = resolved_out_frame + extra_frames_on_right
@@ -352,13 +353,11 @@ class FrameInOutSlider(ClickSlider):
             # logging.debug(f'in out {frame_in_out}, total frames {no_of_frames}, rect={rect}')
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
         elif frame_in_out.in_frame is not None:
-            left = int(round(frame_in_out.in_frame / cur_total_frames * self.width()))
-            # left = 0
+            left = int(round((frame_in_out.in_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(left, 0, self.width(), self.height())
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
         elif frame_in_out.out_frame is not None:
-            right = int(round(frame_in_out.out_frame / cur_total_frames * self.width()))
-            # right = self.width()
+            right = int(round((frame_in_out.out_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(0, 0, right, self.height())
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
 

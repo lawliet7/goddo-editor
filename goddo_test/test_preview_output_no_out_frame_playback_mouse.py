@@ -825,7 +825,7 @@ def test_restricted_mouse_drag_left_pass_in(app_thread, windows_container: Windo
 
     floor = (0.14 * pw_state.cur_total_frames + pw_state.cur_start_frame)
     ceil = (0.17 * pw_state.cur_total_frames + pw_state.cur_start_frame)
-    wait_until(lambda: floor < pw_state.current_frame_no < ceil)
+    wait_until(lambda: floor < pw_state.current_frame_no < ceil, error_msg_func=lambda: f'{floor} < {pw_state.current_frame_no} < {ceil}')
 
     clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=None)
     expected_timeline_clips = [(clip,120)]
@@ -836,8 +836,13 @@ def test_restricted_mouse_drag_left_pass_in(app_thread, windows_container: Windo
                 get_assert_preview_fn(clip, slider_range=(0.14, 0.17), is_output_window=True, extra_frames_left=40, extra_frames_right=0), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
-def test_restricted_mouse_drag_right_pass_out(app_thread, windows_container: WindowsContainer, blank_state):
-    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+def test_unrestricted_mouse_drag_right_within_in_out(app_thread, windows_container: WindowsContainer, blank_state):
+    open_clip_on_output_window(app_thread, windows_container, '0:59:00.02', None, get_blank_1hr_vid_path())
+
+    pw_state = app_thread.mon.state.preview_window_output
+
+    pyautogui.press('f')
+    wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
 
     slider = app_thread.mon.preview_window_output.slider
     pos = local_to_global_pos(slider, app_thread.mon.preview_window_output)
@@ -846,51 +851,23 @@ def test_restricted_mouse_drag_right_pass_out(app_thread, windows_container: Win
     y_offset = int(slider.height() * 0.5)
     drag_and_drop(pos.x() + x1_offset, pos.y() + y_offset, pos.x() + x2_offset, pos.y() + y_offset)
 
-    expected_in_frame = 4 * 60 * 1
-    expected_out_frame = 4 * 60 * 2
+    floor = (0.94 * pw_state.cur_total_frames + pw_state.cur_start_frame)
+    ceil = (0.97 * pw_state.cur_total_frames + pw_state.cur_start_frame)
+    wait_until(lambda: floor < pw_state.current_frame_no < ceil, error_msg_func=lambda: f'{floor} < {pw_state.current_frame_no} < {ceil}')
 
-    assert app_thread.mon.state.preview_window_output.current_frame_no <= 4 * 60 * 2
-    assert app_thread.mon.preview_window_output.slider.value() <= 176
-
-    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=None)
     expected_timeline_clips = [(clip,120)]
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
-                get_assert_preview_fn(clip, slider_range=(0.85, 0.88), is_output_window=True, extra_frames_left=40, extra_frames_right=40), 
-                get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
-
-def test_unrestricted_mouse_drag_right_within_in_out(app_thread, windows_container: WindowsContainer, blank_state):
-    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
-
-    pyautogui.press('f')
-    wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
-
-    slider = app_thread.mon.preview_window_output.slider
-    pos = local_to_global_pos(slider, app_thread.mon.preview_window_output)
-    x1_offset = int(slider.width() * 0.3)
-    x2_offset = int(slider.width() * 0.7)
-    y_offset = int(slider.height() * 0.5)
-    drag_and_drop(pos.x() + x1_offset, pos.y() + y_offset, pos.x() + x2_offset, pos.y() + y_offset)
-
-    expected_in_frame = 4 * 60 * 1
-    expected_out_frame = 4 * 60 * 2
-
-    assert app_thread.mon.state.preview_window_output.current_frame_no <= 4 * 60 * 2
-    assert app_thread.mon.preview_window_output.slider.value() <= 176
-
-    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
-    expected_timeline_clips = [(clip,120)]
-
-    generic_assert(app_thread, windows_container, blank_state,
-                get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
-                get_assert_preview_fn(clip, slider_range=(0.68, 0.72), is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_preview_fn(clip, slider_range=(0.98, 0.99), current_frame_no=expected_in_frame),
+                get_assert_preview_fn(clip, slider_range=(0.93, 0.97), is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=0), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))
 
 def test_unrestricted_mouse_drag_left_pass_in(app_thread, windows_container: WindowsContainer, blank_state):
-    open_clip_on_output_window(app_thread, windows_container, '0:01:00.00', '0:02:00.00', get_blank_1hr_vid_path())
+    open_clip_on_output_window(app_thread, windows_container, '0:59:00.02', None, get_blank_1hr_vid_path())
+
+    pw_state = app_thread.mon.state.preview_window_output
 
     pyautogui.press('f')
     wait_until(lambda: not app_thread.mon.state.preview_window_output.restrict_frame_interval)
@@ -902,17 +879,15 @@ def test_unrestricted_mouse_drag_left_pass_in(app_thread, windows_container: Win
     y_offset = int(slider.height() * 0.5)
     drag_and_drop(pos.x() + x1_offset, pos.y() + y_offset, pos.x() + x2_offset, pos.y() + y_offset)
 
-    expected_in_frame = 4 * 60 * 1
-    expected_out_frame = 4 * 60 * 2
+    floor = int(0.04 * pw_state.cur_total_frames + pw_state.cur_start_frame)
+    ceil = int(round(0.06 * pw_state.cur_total_frames + pw_state.cur_start_frame))
+    wait_until(lambda: floor <= pw_state.current_frame_no <= ceil, error_msg_func=lambda: f'{floor} <= {pw_state.current_frame_no} <= {ceil}')
 
-    assert app_thread.mon.state.preview_window_output.current_frame_no <= 4 * 60 * 2
-    assert app_thread.mon.preview_window_output.slider.value() <= 176
-
-    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=expected_out_frame)
+    clip = get_video_clip_for_1hr_vid(in_frame=expected_in_frame, out_frame=None)
     expected_timeline_clips = [(clip,120)]
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_fn(clip, slider_range=(0.03, 0.04), current_frame_no=expected_out_frame),
-                get_assert_preview_fn(clip, slider_range=(0.04, 0.06), is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=40), 
+                get_assert_preview_fn(clip, slider_range=(0.98, 0.99), current_frame_no=expected_in_frame),
+                get_assert_preview_fn(clip, slider_range=(0.04, 0.06), is_output_window=True, restrict_frame_interval=False, extra_frames_left=40, extra_frames_right=0), 
                 get_assert_timeline_fn(expected_timeline_clips, selected_clip_index=0, opened_clip_index=0))

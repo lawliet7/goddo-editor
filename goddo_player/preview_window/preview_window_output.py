@@ -174,7 +174,7 @@ class PreviewWindowOutput(QWidget):
         extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else resolved_in_frame - 1
         extra_frames_on_right = extra_frames_config if leftover_frames_in_secs > extra_frames_in_secs_config else leftover_frames
 
-        logging.info(f'=== test1 no_of_frames {no_of_frames} left {extra_frames_on_left} right {extra_frames_on_right}')
+        logging.debug(f'=== test1 no_of_frames {no_of_frames} left {extra_frames_on_left} right {extra_frames_on_right}')
         preview_window_state.cur_total_frames = no_of_frames + extra_frames_on_left + extra_frames_on_right
         preview_window_state.cur_start_frame = resolved_in_frame - extra_frames_on_left
         preview_window_state.cur_end_frame = resolved_out_frame + extra_frames_on_right
@@ -397,7 +397,9 @@ class FrameInOutSlider(ClickSlider):
         in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
         out_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(self.state.preview_window_output.total_frames)
         is_restricted = self.state.preview_window_output.restrict_frame_interval
+
+        logging.debug(f'=== mouse release in_frame {out_frame} in_frame {out_frame} start_frame {start_frame} cur_total_frames {cur_total_frames} max {self.maximum()}')
         if in_frame > frame_no and is_restricted:
-            self.setValue(int(round((in_frame - start_frame) / cur_total_frames * self.maximum())))
+            self.signals.preview_window_output.seek_slot.emit(in_frame, PositionType.ABSOLUTE)
         elif out_frame < frame_no and is_restricted:
-            self.setValue(int(round((out_frame - start_frame) / cur_total_frames * self.maximum())))
+            self.signals.preview_window_output.seek_slot.emit(out_frame, PositionType.ABSOLUTE)

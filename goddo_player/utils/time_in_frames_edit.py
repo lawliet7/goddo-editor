@@ -51,29 +51,29 @@ class TimeInFramesEdit(QSpinBox):
 
         if re.match('^[0-9]:[0-5][0-9]:[0-5][0-9]\\.[0-9][0-9]$', input):
             fps_section = int(input[-2:])
-            logging.info(f'=== validate fps {fps_section} - {int(round(self._fps))}')
+            logging.debug(f'=== validate fps {fps_section} - {int(round(self._fps))}')
             if fps_section >= int(round(self._fps)):
-                logging.info('validate failed')
+                logging.debug('validate failed')
                 self.setStyleSheet(fail_style_sheet)
                 self.is_valid = False
                 return QValidator.Intermediate, input, pos
             elif self.minimum() > self.valueFromText(input) or self.maximum() < self.valueFromText(input):
-                logging.info('validate intermediate')
+                logging.debug('validate intermediate')
                 self.setStyleSheet(fail_style_sheet)
                 self.is_valid = False
                 return QValidator.Intermediate, input, pos
             else:
-                logging.info(f'validate success {input}')
+                logging.debug(f'validate success {input}')
                 self.setStyleSheet(good_style_sheet)
                 self.is_valid = True
                 return QValidator.Acceptable, input, pos
         elif re.match('^[0-9]?:[0-9]{0,2}:[0-9]{0,2}\\.[0-9]{0,2}$', input):
-            logging.info('validate intermediate')
+            logging.debug('validate intermediate')
             self.setStyleSheet(fail_style_sheet)
             self.is_valid = False
             return QValidator.Intermediate, input, pos
         else:
-            logging.info('validate failed')
+            logging.debug('validate failed')
             return QValidator.Invalid, input, pos
 
     def wheelEvent(self, event: QWheelEvent):

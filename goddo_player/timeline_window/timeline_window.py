@@ -82,10 +82,6 @@ class TimelineWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    def add_rect_for_new_clip(self, clip: VideoClip):
-        self.inner_widget.add_rect_for_new_clip(clip)
-        self.resize_timeline_widget()
-
     def recalculate_clip_rects(self):
         x = 0
         new_clip_rects = []

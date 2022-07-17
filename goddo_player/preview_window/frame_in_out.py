@@ -31,7 +31,7 @@ class FrameInOut:
         elif self.in_frame:
             return total_frames - self.in_frame + 1
         elif self.out_frame:
-            return self.out_frame + 1
+            return self.out_frame
         else:
             return 0
 
@@ -41,8 +41,8 @@ class FrameInOut:
     def get_resolved_out_frame(self, total_frames):
         return self.out_frame if self.out_frame is not None else total_frames
 
-    def contains_frame(self, frame_no):
-        if self.in_frame <= frame_no <= self.out_frame:
+    def contains_frame(self, frame_no, total_frames):
+        if self.get_resolved_in_frame() <= frame_no <= self.get_resolved_out_frame(total_frames):
             return True
         else:
             return False

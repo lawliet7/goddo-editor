@@ -144,13 +144,13 @@ class PreviewWindowOutput(QWidget):
 
     def on_value_changed(self, value):
         pct = self.slider.slider_value_to_pct(value)
-        cur_total_frames = self.get_preview_window_state().cur_total_frames
-        start_frame = self.get_preview_window_state().cur_start_frame
+        pw_state = self.get_preview_window_state()
+        cur_total_frames = pw_state.cur_total_frames
+        start_frame = pw_state.cur_start_frame
         frame_no = int(round(pct * cur_total_frames)) + start_frame
         logging.debug(f'value changed to {value}, frame to {frame_no}, '
-                      f'total_frames={self.get_preview_window_state().total_frames}')
-        frame_in_out = self.get_preview_window_state().frame_in_out
-        if not self.get_preview_window_state().restrict_frame_interval or frame_in_out.contains_frame(frame_no):
+                      f'total_frames={pw_state.total_frames}')
+        if not pw_state.restrict_frame_interval or pw_state.frame_in_out.contains_frame(frame_no, pw_state.total_frames):
             self.get_preview_window_signal().seek_slot.emit(frame_no, PositionType.ABSOLUTE)
 
     def _update_state_for_new_video(self, video_path: VideoPath, frame_in_out: FrameInOut):
@@ -162,17 +162,22 @@ class PreviewWindowOutput(QWidget):
         preview_window_state.total_frames = self.preview_widget.get_total_frames()
         preview_window_state.current_frame_no = frame_in_out.get_resolved_in_frame()
 
+        resolved_in_frame = frame_in_out.get_resolved_in_frame()
+        resolved_out_frame = frame_in_out.get_resolved_out_frame(preview_window_state.total_frames)
+        no_of_frames = preview_window_state.frame_in_out.get_no_of_frames(preview_window_state.total_frames)
+
         extra_frames_in_secs_config = self.state.app_config.extra_frames_in_secs_config
         extra_frames_config = int(round(extra_frames_in_secs_config * preview_window_state.fps))
-        in_frame_in_secs = int(round(frame_in_out.get_resolved_in_frame() / preview_window_state.fps)) if preview_window_state.fps > 0 else 0
-        leftover_frames = preview_window_state.total_frames - frame_in_out.get_resolved_out_frame(preview_window_state.total_frames)
+        in_frame_in_secs = int(round(resolved_in_frame / preview_window_state.fps)) if preview_window_state.fps > 0 else 0
+        leftover_frames = preview_window_state.total_frames - resolved_out_frame
         leftover_frames_in_secs = int(round(leftover_frames / preview_window_state.fps))
-        extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else frame_in_out.in_frame - 1
+        extra_frames_on_left = extra_frames_config if in_frame_in_secs > extra_frames_in_secs_config else resolved_in_frame - 1
         extra_frames_on_right = extra_frames_config if leftover_frames_in_secs > extra_frames_in_secs_config else leftover_frames
 
-        preview_window_state.cur_total_frames = preview_window_state.frame_in_out.get_no_of_frames(preview_window_state.total_frames) + extra_frames_on_left + extra_frames_on_right
-        preview_window_state.cur_start_frame = frame_in_out.get_resolved_in_frame() - extra_frames_on_left
-        preview_window_state.cur_end_frame = frame_in_out.get_resolved_out_frame(preview_window_state.total_frames) + extra_frames_on_right
+        logging.debug(f'=== test1 no_of_frames {no_of_frames} left {extra_frames_on_left} right {extra_frames_on_right}')
+        preview_window_state.cur_total_frames = no_of_frames + extra_frames_on_left + extra_frames_on_right
+        preview_window_state.cur_start_frame = resolved_in_frame - extra_frames_on_left
+        preview_window_state.cur_end_frame = resolved_out_frame + extra_frames_on_right
 
     def _update_state_for_blank_video(self, video_path: VideoPath):
         preview_window_state = self.get_preview_window_state()
@@ -348,13 +353,11 @@ class FrameInOutSlider(ClickSlider):
             # logging.debug(f'in out {frame_in_out}, total frames {no_of_frames}, rect={rect}')
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
         elif frame_in_out.in_frame is not None:
-            # left = int(round(frame_in_out.in_frame / no_of_frames * self.width()))
-            left = 0
+            left = int(round((frame_in_out.in_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(left, 0, self.width(), self.height())
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
         elif frame_in_out.out_frame is not None:
-            # right = int(round(frame_in_out.out_frame / no_of_frames * self.width()))
-            right = self.width()
+            right = int(round((frame_in_out.out_frame - start_frame) / cur_total_frames * self.width()))
             rect = QRect(0, 0, right, self.height())
             painter.fillRect(rect, QColor(166, 166, 166, alpha=150))
 
@@ -380,7 +383,7 @@ class FrameInOutSlider(ClickSlider):
             cur_total_frames = self.state.preview_window_output.cur_total_frames
             start_frame = self.state.preview_window_output.cur_start_frame
             frame_no = int(round(pct * cur_total_frames)) + start_frame
-            if self.state.preview_window_output.frame_in_out.contains_frame(frame_no):
+            if self.state.preview_window_output.frame_in_out.contains_frame(frame_no, self.state.preview_window_output.total_frames):
                 logging.info(f'=== pct {pct} frame_no {frame_no}')
                 super().mousePressEvent(event)
         else:
@@ -394,7 +397,9 @@ class FrameInOutSlider(ClickSlider):
         in_frame = self.state.preview_window_output.frame_in_out.get_resolved_in_frame()
         out_frame = self.state.preview_window_output.frame_in_out.get_resolved_out_frame(self.state.preview_window_output.total_frames)
         is_restricted = self.state.preview_window_output.restrict_frame_interval
+
+        logging.debug(f'=== mouse release in_frame {out_frame} in_frame {out_frame} start_frame {start_frame} cur_total_frames {cur_total_frames} max {self.maximum()}')
         if in_frame > frame_no and is_restricted:
-            self.setValue(int(round((in_frame - start_frame) / cur_total_frames * self.maximum())))
+            self.signals.preview_window_output.seek_slot.emit(in_frame, PositionType.ABSOLUTE)
         elif out_frame < frame_no and is_restricted:
-            self.setValue(int(round((out_frame - start_frame) / cur_total_frames * self.maximum())))
+            self.signals.preview_window_output.seek_slot.emit(out_frame, PositionType.ABSOLUTE)

@@ -404,15 +404,15 @@ def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_
     # video_path = get_blank_1hr_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    enter_time_in_go_to_dialog_box(app_thread, from_time_str)
+    if from_time_str:
+        enter_time_in_go_to_dialog_box(app_thread, from_time_str)
+        pyautogui.press('i')
+        wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
 
-    pyautogui.press('i')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
-
-    enter_time_in_go_to_dialog_box(app_thread, to_time_str)
-
-    pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    if to_time_str:
+        enter_time_in_go_to_dialog_box(app_thread, to_time_str)
+        pyautogui.press('o')
+        wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
 
     drop_cur_to_timeline(windows_container)
 

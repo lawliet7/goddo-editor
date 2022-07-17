@@ -259,9 +259,9 @@ class PreviewWindow(QWidget):
 
         video_path = VideoPath(event.mimeData().urls()[0])
 
+        self.signals.add_file_slot.emit(video_path)
         self.get_preview_window_signal().switch_video_slot.emit(video_path, FrameInOut())
         self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PLAY)
-        self.signals.add_file_slot.emit(video_path)
 
     def is_playing(self):
         if self.preview_widget.timer and self.preview_widget.timer.isActive():

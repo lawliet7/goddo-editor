@@ -89,7 +89,7 @@ class PreviewWidgetNew(QWidget):
         # if cur_frame_no and frame_no is same then opencv is not able to advance to next frame 
         # so mind as well pause to save on processing power
         if frame_no == end_frame or cur_frame_no == frame_no:
-            logging.info(f'=== pausing since frame no {frame_no} has reach the end frame {end_frame}')
+            logging.info(f'pausing since frame no {frame_no} has reach the end frame {end_frame}')
             self.pw_signal.play_cmd_slot.emit(PlayCommand.PAUSE)
 
         self.pw_update_fn()

@@ -2,6 +2,7 @@ import logging
 import time
 
 import pytest
+import pyautogui
 from PyQt5.QtWidgets import QLabel
 
 from goddo_player.utils.video_path import VideoPath
@@ -96,3 +97,24 @@ def assert_file_list_for_multiple_files(app_thread, windows_container, state_dic
     item_widget2 = video_tab_list_widget.itemWidget(video_tab_list_widget.item(1))
     pixmap = item_widget2.screenshot_label.pixmap()
     assert pixmap != videos_tab.black_pixmap
+
+def test_drop_same_video_2_times(app_thread, windows_container, blank_state):
+    video_path1 = get_test_vid_path()
+    drop_video_on_file_list(app_thread, windows_container, [video_path1])
+    drop_video_on_file_list(app_thread, windows_container, [video_path1])
+
+    wait_until(lambda: app_thread.app.activeWindow().windowTitle() == 'Duplicate Video')
+    pyautogui.press('enter')
+
+    logging.info(f'=== {app_thread.app.activeWindow().windowTitle()}')
+
+    new_total_count_expected = 1
+
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
+    wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_blank_file_fn(is_output_window=False), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)

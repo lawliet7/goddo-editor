@@ -15,18 +15,20 @@ def get_perf_counter_as_millis():
 
 
 def frames_to_time_components(total_frames, fps):
-    frames = int(total_frames % fps)
-    secs = int(total_frames / fps % 60)
-    mins = int(total_frames / fps / 60 % 60)
-    hours = int(total_frames / fps / 60 / 60 % 60)
+    rounded_fps = round(fps)
+    frames = int(total_frames % rounded_fps)
+    secs = int(total_frames / rounded_fps % 60)
+    mins = int(total_frames / rounded_fps / 60 % 60)
+    hours = int(total_frames / rounded_fps / 60 / 60 % 60)
     return hours, mins, secs, frames
 
 
 def frames_to_time_ms_components(total_frames, fps):
-    ms = int(total_frames / fps * 1000)
-    secs = int(total_frames / fps % 60)
-    mins = int(total_frames / fps / 60 % 60)
-    hours = int(total_frames / fps / 60 / 60 % 60)
+    rounded_fps = round(fps)
+    ms = int(total_frames / rounded_fps * 1000)
+    secs = int(total_frames / rounded_fps % 60)
+    mins = int(total_frames / rounded_fps / 60 % 60)
+    hours = int(total_frames / rounded_fps / 60 / 60 % 60)
     return hours, mins, secs, ms
 
 

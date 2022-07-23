@@ -1,4 +1,5 @@
 
+import logging
 from PyQt5.QtCore import QRect, Qt, QMimeData, QTime, QObject, pyqtSignal
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
     QResizeEvent, QWheelEvent, QDragEnterEvent, QDropEvent
@@ -37,6 +38,7 @@ class GoToFrameDialog(QObject):
     
     def _on_dialog_box_done(self):
         if self.time_edit.hasFocus():
+            logging.debug(f'=== go to value {self.time_edit.value()}')
             self.submit_slot.emit(self.time_edit.value())
             self.close()
 

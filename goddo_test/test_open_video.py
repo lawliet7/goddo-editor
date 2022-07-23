@@ -16,7 +16,7 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import assert_blank_timeline, generic_assert, get_assert_blank_list_fn, get_assert_file_list_for_test_file_1_fn, get_assert_preview_for_blank_file_fn, get_assert_preview_for_test_file_1_fn
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_file_list, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import drag_and_drop, drop_video_on_file_list, enter_time_in_go_to_dialog_box, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
 
@@ -77,9 +77,12 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    frames_3_sec = int(round(29.97 * 3))
+
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), current_frame_no=frames_3_sec),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
@@ -120,9 +123,12 @@ def test_open_video_already_in_file_list(app_thread, windows_container, blank_st
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.list_widget.count() == new_total_count_expected)
     wait_until(lambda: app_thread.mon.tabbed_list_window.videos_tab.thread_pool.activeThreadCount() == 0)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    frames_3_sec = int(round(29.97 * 3))
+
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), current_frame_no=frames_3_sec),
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 

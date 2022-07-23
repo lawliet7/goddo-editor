@@ -357,6 +357,8 @@ def enter_time_in_go_to_dialog_box(app_thread, time_label: str, should_go_to_fra
         pw_window = app_thread.mon.preview_window_output
     else:
         assert False, f'window is not a preview window or its dialog box.  it is {active_window}'
+
+    wait_until(lambda: QApplication.activeWindow() == pw_window.dialog.dialog)
     
     line_edit = pw_window.dialog.time_edit.lineEdit()
 

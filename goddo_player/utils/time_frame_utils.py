@@ -1,3 +1,4 @@
+from math import ceil, floor
 import re
 import time
 
@@ -15,20 +16,18 @@ def get_perf_counter_as_millis():
 
 
 def frames_to_time_components(total_frames, fps):
-    rounded_fps = round(fps)
-    frames = int(total_frames % rounded_fps)
-    secs = int(total_frames / rounded_fps % 60)
-    mins = int(total_frames / rounded_fps / 60 % 60)
-    hours = int(total_frames / rounded_fps / 60 / 60 % 60)
+    hours = floor(total_frames / fps / 60 / 60)
+    mins = floor(total_frames / fps / 60) % 60
+    secs = floor(total_frames / fps) % 60
+    frames = floor(total_frames % fps)
     return hours, mins, secs, frames
 
 
 def frames_to_time_ms_components(total_frames, fps):
-    rounded_fps = round(fps)
-    ms = int(total_frames / rounded_fps * 1000)
-    secs = int(total_frames / rounded_fps % 60)
-    mins = int(total_frames / rounded_fps / 60 % 60)
-    hours = int(total_frames / rounded_fps / 60 / 60 % 60)
+    hours = floor(total_frames / fps / 60 / 60)
+    mins = floor(total_frames / fps / 60) % 60
+    secs = floor(total_frames / fps) % 60
+    ms = floor(total_frames / fps * 1000)
     return hours, mins, secs, ms
 
 
@@ -92,7 +91,8 @@ def time_str_to_frames(time_str: str, fps, last_component_type='frames'):
             raise Exception(f"Please pass correct fps in, we cannot divide by {fps}")
         last_component_total_frames = ms / 1000 * fps
 
-    total_frames = int(round(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames))
+    # frames to str does a floor so here we do the reverse which is ceil
+    total_frames = ceil(hrs * 60 * 60 * fps + mins * 60 * fps + secs * fps + last_component_total_frames)
     return total_frames if time_str[0] != '-' else -total_frames
 
 def is_time_label(text):

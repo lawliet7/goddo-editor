@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QSpinBox
 from PyQt5.QtCore import Qt
 from goddo_player.utils.event_helper import is_key_press
 
-from goddo_player.utils.time_frame_utils import time_str_to_components
+from goddo_player.utils.time_frame_utils import time_str_to_components, time_str_to_frames
 
 
 class TimeInFramesEdit(QSpinBox):
@@ -32,8 +32,8 @@ class TimeInFramesEdit(QSpinBox):
         self.is_valid = True
 
     def valueFromText(self, text: str) -> int:
-        hours, mins, secs, frames = time_str_to_components(text)
-        return int(round(hours * 60 * 60 * self._fps + mins * 60 * self._fps + secs * self._fps + frames))
+        # hours, mins, secs, frames = time_str_to_components(text)
+        return time_str_to_frames(text, self._fps)
 
     def textFromValue(self, total_frames: int) -> str:
         if self._fps > 0:

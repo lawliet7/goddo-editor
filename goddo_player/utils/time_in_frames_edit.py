@@ -14,6 +14,7 @@ class TimeInFramesEdit(QSpinBox):
         super().__init__(parent)
 
         self._fps = 0
+        self._is_fps_fraction = False
 
         self.setMaximum(1)
         self.setMinimum(1)
@@ -26,13 +27,13 @@ class TimeInFramesEdit(QSpinBox):
 
     def reset(self, fps, current_frame, min_frame, max_frame):
         self._fps = fps
+        self._is_fps_fraction = True if abs(self._fps - round(self._fps)) > 0.000001 else False
         self.setMinimum(min_frame)
         self.setMaximum(max_frame)
         self.setValue(current_frame)
         self.is_valid = True
 
     def valueFromText(self, text: str) -> int:
-        # hours, mins, secs, frames = time_str_to_components(text)
         return time_str_to_frames(text, self._fps)
 
     def textFromValue(self, total_frames: int) -> str:
@@ -62,6 +63,19 @@ class TimeInFramesEdit(QSpinBox):
                 self.setStyleSheet(fail_style_sheet)
                 self.is_valid = False
                 return QValidator.Intermediate, input, pos
+            elif self._is_fps_fraction and fps_section == int(round(self._fps))-1:
+                logging.debug(f'checking if fps is valid success {input}')
+                frame = self.valueFromText(input)
+                reconstructed_label = self.textFromValue(frame)
+
+                if reconstructed_label == input:
+                    self.setStyleSheet(good_style_sheet)
+                    self.is_valid = True
+                    return QValidator.Acceptable, input, pos
+                else:
+                    self.setStyleSheet(fail_style_sheet)
+                    self.is_valid = False
+                    return QValidator.Intermediate, input, pos
             else:
                 logging.debug(f'validate success {input}')
                 self.setStyleSheet(good_style_sheet)

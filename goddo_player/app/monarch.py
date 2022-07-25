@@ -1,4 +1,5 @@
 import logging
+from math import floor
 import os
 import pathlib
 from time import time
@@ -19,7 +20,7 @@ from goddo_player.timeline_window.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import file_to_url
-from goddo_player.utils.window_util import activate_window
+from goddo_player.utils.window_util import activate_window, get_title_bar_height
 
 
 class MonarchSystem(QObject):
@@ -29,23 +30,43 @@ class MonarchSystem(QObject):
         self.app = app
         self.state = StateStore()
 
+        screen = QApplication.primaryScreen()
+        actual_screen_rect = screen.availableGeometry()
+        avail_screen_rect = screen.availableGeometry()
+        title_bar_height = get_title_bar_height()
+        width = floor(avail_screen_rect.width()*0.2)
+        height = avail_screen_rect.height() - title_bar_height
+
         self.tabbed_list_window = TabbedListWindow()
+        self.tabbed_list_window.setGeometry(0, title_bar_height, width, height)
         self.tabbed_list_window.show()
 
         left = self.tabbed_list_window.geometry().right()
-        top = self.tabbed_list_window.geometry().top() + 20
+        top = title_bar_height
+        width = floor((avail_screen_rect.width() - left) / 2)
+        height = width * actual_screen_rect.height() / avail_screen_rect.width()
 
         self.preview_window = PreviewWindow()
+        self.preview_window.setGeometry(left, top, width, height)
         self.preview_window.show()
-        self.preview_window.move(left, top)
+
+        left = self.preview_window.geometry().right()
+        width = floor(avail_screen_rect.width() - left)
+        height = width * actual_screen_rect.height() / avail_screen_rect.width()
 
         self.preview_window_output = PreviewWindowOutput()
+        self.preview_window_output.setGeometry(left, top, width, height)
         self.preview_window_output.show()
-        self.preview_window_output.move(self.preview_window.geometry().right() + 10, top)
+        # self.preview_window_output.move(self.preview_window.geometry().right() + 10, top)
+
+        left = self.tabbed_list_window.geometry().right()
+        top = self.preview_window.geometry().bottom() + 40
+        width = floor(avail_screen_rect.width() - left)
 
         self.timeline_window = TimelineWindow()
+        self.timeline_window.setGeometry(left, top, width, 300)
         self.timeline_window.show()
-        self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
+        # self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
         self.signals: StateStoreSignals = StateStoreSignals()
         self.signals.preview_window.switch_video_slot.connect(self.__on_switch_video)

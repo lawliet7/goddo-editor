@@ -1,5 +1,7 @@
+import logging
+from math import floor
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QTabWidget, QVBoxLayout
+from PyQt5.QtWidgets import QTabWidget, QVBoxLayout, QApplication
 
 from goddo_player.utils.event_helper import common_event_handling
 from goddo_player.app.signals import StateStoreSignals
@@ -15,7 +17,6 @@ class TabbedListWindow(BaseQWidget):
     def __init__(self):
         super().__init__()
 
-        self.setGeometry(0, get_title_bar_height(), 500, 1000)
         self.setWindowTitle('中毒美女捜査官')
         self.signals: StateStoreSignals = StateStoreSignals()
         self.state = StateStore()

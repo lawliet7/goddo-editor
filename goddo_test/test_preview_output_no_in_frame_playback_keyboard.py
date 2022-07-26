@@ -121,11 +121,15 @@ def test_restricted_keyboard_move_left_from_bet_in_and_out_frame(app_thread, win
 
     enter_time_in_go_to_dialog_box(app_thread, '0:00:30.00')
 
+    time.sleep(5)
+
     expected_out_frame = 4 * 60
     expected_cur_frame = 4 * 30 - 5
 
     pyautogui.press('left')
     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_cur_frame)
+
+    time.sleep(5)
 
     clip = get_video_clip_for_1hr_vid(in_frame=None, out_frame=expected_out_frame)
     expected_timeline_clips = [(clip,120)]
@@ -445,9 +449,13 @@ def test_unrestricted_keyboard_from_out_frame_move_right(app_thread, windows_con
 
     enter_time_in_go_to_dialog_box(app_thread, '0:00:59.03')
 
+    time.sleep(3)
+
     # move to in frame
     pyautogui.press('right')
     wait_until(lambda: app_thread.mon.state.preview_window_output.current_frame_no == expected_out_frame)
+
+    time.sleep(3)
 
     # move right
     pyautogui.press('right')
@@ -455,6 +463,8 @@ def test_unrestricted_keyboard_from_out_frame_move_right(app_thread, windows_con
 
     clip = get_video_clip_for_1hr_vid(in_frame=None, out_frame=expected_out_frame)
     expected_timeline_clips = [(clip,120)]
+
+    time.sleep(3)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 

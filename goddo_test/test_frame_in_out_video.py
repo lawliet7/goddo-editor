@@ -12,97 +12,203 @@ from goddo_test.common_asserts import assert_state_is_blank
 from goddo_test.utils.assert_utils import *
 from goddo_test.utils.command_widget import Command, CommandType
 from goddo_test.utils.path_util import video_folder_path, my_test_output_folder_path
-from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, get_test_vid_path, wait_until, pil_img_to_arr, cmp_image
+from goddo_test.utils.test_utils import click_on_prev_wind_slider, drag_and_drop, drop_video_on_preview, enter_time_in_go_to_dialog_box, get_test_vid_path, go_to_prev_wind_slider, open_clip_on_output_window, wait_until, pil_img_to_arr, cmp_image
 from goddo_test.utils.windows_container import WindowsContainer
 
+frames_1_sec = 30
+frames_3_sec = int(round(29.97 * 3))
+frames_5_sec = int(round(29.97 * 5))
 
-def test_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+def test_in_frame_when_no_in_out(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    cur_frame_no = app_thread.mon.state.preview_window.current_frame_no
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
 
     pyautogui.press('i')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
 
     logging.info(f'=== slider value {windows_container.preview_window.slider.value()}')
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(current_frame_no=cur_frame_no, in_frame=cur_frame_no), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), current_frame_no=frames_1_sec, in_frame=frames_1_sec), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
-
-def test_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+def test_in_frame_before_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-
-    print(app_thread.mon.state.preview_window)
-    cur_frame_no = app_thread.mon.state.preview_window.current_frame_no
-
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    
     pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_3_sec)
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
 
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-                get_assert_preview_for_test_file_1_fn(out_frame=cur_frame_no), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), current_frame_no=frames_1_sec, in_frame=frames_1_sec, out_frame=frames_3_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_in_frame_after_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_1_sec)
+    
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), current_frame_no=frames_3_sec, in_frame=frames_3_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_change_in_frame_before_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
+    
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), current_frame_no=frames_3_sec, in_frame=frames_3_sec, out_frame=frames_5_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_change_in_frame_from_before_to_after_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_3_sec)
+    
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_5_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec, in_frame=frames_5_sec), 
                 get_assert_preview_for_blank_file_fn(is_output_window=True), 
                 assert_blank_timeline)
 
 
-def test_in_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+def test_out_frame_when_no_in(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    pyautogui.press('i')
-
-    in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
 
     pyautogui.press('o')
-
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
-
-    time.sleep(0.5)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_3_sec)
 
     generic_assert(app_thread, windows_container, blank_state,
-            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), in_frame=in_frame, out_frame=out_frame), 
-            get_assert_preview_for_blank_file_fn(is_output_window=True), 
-            assert_blank_timeline)
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), out_frame=frames_3_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_out_frame_after_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_3_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.42, 0.43), in_frame=frames_1_sec, out_frame=frames_3_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_out_frame_before_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_1_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), out_frame=frames_1_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
+
+def test_change_out_frame_from_after_to_before_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_1_sec)
+
+    generic_assert(app_thread, windows_container, blank_state,
+                get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+                get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), out_frame=frames_1_sec), 
+                get_assert_preview_for_blank_file_fn(is_output_window=True), 
+                assert_blank_timeline)
 
 
 def test_unset_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
     pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
 
-    # in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
-
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
     pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['i'])
@@ -110,7 +216,7 @@ def test_unset_in_frame(app_thread, windows_container: WindowsContainer, blank_s
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), out_frame=out_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), out_frame=frames_5_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -119,21 +225,13 @@ def test_unset_out_frame(app_thread, windows_container: WindowsContainer, blank_
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
     pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
 
-    in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
-
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
     pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['o'])
@@ -141,30 +239,48 @@ def test_unset_out_frame(app_thread, windows_container: WindowsContainer, blank_
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), current_frame_no=out_frame, in_frame=in_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec, in_frame=frames_3_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
 
-def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
+def test_unset_in_then_out_frame(app_thread, windows_container: WindowsContainer, blank_state):
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
     pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
 
-    # in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
-
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
     pyautogui.press('o')
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
+
+    with pyautogui.hold('shift'):
+        pyautogui.press(['i'])
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is None)
+
+    with pyautogui.hold('shift'):
+        pyautogui.press(['o'])
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame is None)
+
+    generic_assert(app_thread, windows_container, blank_state,
+            get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec), 
+            get_assert_preview_for_blank_file_fn(is_output_window=True), 
+            assert_blank_timeline)
+
+def test_unset_out_then_in_frame(app_thread, windows_container: WindowsContainer, blank_state):
+    video_path = get_test_vid_path()
+    drop_video_on_preview(app_thread, windows_container, video_path)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:03.00')
+    pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_3_sec)
+
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
+    pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
 
     with pyautogui.hold('shift'):
         pyautogui.press(['o'])
@@ -176,7 +292,7 @@ def test_unset_in_out_frame(app_thread, windows_container: WindowsContainer, bla
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(0.1, 0.3), current_frame_no=out_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -185,45 +301,20 @@ def test_go_to_in_frame(app_thread, windows_container: WindowsContainer, blank_s
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+
     pyautogui.press('i')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
-
-    slider = windows_container.preview_window.slider
-
-    cur_slider_value = slider.value()
-
-    in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('o')
-
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
-    
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.9)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
-    pyautogui.click()
-
-    wait_until(lambda: slider.value() > cur_slider_value)
+    click_on_prev_wind_slider(windows_container.preview_window, 0.8)
+    wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no > frames_1_sec)
 
     pyautogui.press('[')
+    wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no == frames_1_sec)
 
-    wait_until(lambda: slider.value() == cur_slider_value)
-
-    expected_slider_pct = cur_slider_value/200
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=in_frame, in_frame=in_frame, out_frame=out_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), current_frame_no=frames_1_sec, in_frame=frames_1_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -231,13 +322,15 @@ def test_go_to_in_frame_when_no_in_out(app_thread, windows_container: WindowsCon
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
+
     pyautogui.press('[')
 
     time.sleep(0.5)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), current_frame_no=frames_1_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -269,45 +362,20 @@ def test_go_to_out_frame(app_thread, windows_container: WindowsContainer, blank_
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    pyautogui.press('i')
-
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame is not None)
-
-    slider = windows_container.preview_window.slider
-
-    in_frame = app_thread.mon.state.preview_window.current_frame_no
-
-    pyautogui.press('space')
-
-    time.sleep(0.5)
-
-    pyautogui.press('space')
-
-    wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
-    out_frame = app_thread.mon.state.preview_window.current_frame_no
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
 
     pyautogui.press('o')
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.out_frame == frames_5_sec)
 
-    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out is not None)
-
-    cur_slider_value = slider.value()
-    
-    pos = local_to_global_pos(slider, windows_container.preview_window)
-    x_offset = int(slider.width() * 0.9)
-    y_offset = int(slider.height() * 0.5)
-    pyautogui.moveTo(pos.x() + x_offset, pos.y() + y_offset)
-    pyautogui.click()
-
-    wait_until(lambda: slider.value() > cur_slider_value)
+    click_on_prev_wind_slider(windows_container.preview_window, 0.2)
+    wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no < frames_5_sec)
 
     pyautogui.press(']')
+    wait_until(lambda: app_thread.mon.state.preview_window.current_frame_no == frames_5_sec)
 
-    wait_until(lambda: slider.value() == cur_slider_value)
-
-    expected_slider_pct = cur_slider_value/200
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(expected_slider_pct-0.01, expected_slider_pct+0.01), current_frame_no=out_frame, in_frame=in_frame, out_frame=out_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec, out_frame=frames_5_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -315,13 +383,15 @@ def test_go_to_out_frame_when_no_in_out(app_thread, windows_container: WindowsCo
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:05.00')
+
     pyautogui.press(']')
 
     time.sleep(0.5)
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.71, 0.72), current_frame_no=frames_5_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)
 
@@ -329,13 +399,9 @@ def test_go_to_out_frame_when_only_in(app_thread, windows_container: WindowsCont
     video_path = get_test_vid_path()
     drop_video_on_preview(app_thread, windows_container, video_path)
 
-    in_frame = windows_container.preview_window.state.preview_window.current_frame_no
-
+    enter_time_in_go_to_dialog_box(app_thread, '0:00:01.00')
     pyautogui.press('i')
-
-    click_on_prev_wind_slider(windows_container.preview_window, 0.95)
-
-    frame_no = windows_container.preview_window.state.preview_window.current_frame_no
+    wait_until(lambda: app_thread.mon.state.preview_window.frame_in_out.in_frame == frames_1_sec)
 
     pyautogui.press(']')
 
@@ -343,6 +409,6 @@ def test_go_to_out_frame_when_only_in(app_thread, windows_container: WindowsCont
 
     generic_assert(app_thread, windows_container, blank_state,
             get_assert_file_list_for_test_file_1_fn(), get_assert_blank_list_fn(is_file_list=False), 
-            get_assert_preview_for_test_file_1_fn(slider_range=(0.93, 0.97), current_frame_no=frame_no, in_frame=in_frame), 
+            get_assert_preview_for_test_file_1_fn(slider_range=(0.14, 0.15), current_frame_no=frames_1_sec, in_frame=frames_1_sec), 
             get_assert_preview_for_blank_file_fn(is_output_window=True), 
             assert_blank_timeline)

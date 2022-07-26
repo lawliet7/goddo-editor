@@ -260,6 +260,8 @@ def test_restricted_add_in_frame_less_than_10_secs(app_thread, windows_container
     output_clip = get_video_clip_for_1hr_vid(in_frame=expected_new_in_frame, out_frame=expected_out_frame)
     expected_timeline_clips = [(output_clip,110)]
 
+    time.sleep(3)
+
     generic_assert(app_thread, windows_container, blank_state,
                 get_assert_file_list_for_1hr_fn(), get_assert_blank_list_fn(is_file_list=False), 
                 get_assert_preview_fn(prev_clip, slider_range=(0.01, 0.02), current_frame_no=expected_out_frame),

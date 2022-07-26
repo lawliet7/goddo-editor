@@ -434,11 +434,12 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
             cur_abs_time_label, cur_rel_time_label, total_time_label, speed_label, skip_label, restrict_label, time_color = \
                 parse_preview_window_label(resolved_win_state_dict['label'], WINDOW_NAME_OUTPUT)
             defaulted_restrict_label = f'restrict={defaulted_restrict_frame_interval if restrict_frame_interval is None else restrict_frame_interval}'
-            clip_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames) - 1
+            clip_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
             cur_total_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames) + extra_frames_left + extra_frames_right
             cur_start_frame = clip.frame_in_out.get_resolved_in_frame() - extra_frames_left
             cur_end_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) + extra_frames_right
-            expected_total_time_label = clip.get_total_time_str(clip_total_frames)
+            logging.info(f'=== label clip total {clip_total_frames} no frames {clip.frame_in_out.get_no_of_frames(clip.total_frames)} frame_in_out {clip.frame_in_out} total {clip.total_frames} label {clip.get_total_time_str(clip_total_frames)}')
+            expected_total_time_label = clip.get_total_time_str(clip_total_frames - 1)
         else:
             geometry_dict = {
                 "x": 546,
@@ -501,12 +502,14 @@ def get_assert_preview_fn(clip: VideoClip, slider_range=(0.00, 0.01), current_fr
         if is_output_window:
             cur_rel_frames_in_time_label = time_str_to_frames(cur_rel_time_label, clip.fps)
             cur_total_frames_in_time_label = time_str_to_frames(total_time_label, clip.fps)
+            logging.info(f'=== abs {cur_abs_frames_in_time_label} rel {cur_rel_frames_in_time_label} in {clip.frame_in_out.in_frame}')
             assert cur_abs_frames_in_time_label == (cur_rel_frames_in_time_label + clip.frame_in_out.get_resolved_in_frame())
 
             if resolved_state_dict['current_frame_no'] < clip.frame_in_out.get_resolved_in_frame():
                 assert cur_rel_frames_in_time_label < 0
                 assert time_color == 'blue'
             if resolved_state_dict['current_frame_no'] > clip.frame_in_out.get_resolved_out_frame(clip.total_frames):
+                logging.info(f"=== cur {resolved_state_dict['current_frame_no']} out {clip.frame_in_out.get_resolved_out_frame(clip.total_frames)} rel {cur_rel_frames_in_time_label} total {cur_total_frames_in_time_label}")
                 assert cur_rel_frames_in_time_label > cur_total_frames_in_time_label
                 assert time_color == 'blue'
         else:

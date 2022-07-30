@@ -368,8 +368,8 @@ def assert_blank_timeline(app_thread, windows_container, state_dict, win_state_d
      # assert win state timeline
     # assert win_state_dict['timeline_window']['geometry']['x'] == 546
     # assert win_state_dict['timeline_window']['geometry']['y'] == 525
-    assert win_state_dict['timeline_window']['geometry']['width'] == 1075
-    assert win_state_dict['timeline_window']['geometry']['height'] == 393
+    # assert win_state_dict['timeline_window']['geometry']['width'] == 1075
+    # assert win_state_dict['timeline_window']['geometry']['height'] == 393
     assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == 1075
     assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
     assert len(win_state_dict['timeline_window']['clip_rects']) == 0
@@ -555,8 +555,8 @@ def get_assert_timeline_for_test_file_1_fn(in_frame=None, out_frame=None, width_
         # assert win state timeline
         # assert win_state_dict['timeline_window']['geometry']['x'] == 546
         # assert win_state_dict['timeline_window']['geometry']['y'] == 525
-        assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
-        assert win_state_dict['timeline_window']['geometry']['height'] == 393
+        # assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
+        # assert win_state_dict['timeline_window']['geometry']['height'] == 393
         assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == PlayerConfigs.timeline_initial_width
         assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
         assert len(win_state_dict['timeline_window']['clip_rects']) == 1
@@ -606,8 +606,8 @@ def get_assert_timeline_for_1hr_file_fn(in_frame=None, out_frame=None, width_of_
         # assert win state timeline
         # assert win_state_dict['timeline_window']['geometry']['x'] == 546
         # assert win_state_dict['timeline_window']['geometry']['y'] == 525
-        assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
-        assert win_state_dict['timeline_window']['geometry']['height'] == 393
+        # assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
+        # assert win_state_dict['timeline_window']['geometry']['height'] == 393
         assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == scroll_area_width
         assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393
         assert len(win_state_dict['timeline_window']['clip_rects']) == num_of_clips
@@ -646,8 +646,8 @@ def get_assert_timeline_fn(expected_timeline_clips: List[Tuple[VideoClip,int]], 
         # assert win state timeline
         # assert win_state_dict['timeline_window']['geometry']['x'] == 546
         # assert win_state_dict['timeline_window']['geometry']['y'] == 525
-        assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
-        assert win_state_dict['timeline_window']['geometry']['height'] == 393
+        # assert win_state_dict['timeline_window']['geometry']['width'] == PlayerConfigs.timeline_initial_width
+        # assert win_state_dict['timeline_window']['geometry']['height'] == 393
 
         assert win_state_dict['timeline_window']['innerWidgetSize']['width'] == scroll_area_width
         assert win_state_dict['timeline_window']['innerWidgetSize']['height'] == 393

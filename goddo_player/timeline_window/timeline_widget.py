@@ -41,7 +41,7 @@ class TimelineWidget(QWidget):
         n_mins = n_frames / clip.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
 
-        return QRect(x, self.height_of_line + 50, width, 100)
+        return QRect(x, self.height_of_line + 50, width, self.height())
 
     def recalculate_all_clip_rects(self):
         x = 0
@@ -111,7 +111,7 @@ class TimelineWidget(QWidget):
         painter.setPen(QColor(173, 202, 235))
         for i in range(int(math.ceil(self.width() / length_of_one_min))):
             x = (i+1) * length_of_one_min
-            painter.drawLine(x, self.height_of_line, x, 393)
+            painter.drawLine(x, self.height_of_line, x, self.height())
             painter.drawText(int(x-size_width/2), self.height_of_line-5, f"{i+1}:00")
 
             for j in range(6):

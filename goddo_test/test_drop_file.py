@@ -74,8 +74,8 @@ def assert_file_list_for_multiple_files(app_thread, windows_container, state_dic
     # assert win state
     # assert win_state_dict['tabbed_list_window']['geometry']['x'] == 0
     # assert win_state_dict['tabbed_list_window']['geometry']['y'] == 27
-    assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
-    assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
+    # assert win_state_dict['tabbed_list_window']['geometry']['width'] == 546
+    # assert win_state_dict['tabbed_list_window']['geometry']['height'] == 1000
 
     clips = win_state_dict['tabbed_list_window']['videos_tab']['clips']
     assert len(clips) == 2

@@ -41,7 +41,9 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.setGeometry(0, title_bar_height, width, height)
         self.tabbed_list_window.show()
 
-        left = self.tabbed_list_window.geometry().right()
+        extra_pixels_bet_windows = 3
+
+        left = self.tabbed_list_window.geometry().right() + extra_pixels_bet_windows
         top = title_bar_height
         width = floor((avail_screen_rect.width() - left) / 2)
         height = width * actual_screen_rect.height() / avail_screen_rect.width()
@@ -50,7 +52,7 @@ class MonarchSystem(QObject):
         self.preview_window.setGeometry(left, top, width, height)
         self.preview_window.show()
 
-        left = self.preview_window.geometry().right()
+        left = self.preview_window.geometry().right() + extra_pixels_bet_windows
         width = floor(avail_screen_rect.width() - left)
         height = width * actual_screen_rect.height() / avail_screen_rect.width()
 
@@ -59,12 +61,13 @@ class MonarchSystem(QObject):
         self.preview_window_output.show()
         # self.preview_window_output.move(self.preview_window.geometry().right() + 10, top)
 
-        left = self.tabbed_list_window.geometry().right()
-        top = self.preview_window.geometry().bottom() + 40
+        left = self.tabbed_list_window.geometry().right() + extra_pixels_bet_windows
+        top = self.preview_window.geometry().bottom() + title_bar_height + 5 + extra_pixels_bet_windows # bottom is off by few pixels for some reason
         width = floor(avail_screen_rect.width() - left)
+        height = self.tabbed_list_window.height() - top + title_bar_height
 
         self.timeline_window = TimelineWindow()
-        self.timeline_window.setGeometry(left, top, width, 300)
+        self.timeline_window.setGeometry(left, top, width, height)
         self.timeline_window.show()
         # self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 

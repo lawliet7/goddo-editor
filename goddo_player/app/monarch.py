@@ -5,11 +5,12 @@ from time import time
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, VideoClip
+from goddo_player.utils.loading_dialog import LoadingDialog
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.preview_window.preview_window import PreviewWindow
@@ -20,7 +21,6 @@ from goddo_player.utils.enums import IncDec
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import activate_window
-
 
 class MonarchSystem(QObject):
     def __init__(self, app: 'QApplication'):
@@ -46,6 +46,9 @@ class MonarchSystem(QObject):
         self.timeline_window = TimelineWindow()
         self.timeline_window.show()
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
+
+        self.dialog = LoadingDialog()
+        # self.dialog.open_dialog.emit('you suck')
 
         self.signals: StateStoreSignals = StateStoreSignals()
         self.signals.preview_window.switch_video_slot.connect(self.__on_switch_video)
@@ -244,9 +247,22 @@ class MonarchSystem(QObject):
 
     def __on_switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut):
         logging.info(f'update preview file')
+        self.tabbed_list_window.setDisabled(True)
+        self.preview_window.preview_widget.setDisabled(True)        
+        self.preview_window_output.setDisabled(True)
+        self.timeline_window.setDisabled(True)
+
         preview_window = self.get_preview_window_from_signal(self.sender())
-        preview_window.switch_video(video_path, frame_in_out)
-        preview_window.activateWindow()
+        def finished_loading_video(_):
+            self.tabbed_list_window.setDisabled(False)
+            self.preview_window.setDisabled(False)
+            self.preview_window_output.setDisabled(False)
+            self.timeline_window.setDisabled(False)
+
+            preview_window.switch_video(video_path, frame_in_out)
+            preview_window.activateWindow()
+
+        self.dialog.open_dialog(finished_loading_video)
 
     def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())

@@ -1,3 +1,4 @@
+import logging
 from typing import Callable
 from PyQt5.QtWidgets import QDialog, QLabel
 from PyQt5.QtGui import QMovie
@@ -31,8 +32,14 @@ class LoadingDialog(QObject):
         self._dialog = self._MyDialog()
 
     def open_dialog(self, fn):
-        self._dialog.finished.connect(fn)
-        self._dialog.show()
+        if self._dialog.isHidden():
+            self._dialog.finished.connect(fn)
+            self._dialog.show()
+        else:
+            logging.error('dialog is hidden')
+
+    def close(self):
+        self._dialog.close()
 
 
 

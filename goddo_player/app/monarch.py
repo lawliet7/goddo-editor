@@ -48,7 +48,6 @@ class MonarchSystem(QObject):
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
         self.dialog = LoadingDialog()
-        # self.dialog.open_dialog.emit('you suck')
 
         self.signals: StateStoreSignals = StateStoreSignals()
         self.signals.preview_window.switch_video_slot.connect(self.__on_switch_video)
@@ -263,6 +262,7 @@ class MonarchSystem(QObject):
             preview_window.activateWindow()
 
         self.dialog.open_dialog(finished_loading_video)
+        QTimer.singleShot(800, lambda: self.dialog.close())
 
     def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())

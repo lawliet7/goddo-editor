@@ -147,10 +147,6 @@ class FileListWidget(QListWidget):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         for url in event.mimeData().urls():
-            if not url.path().isascii():
-                show_error_box(self, "sorry unicode file names are not support!")
-                break
-
             self.signals.add_file_slot.emit(VideoPath(url))
 
     def get_all_items(self) -> List[QListWidgetItem]:

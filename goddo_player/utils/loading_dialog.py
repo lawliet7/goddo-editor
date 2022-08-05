@@ -30,10 +30,16 @@ class LoadingDialog(QObject):
         super().__init__()
 
         self._dialog = self._MyDialog()
+        self._current_callback = None
+        self._dialog.finished.connect(self._callback)
 
-    def open_dialog(self, fn):
+    def _callback(self, result: int):
+        if self._current_callback:
+            self._current_callback(result)
+
+    def open_dialog(self, fn: Callable[[int],None]):
         if self._dialog.isHidden():
-            self._dialog.finished.connect(fn)
+            self._current_callback = fn
             self._dialog.show()
         else:
             logging.error('dialog is hidden')

@@ -203,5 +203,7 @@ class ClipListWindow(BaseQWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.url}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.url, FrameInOut())
-        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
+        fn_id = self.signals.fn_repo.push(lambda: self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY))
+        logging.info(f'=== emitting {fn_id}')
+        self.signals.preview_window.switch_video_slot.emit(item_widget.url, FrameInOut(), fn_id)
+        

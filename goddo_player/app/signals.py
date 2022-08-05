@@ -1,4 +1,8 @@
+from dataclasses import dataclass
 from enum import Enum, auto, unique
+import itertools
+import logging
+from typing import Callable
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
@@ -16,13 +20,36 @@ class PlayCommand(Enum):
     PLAY = auto()
     PAUSE = auto()
 
+@dataclass(frozen=True)
+class SignalFunctionId:
+    id: int
+
+    @staticmethod
+    def no_func():
+        return SignalFunctionId(-1)
+
+
+class SignalFunctionRepo:
+    def __init__(self):
+        self._repo = {}
+        self._id_iter = itertools.count()
+
+    def push(self, fn: Callable) -> SignalFunctionId:
+        fn_id = next(self._id_iter)
+        logging.info(f'=== push fn id - {fn_id}')
+        self._repo[fn_id] = fn
+        return SignalFunctionId(fn_id)
+
+    def pop(self, fn_id: SignalFunctionId) -> Callable:
+        logging.info(f'=== pop fn id - {fn_id}')
+        return self._repo.pop(fn_id.id)
 
 class PreviewWindowSignals(QObject):
     def __init__(self, name: str):
         super().__init__()
         self.setObjectName(name)
 
-    switch_video_slot = pyqtSignal(VideoPath, FrameInOut)
+    switch_video_slot = pyqtSignal(VideoPath, FrameInOut, SignalFunctionId)
     switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
     out_frame_slot = pyqtSignal(int)
@@ -56,6 +83,8 @@ class StateStoreSignals(QObject):
     timeline_set_clipboard_clip_slot = pyqtSignal(VideoClip)
     timeline_clear_clipboard_clip_slot = pyqtSignal()
     activate_all_windows_slot = pyqtSignal()
+
+    fn_repo = SignalFunctionRepo()
 
     def get_preview_window(self, window_name):
         return self.preview_window if window_name == WINDOW_NAME_SOURCE else self.preview_window_output

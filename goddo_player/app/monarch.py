@@ -8,7 +8,7 @@ from PyQt5.QtCore import QObject, QUrl, QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel
 
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
+from goddo_player.app.signals import SignalFunctionId, StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.loading_dialog import LoadingDialog
 from goddo_player.utils.video_path import VideoPath
@@ -126,10 +126,13 @@ class MonarchSystem(QObject):
     def __on_preview_window_reset(self):
         preview_window = self.get_preview_window_from_signal(self.sender())
 
-        self.sender().switch_video_slot.emit(VideoPath(QUrl()), FrameInOut())
+        def fn():
+            self.timeline_window.update()
+            preview_window.update()
 
-        self.timeline_window.update()
-        preview_window.update()
+        fn_id = self.signals.fn_repo.push(fn)
+        logging.info(f'=== emitting {fn_id}')
+        self.sender().switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), fn_id)        
 
     def __on_timeline_clip_double_click(self, idx, clip):
         self.state.timeline.opened_clip_index = idx
@@ -138,13 +141,18 @@ class MonarchSystem(QObject):
             pw_signals = self.signals.preview_window_output
             pw_state = self.state.preview_window_output
 
-            pw_signals.switch_video_slot.emit(clip.video_path, clip.frame_in_out)
-            pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
+            def fn():
+                pw_signals.seek_slot.emit(clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
 
-            if pw_state.is_max_speed:
-                pw_signals.switch_speed_slot.emit()
+                if pw_state.is_max_speed:
+                    pw_signals.switch_speed_slot.emit()
 
-            pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
+                pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
+            
+            fn_id = self.signals.fn_repo.push(fn)
+            logging.info(f'=== emitting {fn_id}')
+            pw_signals.switch_video_slot.emit(clip.video_path, clip.frame_in_out, fn_id)
+            
         else:
             self.signals.preview_window_output.reset_slot.emit()
 
@@ -244,7 +252,7 @@ class MonarchSystem(QObject):
         else:
             return None
 
-    def __on_switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut):
+    def __on_switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut, fn_id: SignalFunctionId):
         logging.info(f'update preview file')
         self.tabbed_list_window.setDisabled(True)
         self.preview_window.preview_widget.setDisabled(True)        
@@ -260,6 +268,9 @@ class MonarchSystem(QObject):
 
             preview_window.switch_video(video_path, frame_in_out)
             preview_window.activateWindow()
+
+            logging.info(f'=== fn {fn_id}')
+            self.signals.fn_repo.pop(fn_id)()
 
         self.dialog.open_dialog(finished_loading_video)
         QTimer.singleShot(800, lambda: self.dialog.close())
@@ -306,8 +317,10 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.clips_tab.clip_list_dict.clear()
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
-        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut())
-        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut())
+        logging.info(f'=== emitting {0}')
+        logging.info(f'=== emitting {0}')
+        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
+        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
 
         self.timeline_window.recalculate_clip_rects()
         # self.timeline_window.activateWindow()
@@ -327,29 +340,34 @@ class MonarchSystem(QObject):
         def handle_prev_wind_fn(prev_wind_dict):
             pw_signals = StateStoreSignals().preview_window
 
+            def fn():
+                logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
+
+                if prev_wind_dict['current_frame_no'] > 0:
+                    pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
+                else:
+                    pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
+
+                if prev_wind_dict.get('is_max_speed'):
+                    pw_signals.switch_speed_slot.emit()
+
+                if prev_wind_dict.get('time_skip_multiplier'):
+                    new_multiplier = prev_wind_dict['time_skip_multiplier']
+                    cur_multiplier = self.state.preview_window.time_skip_multiplier
+
+                    if new_multiplier > cur_multiplier:
+                        for i in range(new_multiplier - cur_multiplier):
+                            pw_signals.update_skip_slot.emit(IncDec.INC)
+                    elif new_multiplier < cur_multiplier:
+                        for i in range(cur_multiplier - new_multiplier):
+                            pw_signals.update_skip_slot.emit(IncDec.DEC)                    
+
             frame_in_out_dict = prev_wind_dict['frame_in_out']
             frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))
-            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_path'])), frame_in_out)
-            logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
-
-            if prev_wind_dict['current_frame_no'] > 0:
-                pw_signals.seek_slot.emit(prev_wind_dict['current_frame_no'], PositionType.ABSOLUTE)
-            else:
-                pw_signals.seek_slot.emit(0, PositionType.ABSOLUTE)
-
-            if prev_wind_dict.get('is_max_speed'):
-                pw_signals.switch_speed_slot.emit()
-
-            if prev_wind_dict.get('time_skip_multiplier'):
-                new_multiplier = prev_wind_dict['time_skip_multiplier']
-                cur_multiplier = self.state.preview_window.time_skip_multiplier
-
-                if new_multiplier > cur_multiplier:
-                    for i in range(new_multiplier - cur_multiplier):
-                        pw_signals.update_skip_slot.emit(IncDec.INC)
-                elif new_multiplier < cur_multiplier:
-                    for i in range(cur_multiplier - new_multiplier):
-                        pw_signals.update_skip_slot.emit(IncDec.DEC)
+            fn_id = self.signals.fn_repo.push(fn)
+            logging.info(f'=== emitting {fn_id}')
+            pw_signals.switch_video_slot.emit(VideoPath(file_to_url(prev_wind_dict['video_path'])), frame_in_out, fn_id)
+            
 
         def handle_prev_wind_output_fn(prev_wind_out_dict):
             pw_signals = StateStoreSignals().preview_window_output

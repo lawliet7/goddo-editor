@@ -21,6 +21,7 @@ from goddo_player.utils.enums import IncDec
 from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import activate_window
+from goddo_player.widgets.audio_widget import AudioPlayer2
 
 class MonarchSystem(QObject):
     def __init__(self, app: 'QApplication'):
@@ -47,7 +48,7 @@ class MonarchSystem(QObject):
         self.timeline_window.show()
         self.timeline_window.move(left, self.preview_window.geometry().bottom() + 10)
 
-        self.dialog = LoadingDialog()
+        self.audio_player = AudioPlayer2()
 
         self.signals: StateStoreSignals = StateStoreSignals()
         self.signals.preview_window.switch_video_slot.connect(self.__on_switch_video)
@@ -255,12 +256,12 @@ class MonarchSystem(QObject):
     def __on_switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut, fn_id: SignalFunctionId):
         logging.info(f'update preview file')
         self.tabbed_list_window.setDisabled(True)
-        self.preview_window.preview_widget.setDisabled(True)        
+        self.preview_window.preview_widget.setDisabled(True)
         self.preview_window_output.setDisabled(True)
         self.timeline_window.setDisabled(True)
 
         preview_window = self.get_preview_window_from_signal(self.sender())
-        def finished_loading_video(_):
+        def finished_loading_video():
             self.tabbed_list_window.setDisabled(False)
             self.preview_window.setDisabled(False)
             self.preview_window_output.setDisabled(False)
@@ -272,8 +273,7 @@ class MonarchSystem(QObject):
             logging.info(f'=== fn {fn_id}')
             self.signals.fn_repo.pop(fn_id)()
 
-        self.dialog.open_dialog(finished_loading_video)
-        QTimer.singleShot(800, lambda: self.dialog.close())
+        self.audio_player.load_audio(str(video_path), os.path.join('output',video_path.file_name(include_ext=False)+'.wav'), finished_loading_video)
 
     def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())

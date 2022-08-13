@@ -261,13 +261,13 @@ class MonarchSystem(QObject):
         self.timeline_window.setDisabled(True)
 
         preview_window = self.get_preview_window_from_signal(self.sender())
+        preview_window.switch_video(video_path, frame_in_out)
         def finished_loading_video():
             self.tabbed_list_window.setDisabled(False)
             self.preview_window.setDisabled(False)
             self.preview_window_output.setDisabled(False)
             self.timeline_window.setDisabled(False)
 
-            preview_window.switch_video(video_path, frame_in_out)
             preview_window.activateWindow()
 
             logging.info(f'=== fn {fn_id}')

@@ -149,6 +149,10 @@ class FileListWidget(QListWidget):
         for url in event.mimeData().urls():
             self.signals.add_file_slot.emit(VideoPath(url))
 
+            # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
+            # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
+            self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+
     def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)
 

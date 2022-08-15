@@ -107,7 +107,7 @@ class MonarchSystem(QObject):
         self.state.file_list.files_dict[video_path.str()].add_tag(tag)
         self.tabbed_list_window.videos_tab.clip_list_dict[video_path.str()].add_tag(tag)
 
-    def __on_activate_all_windows(self):
+    def __on_activate_all_windows(self, window_to_activate: str):
         cur_active_window = QApplication.activeWindow()
 
         if cur_active_window != self.tabbed_list_window:
@@ -122,7 +122,10 @@ class MonarchSystem(QObject):
         if cur_active_window != self.timeline_window:
             activate_window(self.timeline_window)
 
-        activate_window(cur_active_window)
+        if window_to_activate != '':
+            activate_window(getattr(self,window_to_activate))
+        else:
+            activate_window(cur_active_window or self.tabbed_list_window)
 
     def __on_preview_window_reset(self):
         preview_window = self.get_preview_window_from_signal(self.sender())

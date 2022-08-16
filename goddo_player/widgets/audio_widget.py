@@ -9,10 +9,12 @@ from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.state_store import StateStore
 
 from goddo_player.utils.loading_dialog import LoadingDialog
+from goddo_player.utils.message_box_utils import show_error_box
 
 class AudioPlayer2(QObject):
     class _AudioLoadThreadSignals(QObject):
         finished = pyqtSignal(str)
+        error = pyqtSignal(str)
 
     class _AudioLoadThread(QRunnable):
         def __init__(self, src, dest):
@@ -23,20 +25,35 @@ class AudioPlayer2(QObject):
 
         def run(self):
             import subprocess
+
+            from pathlib import Path
+            p = Path("ffmpeg").absolute()
+            print(str(p))
+
             command = "ffmpeg -y -i {} -vn {}".format(self.src, self.dest)
-            subprocess.call(command, shell=True)
-            self.signals.finished.emit(self.dest)
+            print(f'running command: {command}')
+            process = subprocess.run(command, shell=True, capture_output=True, text=True)
+            print(f'return val: {process}')
+            print('stdout')
+            print(process.stdout)
+            print('stderr')
+            print(process.stderr)
+            
+            if process.returncode == 0:
+                self.signals.finished.emit(self.dest)
+            else:
+                self.signals.error.emit(process.stderr)
 
     class _AudioPlaybackThreadSignals(QObject):
         play_audio = pyqtSignal(int, bool)
         goto_audio = pyqtSignal(int)
 
     class _AudioPlaybackWorker(QObject):
-        def __init__(self, state, audio_path):
+        def __init__(self, pw_state, audio_path):
             super().__init__()
             self.signals = AudioPlayer2._AudioPlaybackThreadSignals()
 
-            self.state = state
+            self.pw_state = pw_state
 
             self.audio_wave = wave.open(audio_path, 'rb')
             self.pyaudio = pyaudio.PyAudio()
@@ -45,12 +62,12 @@ class AudioPlayer2(QObject):
                                                 channels=self.audio_wave.getnchannels(),
                                                 rate=self.audio_wave.getframerate(),
                                                 output=True)
-            self.video_fps = self.state.preview_window.fps
+            self.video_fps = self.pw_state.fps
 
             self.signals.play_audio.connect(self.play_audio_handler)
             self.signals.goto_audio.connect(self.go_to_audio_handler)
 
-            self.go_to_audio_handler(self.state.preview_window.current_frame_no)
+            self.go_to_audio_handler(self.pw_state.current_frame_no)
 
         @pyqtSlot(int, bool)
         def play_audio_handler(self, num_of_video_frames, skip):
@@ -73,10 +90,10 @@ class AudioPlayer2(QObject):
             logging.debug(f'{audio_frames_to_go} - {frame} - {self.audio_wave.getframerate()} - {self.video_fps}')
             self.audio_wave.setpos(audio_frames_to_go)
 
-    def __init__(self):
+    def __init__(self, is_output_window: bool):
          super().__init__()
 
-         self.state = StateStore()
+         self.pw_state = StateStore().preview_window_output if is_output_window else StateStore().preview_window
 
          self._dialog = LoadingDialog()
          self._pool = QThreadPool()
@@ -88,6 +105,7 @@ class AudioPlayer2(QObject):
 
             at = self._AudioLoadThread(video_path, wav_output_path)
             at.signals.finished.connect(self._finished_loading)
+            at.signals.error.connect(self._error_loading)
 
             if fn:
                 at.signals.finished.connect(fn)
@@ -97,4 +115,9 @@ class AudioPlayer2(QObject):
     @pyqtSlot(str)
     def _finished_loading(self, audio_file: str):
         self._dialog.close()
-        self.worker = AudioPlayer2._AudioPlaybackWorker(self.state, audio_file)
+        # self.worker = AudioPlayer2._AudioPlaybackWorker(self.pw_state, audio_file)
+
+    @pyqtSlot(str)
+    def _error_loading(self, error_msg: str):
+        self._dialog.close()
+        show_error_box(None, error_msg)

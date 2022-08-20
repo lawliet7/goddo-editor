@@ -73,16 +73,16 @@ class AudioPlayer2(QObject):
         def play_audio_handler(self, num_of_video_frames, skip):
             logging.debug("play audio")
 
-            audio_frames_to_get = None
-            for _ in range(num_of_video_frames):
-                audio_frames_to_get = int(round(self.audio_wave.getframerate() / self.video_fps))
+            audio_frames_to_get = int(round(num_of_video_frames / self.video_fps * self.audio_wave.getframerate()))
+            # for _ in range(num_of_video_frames):
+            #     audio_frames_to_get = int(round(self.audio_wave.getframerate() / self.video_fps))
 
-            if audio_frames_to_get is not None:
-                frames = self.audio_wave.readframes(audio_frames_to_get)
-                if not skip:
-                    if self.state.source['volume'] != 1:
-                        frames = (np.frombuffer(frames, dtype=np.int16) * self.state.source['volume']).astype(np.int16).tobytes()
-                    self.audio_stream.write(frames)
+            # if audio_frames_to_get is not None:
+            frames = self.audio_wave.readframes(audio_frames_to_get)
+            if not skip and frames != '':
+                # if self.state.source['volume'] != 1:
+                #     frames = (np.frombuffer(frames, dtype=np.int16) * self.state.source['volume']).astype(np.int16).tobytes()
+                self.audio_stream.write(frames)
 
         @pyqtSlot(int)
         def go_to_audio_handler(self, frame):
@@ -115,7 +115,7 @@ class AudioPlayer2(QObject):
     @pyqtSlot(str)
     def _finished_loading(self, audio_file: str):
         self._dialog.close()
-        # self.worker = AudioPlayer2._AudioPlaybackWorker(self.pw_state, audio_file)
+        self.worker = AudioPlayer2._AudioPlaybackWorker(self.pw_state, audio_file)
 
     @pyqtSlot(str)
     def _error_loading(self, error_msg: str):

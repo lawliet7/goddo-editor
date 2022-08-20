@@ -149,6 +149,7 @@ class PreviewWidgetNew(QWidget):
                 for _ in range(target_frame_no - cur_frame_no - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.worker.signals.play_audio.emit(1, False)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)

@@ -146,14 +146,16 @@ class PreviewWidgetNew(QWidget):
                     self.set_cap_pos(end_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
             elif 0 < (target_frame_no - cur_frame_no) <= 10:
-                for _ in range(target_frame_no - cur_frame_no - 1):
+                num_of_frames_to_get = target_frame_no - cur_frame_no
+                for _ in range(num_of_frames_to_get - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
-                self.audio_player.worker.signals.play_audio.emit(1, False)
+                self.audio_player.worker.signals.play_audio.emit(num_of_frames_to_get, False)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.worker.signals.play_audio.emit(num_of_frames_to_get, False)
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 

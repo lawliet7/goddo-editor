@@ -154,6 +154,7 @@ class PreviewWidgetNew(QWidget):
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.worker.signals.goto_audio.emit(target_frame_no)
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 

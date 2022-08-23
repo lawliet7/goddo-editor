@@ -325,7 +325,6 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
         logging.info(f'=== emitting {0}')
-        logging.info(f'=== emitting {0}')
         self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
         self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
 

@@ -3,10 +3,12 @@ import logging
 from typing import Callable
 import numpy as np
 import pyaudio
+import shutil
 import wave
 from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool, pyqtSlot, QTimer
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.state_store import StateStore
+from goddo_player.utils.file_utils import is_non_empty_file
 
 from goddo_player.utils.loading_dialog import LoadingDialog
 from goddo_player.utils.message_box_utils import show_error_box
@@ -17,32 +19,35 @@ class AudioPlayer2(QObject):
         error = pyqtSignal(str)
 
     class _AudioLoadThread(QRunnable):
-        def __init__(self, src, dest):
+        def __init__(self, input_file_path: str, wav_output_file_path: str):
             super().__init__()
-            self.src = src
-            self.dest = dest
+            self.input_file_path = input_file_path
+            self.wav_output_file_path = wav_output_file_path
             self.signals = AudioPlayer2._AudioLoadThreadSignals()
 
         def run(self):
+            tmp_wav_file_name = self._get_tmp_file_name()
+
             import subprocess
-
-            from pathlib import Path
-            p = Path("ffmpeg").absolute()
-            print(str(p))
-
-            command = "ffmpeg -y -i {} -vn {}".format(self.src, self.dest)
-            print(f'running command: {command}')
-            process = subprocess.run(command, shell=True, capture_output=True, text=True)
-            print(f'return val: {process}')
-            print('stdout')
-            print(process.stdout)
-            print('stderr')
-            print(process.stderr)
+            command = 'ffmpeg -y -i "{}" -vn "{}"'.format(self.input_file_path, tmp_wav_file_name)
+            logging.info(f'running command: {command}')
+            process = subprocess.run(command, capture_output=True, text=True)
+            logging.info(f'return val: {process}')
+            logging.debug('stdout')
+            logging.debug(process.stdout)
+            logging.debug('stderr')
+            logging.debug(process.stderr)
             
             if process.returncode == 0:
-                self.signals.finished.emit(self.dest)
+                shutil.move(tmp_wav_file_name, self.wav_output_file_path)
+                self.signals.finished.emit(self.wav_output_file_path)
             else:
                 self.signals.error.emit(process.stderr)
+
+        def _get_tmp_file_name(self):
+            from pathlib import Path
+            wav_path = Path(self.wav_output_file_path)
+            return wav_path.parent.joinpath('wip_'+wav_path.name)
 
     class _AudioPlaybackThreadSignals(QObject):
         play_audio = pyqtSignal(int, bool)
@@ -98,11 +103,15 @@ class AudioPlayer2(QObject):
          self._dialog = LoadingDialog()
          self._pool = QThreadPool()
          self._pool.setMaxThreadCount(PlayerConfigs.audio_thread_pool_size)
+         self.worker = None
 
     def load_audio(self, video_path: str, wav_output_path: str, fn: Callable = None):
-            """Long-running task in 5 steps."""
-            self._dialog.open_dialog()
+        self._dialog.open_dialog()
 
+        if is_non_empty_file(wav_output_path):
+            self._finished_loading(wav_output_path)
+            fn(wav_output_path)
+        else:
             at = self._AudioLoadThread(video_path, wav_output_path)
             at.signals.finished.connect(self._finished_loading)
             at.signals.error.connect(self._error_loading)

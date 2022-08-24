@@ -130,6 +130,8 @@ class PreviewWidgetNew(QWidget):
             start_frame, end_frame = self.get_start_and_end_frames()
             # logging.debug(f'to_frame={target_frame_no} start_frame={start_frame} end_frame={end_frame}')
 
+            num_of_frames = target_frame_no - cur_frame_no
+
             if cur_frame_no == target_frame_no or \
                 target_frame_no <= start_frame == cur_frame_no or \
                     cur_frame_no == end_frame <= target_frame_no:
@@ -145,11 +147,11 @@ class PreviewWidgetNew(QWidget):
                 elif cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(end_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
-            elif 0 < (target_frame_no - cur_frame_no) <= 10:
-                for _ in range(target_frame_no - cur_frame_no - 1):
+            elif 0 < num_of_frames <= 10:
+                for _ in range(num_of_frames - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
-                self.audio_player.worker.signals.play_audio.emit(1, False)
+                self.audio_player.worker.signals.play_audio.emit(num_of_frames, False)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)

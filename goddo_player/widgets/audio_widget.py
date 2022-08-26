@@ -13,7 +13,7 @@ from goddo_player.utils.file_utils import is_non_empty_file
 from goddo_player.utils.loading_dialog import LoadingDialog
 from goddo_player.utils.message_box_utils import show_error_box
 
-class AudioPlayer2(QObject):
+class AudioPlayer(QObject):
     class _AudioLoadThreadSignals(QObject):
         finished = pyqtSignal(str)
         error = pyqtSignal(str)
@@ -23,7 +23,7 @@ class AudioPlayer2(QObject):
             super().__init__()
             self.input_file_path = input_file_path
             self.wav_output_file_path = wav_output_file_path
-            self.signals = AudioPlayer2._AudioLoadThreadSignals()
+            self.signals = AudioPlayer._AudioLoadThreadSignals()
 
         def run(self):
             tmp_wav_file_name = self._get_tmp_file_name()
@@ -56,7 +56,7 @@ class AudioPlayer2(QObject):
     class _AudioPlaybackWorker(QObject):
         def __init__(self, pw_state, audio_path):
             super().__init__()
-            self.signals = AudioPlayer2._AudioPlaybackThreadSignals()
+            self.signals = AudioPlayer._AudioPlaybackThreadSignals()
 
             self.pw_state = pw_state
 
@@ -124,7 +124,7 @@ class AudioPlayer2(QObject):
     @pyqtSlot(str)
     def _finished_loading(self, audio_file: str):
         self._dialog.close()
-        self.worker = AudioPlayer2._AudioPlaybackWorker(self.pw_state, audio_file)
+        self.worker = AudioPlayer._AudioPlaybackWorker(self.pw_state, audio_file)
 
     @pyqtSlot(str)
     def _error_loading(self, error_msg: str):

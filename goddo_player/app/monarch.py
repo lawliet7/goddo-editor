@@ -262,26 +262,32 @@ class MonarchSystem(QObject):
 
     def __on_switch_video(self, video_path: VideoPath, frame_in_out: FrameInOut, fn_id: SignalFunctionId):
         logging.info(f'update preview file')
-        self.tabbed_list_window.setDisabled(True)
-        self.preview_window.preview_widget.setDisabled(True)
-        self.preview_window_output.setDisabled(True)
-        self.timeline_window.setDisabled(True)
 
-        preview_window = self.get_preview_window_from_signal(self.sender())
-        preview_window.switch_video(video_path, frame_in_out)
-        def finished_loading_video(_: str):
-            self.tabbed_list_window.setDisabled(False)
-            self.preview_window.setDisabled(False)
-            self.preview_window_output.setDisabled(False)
-            self.timeline_window.setDisabled(False)
+        if not video_path.is_empty():
+            self.tabbed_list_window.setDisabled(True)
+            self.preview_window.preview_widget.setDisabled(True)
+            self.preview_window_output.setDisabled(True)
+            self.timeline_window.setDisabled(True)
 
+            preview_window = self.get_preview_window_from_signal(self.sender())
+            preview_window.switch_video(video_path, frame_in_out)
+            def finished_loading_video(_: str):
+                self.tabbed_list_window.setDisabled(False)
+                self.preview_window.setDisabled(False)
+                self.preview_window_output.setDisabled(False)
+                self.timeline_window.setDisabled(False)
+
+                preview_window.activateWindow()
+
+                logging.info(f'=== fn {fn_id}')
+                self.signals.fn_repo.pop(fn_id)()
+
+            wav_file_path = os.path.join('output',video_path.file_name(include_ext=False)+'.wav')
+            self.preview_window.preview_widget.audio_player.load_audio(str(video_path), wav_file_path, finished_loading_video)
+        else:
+            preview_window = self.get_preview_window_from_signal(self.sender())
+            preview_window.switch_video(video_path, frame_in_out)
             preview_window.activateWindow()
-
-            logging.info(f'=== fn {fn_id}')
-            self.signals.fn_repo.pop(fn_id)()
-
-        wav_file_path = os.path.join('output',video_path.file_name(include_ext=False)+'.wav')
-        self.preview_window.preview_widget.audio_player.load_audio(str(video_path), wav_file_path, finished_loading_video)
 
     def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())
@@ -326,8 +332,8 @@ class MonarchSystem(QObject):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
         self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
         logging.info(f'=== emitting {0}')
-        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
-        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function)
+        self.signals.preview_window.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function())
+        self.signals.preview_window_output.switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), SignalFunctionId.no_function())
 
         self.timeline_window.recalculate_clip_rects()
         # self.timeline_window.activateWindow()

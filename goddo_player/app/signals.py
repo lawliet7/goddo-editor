@@ -25,7 +25,7 @@ class SignalFunctionId:
     id: int
 
     @staticmethod
-    def no_func():
+    def no_function():
         return SignalFunctionId(-1)
 
 
@@ -33,6 +33,10 @@ class SignalFunctionRepo:
     def __init__(self):
         self._repo = {}
         self._id_iter = itertools.count()
+
+    @staticmethod
+    def _do_nothing_fn():
+        pass
 
     def push(self, fn: Callable) -> SignalFunctionId:
         fn_id = next(self._id_iter)
@@ -42,7 +46,10 @@ class SignalFunctionRepo:
 
     def pop(self, fn_id: SignalFunctionId) -> Callable:
         logging.info(f'=== pop fn id - {fn_id}')
-        return self._repo.pop(fn_id.id)
+        if fn_id.id != SignalFunctionId.no_function().id:
+            return self._repo.pop(fn_id.id)
+        else:
+            return self._do_nothing_fn
 
 class PreviewWindowSignals(QObject):
     def __init__(self, name: str):

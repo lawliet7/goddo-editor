@@ -2,6 +2,7 @@ from goddo_player.list_window.tabbed_list_window import TabbedListWindow
 from goddo_player.preview_window.preview_window import PreviewWindow
 from goddo_player.preview_window.preview_window_output import PreviewWindowOutput
 from goddo_player.timeline_window.timeline_window import TimelineWindow
+from goddo_player.widgets.audio_widget import AudioPlayer
 from goddo_test.utils.test_utils import qrect_as_dict, qsize_as_dict
 
 
@@ -12,9 +13,24 @@ class WindowsContainer:
         self.output_window = output_window
         self.timeline_window = timeline_window
 
+    def _get_audio_player_dict(self, audio_player: AudioPlayer):
+        if audio_player.worker: 
+            return {
+                'audio_path': audio_player.worker.audio_wave._file.file.name,
+                'frame_rate': audio_player.worker.audio_wave.getframerate(),
+                'channels': audio_player.worker.audio_wave.getnchannels(),
+                'no_of_frames': audio_player.worker.audio_wave.getnframes(),
+                'cur_pos': audio_player.worker.audio_wave.tell(),
+            }
+        else:
+            return {
+
+            }
+
     def as_dict(self):
         return {
           'tabbed_list_window': {
+              'isEnabled': self.tabbed_list_window.isEnabled(),
               'windowTitle': self.tabbed_list_window.windowTitle(),
               'geometry': qrect_as_dict(self.tabbed_list_window.geometry()),
               # not sure if we should also include screenshot pixmap
@@ -26,6 +42,7 @@ class WindowsContainer:
               }
           },
           'preview_window': {
+              'isEnabled': self.preview_window.isEnabled(),
               'windowTitle': self.preview_window.windowTitle(),
               'geometry': qrect_as_dict(self.preview_window.geometry()),
               'label': self.preview_window.label.text(),
@@ -33,8 +50,10 @@ class WindowsContainer:
                   'value': self.preview_window.slider.value(),
                   'isEnabled': self.preview_window.slider.isEnabled()
               },
+              'audioPlayer': self._get_audio_player_dict(self.preview_window.preview_widget.audio_player)
           },
           'output_window': {
+              'isEnabled': self.output_window.isEnabled(),
               'windowTitle': self.output_window.windowTitle(),
               'geometry': qrect_as_dict(self.output_window.geometry()),
               'label': self.output_window.label.text(),
@@ -44,6 +63,7 @@ class WindowsContainer:
               },
           },
           'timeline_window': {
+              'isEnabled': self.timeline_window.isEnabled(),
               'windowTitle': self.timeline_window.windowTitle(),
               'geometry': qrect_as_dict(self.timeline_window.geometry()),
               'innerWidgetSize': qsize_as_dict(self.timeline_window.inner_widget.size()),

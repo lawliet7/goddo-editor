@@ -13,7 +13,7 @@ from goddo_player.utils.enums import PositionType
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
-from goddo_player.widgets.audio_widget import AudioPlayer2
+from goddo_player.widgets.audio_widget import AudioPlayer
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 
 
@@ -27,7 +27,7 @@ class PreviewWidgetNew(QWidget):
         self.signals = StateStoreSignals()
 
         self.cap = None
-        self.audio_player = AudioPlayer2(False if pw_state.name == WINDOW_NAME_SOURCE else True)
+        self.audio_player = AudioPlayer(False if pw_state.name == WINDOW_NAME_SOURCE else True)
 
         self.setMinimumSize(640, 360)
         self.resize(self.minimumSize())

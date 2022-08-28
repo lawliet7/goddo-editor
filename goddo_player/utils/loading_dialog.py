@@ -37,6 +37,9 @@ class LoadingDialog(QObject):
         if self._current_callback:
             self._current_callback(result)
 
+    def isHidden(self):
+        return self._dialog.isHidden()
+
     def open_dialog(self, fn: Callable[[int],None] = None):
         if self._dialog.isHidden():
             self._current_callback = fn

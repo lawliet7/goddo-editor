@@ -20,6 +20,7 @@ class WindowsContainer:
                 'frame_rate': audio_player.worker.audio_wave.getframerate(),
                 'channels': audio_player.worker.audio_wave.getnchannels(),
                 'no_of_frames': audio_player.worker.audio_wave.getnframes(),
+                'sample_width': audio_player.worker.audio_wave.getsampwidth(),
                 'cur_pos': audio_player.worker.audio_wave.tell(),
             }
         else:
@@ -61,6 +62,7 @@ class WindowsContainer:
                   'value': self.output_window.slider.value(),
                   'isEnabled': self.output_window.slider.isEnabled()
               },
+              'audioPlayer': self._get_audio_player_dict(self.preview_window.preview_widget.audio_player)
           },
           'timeline_window': {
               'isEnabled': self.timeline_window.isEnabled(),

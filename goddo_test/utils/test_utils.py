@@ -203,7 +203,7 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
 
     app_thread.cmd.submit_cmd(Command(CommandType.SAVE_FILE, [save_path]))
     app_thread.cmd.submit_cmd(Command(CommandType.RESET))
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.cap is None and windows_container.preview_window.preview_widget.audio_player.is_dialog_closed())
 
     time.sleep(0.5)
 
@@ -230,6 +230,9 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     assert after_load_state_dict['cur_save_file'] == str(save_path)
 
     assert_state(before_state_dict, after_load_state_dict)
+
+    logging.info(f'before_win_state_dict = {before_win_state_dict}')
+    logging.info(f'after_load_win_state_dict = {after_load_win_state_dict}')
     assert_state(before_win_state_dict, after_load_win_state_dict)
 
 def assert_state(src_state, dest_state, is_window_state=False):

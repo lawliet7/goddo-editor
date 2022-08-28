@@ -270,6 +270,7 @@ class MonarchSystem(QObject):
 
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window.switch_video(video_path, frame_in_out)
+        fps = self.get_preview_window_state_from_signal(self.sender()).fps
         def finished_loading_video(_: str):
             self.tabbed_list_window.setDisabled(False)
             self.preview_window.setDisabled(False)
@@ -281,7 +282,7 @@ class MonarchSystem(QObject):
             logging.info(f'=== fn {fn_id}')
             self.signals.fn_repo.pop(fn_id)()
 
-        self.preview_window.preview_widget.audio_player.load_audio(video_path, finished_loading_video)
+        self.preview_window.preview_widget.audio_player.load_audio(video_path, fps, finished_loading_video)
 
     def __on_update_file_details(self, fps: float, total_frames: int):
         preview_window_state = self.get_preview_window_state_from_signal(self.sender())

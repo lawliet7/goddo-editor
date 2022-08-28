@@ -27,7 +27,7 @@ class PreviewWidgetNew(QWidget):
         self.signals = StateStoreSignals()
 
         self.cap = None
-        self.audio_player = AudioPlayer(False if pw_state.name == WINDOW_NAME_SOURCE else True)
+        self.audio_player = AudioPlayer()
 
         self.setMinimumSize(640, 360)
         self.resize(self.minimumSize())
@@ -151,12 +151,12 @@ class PreviewWidgetNew(QWidget):
                 for _ in range(num_of_frames - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
-                self.audio_player.worker.signals.play_audio.emit(num_of_frames, False)
+                self.audio_player.play_audio_slot.emit(num_of_frames, 1, False)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)
                 self.frame_pixmap = self.grab_next_frame()
-                self.audio_player.worker.signals.goto_audio.emit(target_frame_no)
+                self.audio_player.seek_audio_slot.emit(target_frame_no)
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 

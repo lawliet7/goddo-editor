@@ -14,19 +14,7 @@ class WindowsContainer:
         self.timeline_window = timeline_window
 
     def _get_audio_player_dict(self, audio_player: AudioPlayer):
-        if audio_player.worker: 
-            return {
-                'audio_path': audio_player.worker.audio_wave._file.file.name,
-                'frame_rate': audio_player.worker.audio_wave.getframerate(),
-                'channels': audio_player.worker.audio_wave.getnchannels(),
-                'no_of_frames': audio_player.worker.audio_wave.getnframes(),
-                'sample_width': audio_player.worker.audio_wave.getsampwidth(),
-                'cur_pos': audio_player.worker.audio_wave.tell(),
-            }
-        else:
-            return {
-
-            }
+        return audio_player.get_audio_details().as_dict() if audio_player.has_active_audio() else {}
 
     def as_dict(self):
         return {

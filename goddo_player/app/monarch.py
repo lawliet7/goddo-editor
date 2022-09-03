@@ -271,7 +271,7 @@ class MonarchSystem(QObject):
         preview_window = self.get_preview_window_from_signal(self.sender())
         preview_window.switch_video(video_path, frame_in_out)
         fps = self.get_preview_window_state_from_signal(self.sender()).fps
-        def finished_loading_video(_: str):
+        def finished_loading_video(_: str = ''):
             self.tabbed_list_window.setDisabled(False)
             self.preview_window.setDisabled(False)
             self.preview_window_output.setDisabled(False)
@@ -364,10 +364,10 @@ class MonarchSystem(QObject):
                     cur_multiplier = self.state.preview_window.time_skip_multiplier
 
                     if new_multiplier > cur_multiplier:
-                        for i in range(new_multiplier - cur_multiplier):
+                        for _ in range(new_multiplier - cur_multiplier):
                             pw_signals.update_skip_slot.emit(IncDec.INC)
                     elif new_multiplier < cur_multiplier:
-                        for i in range(cur_multiplier - new_multiplier):
+                        for _ in range(cur_multiplier - new_multiplier):
                             pw_signals.update_skip_slot.emit(IncDec.DEC)                    
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']

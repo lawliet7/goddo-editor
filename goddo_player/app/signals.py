@@ -35,7 +35,7 @@ class SignalFunctionRepo:
         self._id_iter = itertools.count()
 
     @staticmethod
-    def _do_nothing_fn():
+    def _do_nothing_fn(p1 = None, p2 = None, p3 = None, p4 = None, p5 = None, p6 = None, p7 = None, p8 = None):
         pass
 
     def push(self, fn: Callable) -> SignalFunctionId:

@@ -78,14 +78,11 @@ class _AudioThread(QObject):
             self.audio_wave = None
             self.audio_stream = None
             self.video_fps = 0
-        logging.info('super closing audio da ze')
-        self.signals.fn_repo.pop(fn_id)()
+        self.ready_slot.emit('', fn_id)
 
     # @pyqtSlot(VideoPath, float, SignalFunctionId)
     def _load_audio(self, video_path: VideoPath, video_fps: float, fn_id: SignalFunctionId):
-        logging.info(f'emitting close slot')
         self.close_slot.emit(SignalFunctionId.no_function())
-        logging.info(f'finished emitting close slot')
 
         audio_file_path = self._get_audio_file_path(video_path)
 

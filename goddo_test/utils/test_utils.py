@@ -216,7 +216,7 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     elif check_type == 'timeline_window':
         wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) > 0)
     elif check_type == 'preview_window':
-        wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+        wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     elif check_type == 'file_list_window':
         wait_until(lambda: windows_container.tabbed_list_window.videos_tab.list_widget.count() > 0)
 
@@ -318,7 +318,7 @@ def drop_video_on_preview(app_thread, windows_container, video_path):
 
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('space')
 

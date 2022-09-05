@@ -299,7 +299,7 @@ def test_preview_output_go_to_dialog_neg_testcases(app_thread, windows_container
     item_widget = video_tab_list_widget.itemWidget(item)
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
@@ -417,7 +417,7 @@ def test_preview_output_go_to_dialog_with_keyboard(app_thread, windows_container
     item_widget = video_tab_list_widget.itemWidget(item)
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
@@ -533,7 +533,7 @@ def test_preview_output_go_to_dialog_with_mouse(app_thread, windows_container: W
     item_widget = video_tab_list_widget.itemWidget(item)
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 

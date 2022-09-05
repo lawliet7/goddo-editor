@@ -318,7 +318,7 @@ def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsConta
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
     pyautogui.doubleClick()
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
@@ -333,7 +333,7 @@ def test_drop_clips_from_diff_videos(app_thread, windows_container: WindowsConta
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
     pyautogui.doubleClick()
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
@@ -366,7 +366,7 @@ def test_cut_and_paste_clips(app_thread, windows_container: WindowsContainer, bl
     item_widget = video_tab_list_widget.itemWidget(item)
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 
@@ -435,7 +435,7 @@ def test_copy_and_paste_clips(app_thread, windows_container: WindowsContainer, b
     item_widget = video_tab_list_widget.itemWidget(item)
     pt = local_to_global_pos(item_widget, video_tab_list_widget)
     pyautogui.doubleClick(x=pt.x() + 10, y=pt.y() + 10)
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
 

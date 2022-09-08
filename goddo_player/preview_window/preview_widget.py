@@ -140,6 +140,7 @@ class PreviewWidgetNew(QWidget):
             elif target_frame_no <= start_frame:
                 self.set_cap_pos(start_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.seek_audio_slot.emit(start_frame)
             elif target_frame_no >= end_frame:
                 if 0 < (end_frame - cur_frame_no - 1) <= 10:
                     for _ in range(end_frame - cur_frame_no - 1):
@@ -147,6 +148,7 @@ class PreviewWidgetNew(QWidget):
                 elif cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(end_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.seek_audio_slot.emit(end_frame)
             elif 0 < num_of_frames <= 10:
                 for _ in range(num_of_frames - 1):
                     self.grab_next_frame(convert_to_pixmap=False)

@@ -336,6 +336,11 @@ class StateStore(QObject):
         if is_existing_file:
             os.remove(tmp_save_file_name)
 
+    def _get_first_row(self, table: Table):
+        all = table.all()
+        if len(all) > 0:
+            return all.pop()
+
     def load_file(self, video_path: VideoPath, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn):
         logging.info(f'loading {video_path}')
         # todo msg box to select save file
@@ -357,17 +362,10 @@ class StateStore(QObject):
 
             for prev_wind_dict in table_preview_windows.all():
                 if prev_wind_dict['video_path']:
-                    handle_prev_wind_fn(prev_wind_dict)
+                    timeline_dict = self._get_first_row(table_timelines)
+                    prev_wind_outputs_dict = self._get_first_row(table_preview_window_outputs)
 
-            timeline_dict = table_timelines.all().pop()
-
-            all = table_preview_window_outputs.all()
-            if len(all) > 0:
-                prev_wind_outputs_dict = all.pop()
-            else:
-                prev_wind_outputs_dict = None
-
-            handle_timeline_fn(timeline_dict, prev_wind_outputs_dict)
+                    handle_prev_wind_fn(prev_wind_dict, timeline_dict, prev_wind_outputs_dict)
 
             db.close()
 

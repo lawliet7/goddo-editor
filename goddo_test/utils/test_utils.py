@@ -215,7 +215,7 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
 
     app_thread.cmd.submit_cmd(Command(CommandType.LOAD_FILE, [save_path]))
     if check_type == 'output_window':
-        wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) > 0)
+        wait_until(lambda: windows_container.output_window.preview_widget.frame_pixmap is not None)
     elif check_type == 'timeline_window':
         wait_until(lambda: len(windows_container.timeline_window.inner_widget.clip_rects) > 0)
     elif check_type == 'preview_window':

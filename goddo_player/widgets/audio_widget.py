@@ -26,7 +26,9 @@ class AudioDetails:
     channels: int
     no_of_frames: int
     sample_width: int
-    cur_pos: int
+    # cur_pos: int
+    # cur_pos_secs: float
+    vid_pos: float
 
     def as_dict(self):
         return asdict(self)
@@ -101,7 +103,12 @@ class _AudioThread(QObject):
             logging.debug(process.stderr)
             
             if process.returncode != 0:
-                self.error_slot.emit(process.stderr)
+                logging.error(process.stderr)
+
+                if 'Output file #0 does not contain any stream' in process.stderr:
+                    self.ready_slot.emit('', fn_id)
+                else:
+                    self.error_slot.emit(process.stderr)
                 return
 
             shutil.move(tmp_wav_file_name, audio_file_path)
@@ -121,18 +128,22 @@ class _AudioThread(QObject):
     def play_audio_handler(self, num_of_video_frames: int, volume: float, skip: bool):
         logging.debug("play audio")
 
-        audio_frames_to_get = int(round(num_of_video_frames / self.video_fps * self.audio_wave.getframerate()))
-        frames = self.audio_wave.readframes(audio_frames_to_get)
-        if not skip and frames != '':
-            if volume != 1:
-                frames = (np.frombuffer(frames, dtype=np.int16) * volume).astype(np.int16).tobytes()
-            self.audio_stream.write(frames)
+        if self.audio_wave is not None:
+            audio_frames_to_get = int(round(num_of_video_frames / self.video_fps * self.audio_wave.getframerate()))
+            frames = self.audio_wave.readframes(audio_frames_to_get)
+            if not skip and frames != '':
+                if volume != 1:
+                    frames = (np.frombuffer(frames, dtype=np.int16) * volume).astype(np.int16).tobytes()
+                self.audio_stream.write(frames)
 
     @pyqtSlot(int)
     def seek_audio_handler(self, frame: int):
-        audio_frames_to_go = int(round(frame * self.audio_wave.getframerate() / self.video_fps))
-        logging.debug(f'{audio_frames_to_go} - {frame} - {self.audio_wave.getframerate()} - {self.video_fps}')
-        self.audio_wave.setpos(audio_frames_to_go)
+        logging.debug(f'seek audio frame={frame}')
+
+        if self.audio_wave is not None:
+            audio_frames_to_go = int(round(frame * self.audio_wave.getframerate() / self.video_fps))
+            logging.debug(f'{audio_frames_to_go} - {frame} - {self.audio_wave.getframerate()} - {self.video_fps}')
+            self.audio_wave.setpos(audio_frames_to_go)
         
 
     def get_audio_details(self) -> AudioDetails:
@@ -143,7 +154,9 @@ class _AudioThread(QObject):
                 channels=self.audio_wave.getnchannels(),
                 no_of_frames=self.audio_wave.getnframes(),
                 sample_width=self.audio_wave.getsampwidth(),
-                cur_pos=self.audio_wave.tell(),
+                # cur_pos = self.audio_wave.tell(),
+                # cur_pos_secs = self.audio_wave.tell() / self.audio_wave.getframerate(),
+                vid_pos=round(self.audio_wave.tell() / self.audio_wave.getframerate() * self.video_fps),
             )
         else:
             return None

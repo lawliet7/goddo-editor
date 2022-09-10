@@ -190,6 +190,9 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     before_state_dict = app_thread.mon.state.as_dict()
     before_win_state_dict = windows_container.as_dict()
 
+    logging.debug(f'before state {before_state_dict}')
+    logging.debug(f'before_load_win_state_dict = {before_win_state_dict}')
+
     if windows_container.output_window.preview_widget.cap is not None:
         check_type = "output_window"
     elif len(windows_container.timeline_window.inner_widget.clip_rects) > 0:
@@ -225,14 +228,15 @@ def save_reload_and_assert_state(app_thread, windows_container, blank_state, sav
     after_load_state_dict = app_thread.mon.state.as_dict()
     after_load_win_state_dict = windows_container.as_dict()
 
-    logging.info(f'after_load_win_state_dict = {after_load_win_state_dict}')
+    logging.debug(f'after state {after_load_state_dict}')
+    logging.debug(f'after_load_win_state_dict = {after_load_win_state_dict}')
 
     assert after_load_state_dict['cur_save_file'] == str(save_path)
 
     assert_state(before_state_dict, after_load_state_dict)
 
-    logging.info(f'before_win_state_dict = {before_win_state_dict}')
-    logging.info(f'after_load_win_state_dict = {after_load_win_state_dict}')
+    logging.debug(f'before_win_state_dict = {before_win_state_dict}')
+    logging.debug(f'after_load_win_state_dict = {after_load_win_state_dict}')
     assert_state(before_win_state_dict, after_load_win_state_dict)
 
 def assert_state(src_state, dest_state, is_window_state=False):
@@ -424,7 +428,7 @@ def open_clip_on_output_window(app_thread, windows_container, from_time_str, to_
     timeline_window = windows_container.timeline_window
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
-    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.output_window.preview_widget.frame_pixmap is not None)
 
     press_space_to_pause(windows_container.output_window)
 

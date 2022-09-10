@@ -86,7 +86,7 @@ class StateStoreSignals(QObject):
     timeline_select_clip = pyqtSignal(int)
     timeline_delete_selected_clip_slot = pyqtSignal()
     timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
-    timeline_clip_double_click_slot = pyqtSignal(int, VideoClip)
+    timeline_clip_double_click_slot = pyqtSignal(int, VideoClip, SignalFunctionId)
     timeline_set_clipboard_clip_slot = pyqtSignal(VideoClip)
     timeline_clear_clipboard_clip_slot = pyqtSignal()
     activate_all_windows_slot = pyqtSignal(str)

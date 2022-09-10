@@ -359,12 +359,15 @@ class StateStore(QObject):
                 if prev_wind_dict['video_path']:
                     handle_prev_wind_fn(prev_wind_dict)
 
-            for timeline_dict in table_timelines:
-                handle_timeline_fn(timeline_dict)
+            timeline_dict = table_timelines.all().pop()
 
-            for prev_wind_outputs_dict in table_preview_window_outputs.all():
-                if prev_wind_outputs_dict['video_path']:
-                    handle_prev_wind_output_fn(prev_wind_outputs_dict)
+            all = table_preview_window_outputs.all()
+            if len(all) > 0:
+                prev_wind_outputs_dict = all.pop()
+            else:
+                prev_wind_outputs_dict = None
+
+            handle_timeline_fn(timeline_dict, prev_wind_outputs_dict)
 
             db.close()
 

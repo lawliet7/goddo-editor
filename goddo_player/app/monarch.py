@@ -142,7 +142,7 @@ class MonarchSystem(QObject):
         logging.info(f'=== emitting {fn_id}')
         self.sender().switch_video_slot.emit(VideoPath(QUrl()), FrameInOut(), fn_id)        
 
-    def __on_timeline_clip_double_click(self, idx, clip):
+    def __on_timeline_clip_double_click(self, idx, clip, callback_fn_id: SignalFunctionId):
         self.state.timeline.opened_clip_index = idx
 
         if idx > -1:
@@ -156,6 +156,8 @@ class MonarchSystem(QObject):
                     pw_signals.switch_speed_slot.emit()
 
                 pw_signals.play_cmd_slot.emit(PlayCommand.PLAY)
+
+                self.signals.fn_repo.pop(fn_id=callback_fn_id)()
             
             fn_id = self.signals.fn_repo.push(fn)
             logging.info(f'=== emitting {fn_id}')
@@ -407,7 +409,7 @@ class MonarchSystem(QObject):
                 # if prev_wind_out_dict.get('time_skip_multiplier'):
 
 
-        def handle_timeline_fn(timeline_dict):
+        def handle_timeline_fn(timeline_dict, preview_output_window_dict):
             for clip_dict in timeline_dict['clips']:
                 StateStoreSignals().add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
 
@@ -431,8 +433,15 @@ class MonarchSystem(QObject):
             if timeline_dict.get('opened_clip_index') > -1:
                 idx = timeline_dict.get('opened_clip_index')
                 opened_clip = VideoClip.from_dict(timeline_dict['clips'][idx])
-                self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip)
-                self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+
+                def fn():
+                    self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
+
+                    if preview_output_window_dict:
+                        handle_prev_wind_output_fn(preview_output_window_dict)
+
+                fn_id = self.signals.fn_repo.push(fn)
+                self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip, fn_id)
 
         self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn)
 

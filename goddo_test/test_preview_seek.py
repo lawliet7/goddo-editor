@@ -318,7 +318,7 @@ def test_preview_output_go_to_dialog_neg_testcases(app_thread, windows_container
     timeline_window = windows_container.timeline_window
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
-    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.output_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
@@ -436,7 +436,7 @@ def test_preview_output_go_to_dialog_with_keyboard(app_thread, windows_container
     timeline_window = windows_container.timeline_window
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
-    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.output_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())
@@ -552,7 +552,7 @@ def test_preview_output_go_to_dialog_with_mouse(app_thread, windows_container: W
     timeline_window = windows_container.timeline_window
     pt = local_to_global_pos(timeline_window.inner_widget, timeline_window)
     pyautogui.doubleClick(x=pt.x() + 50 + 10, y=pt.y() + 68 + 10)
-    wait_until(lambda: windows_container.output_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.output_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('g')
     wait_until(lambda: not windows_container.output_window.dialog.isHidden())

@@ -36,8 +36,8 @@ class AudioDetails:
 
 class _AudioThread(QObject):
     load_slot = pyqtSignal(VideoPath, float, SignalFunctionId) # video path, video fps, function index for callback
-    ready_slot = pyqtSignal(str, SignalFunctionId)
-    close_slot = pyqtSignal(SignalFunctionId) # function index for callback
+    ready_slot = pyqtSignal(str, SignalFunctionId) # callback fn
+    close_slot = pyqtSignal(SignalFunctionId, bool) # function index for callback,  is done
     error_slot = pyqtSignal(str)
     play_audio_slot = pyqtSignal(int, float, bool) # num of frames to play, volume, should simply skip the frames
     seek_audio_slot = pyqtSignal(int) # frame no to go to
@@ -65,14 +65,14 @@ class _AudioThread(QObject):
         self.qthread.start()
 
     def _get_audio_file_path(self, video_path: VideoPath):
-        return os.path.join('output',video_path.file_name(include_ext=False)+'.wav')
+        return os.path.join('output',video_path.file_name()+'.wav')
 
     def _get_tmp_file_name(self, audio_file_path: str):
         p = Path(audio_file_path)
         return p.parent.joinpath('wip_'+p.name)
 
-    @pyqtSlot(SignalFunctionId)
-    def _close_audio(self, fn_id: SignalFunctionId):
+    @pyqtSlot(SignalFunctionId, bool)
+    def _close_audio(self, fn_id: SignalFunctionId, is_done: bool):
         if self.audio_stream:
             self.audio_stream.close()
             self.audio_wave.close()
@@ -80,11 +80,13 @@ class _AudioThread(QObject):
             self.audio_wave = None
             self.audio_stream = None
             self.video_fps = 0
-        self.ready_slot.emit('', fn_id)
+        
+        if is_done:
+            self.ready_slot.emit('', fn_id)
 
-    # @pyqtSlot(VideoPath, float, SignalFunctionId)
+    @pyqtSlot(VideoPath, float, SignalFunctionId)
     def _load_audio(self, video_path: VideoPath, video_fps: float, fn_id: SignalFunctionId):
-        self.close_slot.emit(SignalFunctionId.no_function())
+        self.close_slot.emit(SignalFunctionId.no_function(), False)
 
         audio_file_path = self._get_audio_file_path(video_path)
 
@@ -190,7 +192,7 @@ class AudioPlayer(QObject):
             self.audio_thread.load_slot.emit(video_path, video_fps, fn_id)
         else:
             fn_id = self.signals.fn_repo.push(fn) if fn else SignalFunctionId.no_function()
-            self.audio_thread.close_slot.emit(fn_id)
+            self.audio_thread.close_slot.emit(fn_id, True)
 
     @pyqtSlot(str, SignalFunctionId)
     def _finished_loading(self, audio_file: str, fn_id: SignalFunctionId):

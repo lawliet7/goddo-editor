@@ -347,7 +347,7 @@ class MonarchSystem(QObject):
             for tag in file_dict['tags']:
                 signals.add_video_tag_slot.emit(my_video_path, tag)
 
-        def handle_prev_wind_fn(prev_wind_dict):
+        def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
             pw_signals = StateStoreSignals().preview_window
 
             def fn():
@@ -370,7 +370,9 @@ class MonarchSystem(QObject):
                             pw_signals.update_skip_slot.emit(IncDec.INC)
                     elif new_multiplier < cur_multiplier:
                         for _ in range(cur_multiplier - new_multiplier):
-                            pw_signals.update_skip_slot.emit(IncDec.DEC)                    
+                            pw_signals.update_skip_slot.emit(IncDec.DEC)
+
+                handle_timeline_fn(timeline_dict, preview_output_window_dict)
 
             frame_in_out_dict = prev_wind_dict['frame_in_out']
             frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))

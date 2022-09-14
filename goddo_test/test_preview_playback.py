@@ -431,7 +431,7 @@ def test_save_should_not_flip_speed(app_thread, windows_container: WindowsContai
 
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())

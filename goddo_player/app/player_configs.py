@@ -10,6 +10,7 @@ class PlayerConfigs:
     timeline_max_width_of_one_min = 600
     timeline_length_of_triangle = 15
     default_extra_frames_in_secs = 10
+    audio_thread_pool_size = 1
 
     # a.json on goddo player's root / saves
     default_save_file = pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('a.json').resolve()

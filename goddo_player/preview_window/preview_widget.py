@@ -13,6 +13,8 @@ from goddo_player.utils.enums import PositionType
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.time_frame_utils import fps_to_num_millis
+from goddo_player.widgets.audio_widget import AudioPlayer
+from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 
 
 class PreviewWidgetNew(QWidget):
@@ -25,6 +27,7 @@ class PreviewWidgetNew(QWidget):
         self.signals = StateStoreSignals()
 
         self.cap = None
+        self.audio_player = AudioPlayer()
 
         self.setMinimumSize(640, 360)
         self.resize(self.minimumSize())
@@ -127,6 +130,8 @@ class PreviewWidgetNew(QWidget):
             start_frame, end_frame = self.get_start_and_end_frames()
             # logging.debug(f'to_frame={target_frame_no} start_frame={start_frame} end_frame={end_frame}')
 
+            num_of_frames = target_frame_no - cur_frame_no
+
             if cur_frame_no == target_frame_no or \
                 target_frame_no <= start_frame == cur_frame_no or \
                     cur_frame_no == end_frame <= target_frame_no:
@@ -135,6 +140,7 @@ class PreviewWidgetNew(QWidget):
             elif target_frame_no <= start_frame:
                 self.set_cap_pos(start_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.seek_audio_slot.emit(start_frame)
             elif target_frame_no >= end_frame:
                 if 0 < (end_frame - cur_frame_no - 1) <= 10:
                     for _ in range(end_frame - cur_frame_no - 1):
@@ -142,14 +148,18 @@ class PreviewWidgetNew(QWidget):
                 elif cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(end_frame - 1)
                 self.frame_pixmap = self.grab_next_frame()
-            elif 0 < (target_frame_no - cur_frame_no) <= 10:
-                for _ in range(target_frame_no - cur_frame_no - 1):
+                self.audio_player.seek_audio_slot.emit(end_frame)
+            elif 0 < num_of_frames <= 10:
+                for _ in range(num_of_frames - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.play_audio_slot.emit(num_of_frames - 1, 1, True)
+                self.audio_player.play_audio_slot.emit(1, 1, self.pw_state.is_max_speed)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)
                 self.frame_pixmap = self.grab_next_frame()
+                self.audio_player.seek_audio_slot.emit(target_frame_no)
 
             cur_frame_no = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
 

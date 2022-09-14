@@ -36,7 +36,7 @@ def test_dbl_click_video_list(app_thread, windows_container: WindowsContainer, b
     pyautogui.moveTo(pt.x() + 10, pt.y() + 10)
     pyautogui.doubleClick()
 
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())
@@ -72,7 +72,7 @@ def test_drop_on_preview_window(app_thread, windows_container: WindowsContainer,
 
     app_thread.cmd.submit_cmd(Command(CommandType.HIDE_DND_WINDOW))
 
-    wait_until(lambda: windows_container.preview_window.preview_widget.cap is not None)
+    wait_until(lambda: windows_container.preview_window.preview_widget.frame_pixmap is not None)
 
     pyautogui.press('space')
     wait_until(lambda: not windows_container.preview_window.preview_widget.timer.isActive())

@@ -9,7 +9,7 @@ def common_event_handling(event, signals, state) -> bool:
         QApplication.exit(0)
         event.accept()
     elif is_key_press(event, Qt.Key_F2):
-        signals.activate_all_windows_slot.emit()
+        signals.activate_all_windows_slot.emit('')
         event.accept()
     elif is_key_with_modifiers(event, Qt.Key_S, ctrl=True):
         if not state.cur_save_file.is_empty():

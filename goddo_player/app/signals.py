@@ -1,4 +1,8 @@
+from dataclasses import dataclass
 from enum import Enum, auto, unique
+import itertools
+import logging
+from typing import Callable
 
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl, QRect
 
@@ -16,13 +20,43 @@ class PlayCommand(Enum):
     PLAY = auto()
     PAUSE = auto()
 
+@dataclass(frozen=True)
+class SignalFunctionId:
+    id: int
+
+    @staticmethod
+    def no_function():
+        return SignalFunctionId(-1)
+
+
+class SignalFunctionRepo:
+    def __init__(self):
+        self._repo = {}
+        self._id_iter = itertools.count()
+
+    @staticmethod
+    def _do_nothing_fn(p1 = None, p2 = None, p3 = None, p4 = None, p5 = None, p6 = None, p7 = None, p8 = None):
+        pass
+
+    def push(self, fn: Callable) -> SignalFunctionId:
+        fn_id = next(self._id_iter)
+        logging.info(f'=== push fn id - {fn_id}')
+        self._repo[fn_id] = fn
+        return SignalFunctionId(fn_id)
+
+    def pop(self, fn_id: SignalFunctionId) -> Callable:
+        logging.info(f'=== pop fn id - {fn_id}')
+        if fn_id.id != SignalFunctionId.no_function().id:
+            return self._repo.pop(fn_id.id)
+        else:
+            return self._do_nothing_fn
 
 class PreviewWindowSignals(QObject):
     def __init__(self, name: str):
         super().__init__()
         self.setObjectName(name)
 
-    switch_video_slot = pyqtSignal(VideoPath, FrameInOut)
+    switch_video_slot = pyqtSignal(VideoPath, FrameInOut, SignalFunctionId)
     switch_speed_slot = pyqtSignal()
     in_frame_slot = pyqtSignal(int)
     out_frame_slot = pyqtSignal(int)
@@ -52,10 +86,12 @@ class StateStoreSignals(QObject):
     timeline_select_clip = pyqtSignal(int)
     timeline_delete_selected_clip_slot = pyqtSignal()
     timeline_update_width_of_one_min_slot = pyqtSignal(IncDec)
-    timeline_clip_double_click_slot = pyqtSignal(int, VideoClip)
+    timeline_clip_double_click_slot = pyqtSignal(int, VideoClip, SignalFunctionId)
     timeline_set_clipboard_clip_slot = pyqtSignal(VideoClip)
     timeline_clear_clipboard_clip_slot = pyqtSignal()
-    activate_all_windows_slot = pyqtSignal()
+    activate_all_windows_slot = pyqtSignal(str)
+
+    fn_repo = SignalFunctionRepo()
 
     def get_preview_window(self, window_name):
         return self.preview_window if window_name == WINDOW_NAME_SOURCE else self.preview_window_output

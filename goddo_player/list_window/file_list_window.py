@@ -147,11 +147,11 @@ class FileListWidget(QListWidget):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         for url in event.mimeData().urls():
-            if not url.path().isascii():
-                show_error_box(self, "sorry unicode file names are not support!")
-                break
-
             self.signals.add_file_slot.emit(VideoPath(url))
+
+            # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
+            # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
+            self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
     def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)
@@ -229,8 +229,10 @@ class FileListWindow(BaseQWidget):
     def double_clicked(self, item):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, FrameInOut())
-        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY)
+        fn_id = self.signals.fn_repo.push(lambda: self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY))
+        logging.info(f'=== playing with fn id {fn_id}')
+        logging.info(f'=== emitting {fn_id}')
+        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, FrameInOut(), fn_id)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if is_key_with_modifiers(event, Qt.Key_W, ctrl=True):

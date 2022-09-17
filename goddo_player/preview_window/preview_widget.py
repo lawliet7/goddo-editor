@@ -92,7 +92,7 @@ class PreviewWidgetNew(QWidget):
         # if cur_frame_no and frame_no is same then opencv is not able to advance to next frame 
         # so mind as well pause to save on processing power
         if frame_no == end_frame or cur_frame_no == frame_no:
-            logging.info(f'pausing since frame no {frame_no} has reach the end frame {end_frame}')
+            logging.info(f'pausing since frame no {frame_no} has reach the end frame {end_frame} or cur frame no {cur_frame_no}')
             self.pw_signal.play_cmd_slot.emit(PlayCommand.PAUSE)
 
         self.pw_update_fn()
@@ -153,8 +153,8 @@ class PreviewWidgetNew(QWidget):
                 for _ in range(num_of_frames - 1):
                     self.grab_next_frame(convert_to_pixmap=False)
                 self.frame_pixmap = self.grab_next_frame()
-                self.audio_player.play_audio_slot.emit(num_of_frames - 1, 1, True)
-                self.audio_player.play_audio_slot.emit(1, 1, self.pw_state.is_max_speed)
+                self.audio_player.play_audio_slot.emit(num_of_frames - 1, self.pw_state.volume, True)
+                self.audio_player.play_audio_slot.emit(1, self.pw_state.volume, self.pw_state.is_max_speed)
             else:
                 if cur_frame_no != (end_frame - 1):
                     self.set_cap_pos(target_frame_no - 1)

@@ -73,6 +73,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed)
         self.signals.preview_window_output.switch_speed_slot.connect(self.__on_switch_speed)
         self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip)
+        self.signals.preview_window.update_volume.connect(self.__on_preview_window_update_volume)
         self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip)
         self.signals.preview_window_output.switch_restrict_frame_slot.connect(self.__on_switch_restrict_frame_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip)
@@ -88,6 +89,12 @@ class MonarchSystem(QObject):
         from pathlib import Path
         Path("output").mkdir(parents=True, exist_ok=True)
         Path("saves").mkdir(parents=True, exist_ok=True)
+
+    def __on_preview_window_update_volume(self, volume: float):
+        if 0 <= volume <= PlayerConfigs.max_volume:
+            preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+            preview_window_state.volume = volume
+
 
     def __on_switch_restrict_frame_slot(self):
         self.state.preview_window_output.restrict_frame_interval = not self.state.preview_window_output.restrict_frame_interval

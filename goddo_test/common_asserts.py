@@ -14,7 +14,10 @@ def assert_state_is_blank(app_thread, windows_container):
     assert video_tab_list_widget.count() == 0
 
     # asserts
-    assert windows_container.preview_window.label.text() == 'you suck'
+    assert windows_container.preview_window.time_label.text() == '0:00:00.00/0:00:00.00'
+    assert windows_container.preview_window.speed_label.text() == 'speed=normal'
+    assert windows_container.preview_window.skip_label.text() == 'skip=5s'
+    assert windows_container.preview_window.vol_label.text() == 'vol=100%'
 
     assert windows_container.preview_window.slider.value() == 0
     assert not windows_container.preview_window.slider.isEnabled()

@@ -34,7 +34,10 @@ class WindowsContainer:
               'isEnabled': self.preview_window.isEnabled(),
               'windowTitle': self.preview_window.windowTitle(),
               'geometry': qrect_as_dict(self.preview_window.geometry()),
-              'label': self.preview_window.label.text(),
+              'time_label': self.preview_window.time_label.text(),
+              'speed_label': self.preview_window.speed_label.text(),
+              'skip_label': self.preview_window.skip_label.text(),
+              'vol_label': self.preview_window.vol_label.text(),
               'slider': {
                   'value': self.preview_window.slider.value(),
                   'isEnabled': self.preview_window.slider.isEnabled()
@@ -45,12 +48,16 @@ class WindowsContainer:
               'isEnabled': self.output_window.isEnabled(),
               'windowTitle': self.output_window.windowTitle(),
               'geometry': qrect_as_dict(self.output_window.geometry()),
-              'label': self.output_window.label.text(),
+              'time_label': self.output_window.time_label.text(),
+              'speed_label': self.output_window.speed_label.text(),
+              'skip_label': self.output_window.skip_label.text(),
+              'restrict_label': self.output_window.restrict_label.text(),
+              'vol_label': self.output_window.vol_label.text(),
               'slider': {
                   'value': self.output_window.slider.value(),
                   'isEnabled': self.output_window.slider.isEnabled()
               },
-              'audioPlayer': self._get_audio_player_dict(self.preview_window.preview_widget.audio_player)
+              'audioPlayer': self._get_audio_player_dict(self.output_window.preview_widget.audio_player)
           },
           'timeline_window': {
               'isEnabled': self.timeline_window.isEnabled(),

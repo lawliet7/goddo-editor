@@ -5,7 +5,7 @@ import cv2
 from PyQt5.QtCore import QRect, Qt, QMimeData, QTime
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, \
     QResizeEvent, QWheelEvent, QDragEnterEvent, QDropEvent
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QTimeEdit
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QTimeEdit, QHBoxLayout, QInputDialog
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
 from goddo_player.app.player_configs import PlayerConfigs
@@ -49,15 +49,45 @@ class PreviewWindow(QWidget):
         # self.setPalette(p)
         # self.setAutoFillBackground(True)
 
-        self.label = QLabel()
-        self.label.setText("you suck")
-        self.label.setFixedHeight(15)
+        self.time_label = QLabel()
+        self.time_label.setText(f"{build_time_str()}/{build_time_str()}")
+        self.time_label.setFixedHeight(15)
+        self.time_label.setStyleSheet("border:1px solid rgb(0, 0, 255); ")
+
+        self.speed_label = QLabel()
+        self.speed_label.setText("speed=normal")
+        self.speed_label.setFixedHeight(15)
+        self.speed_label.setStyleSheet("border:1px solid rgb(0, 255, 0); ")
+
+        self.skip_label = QLabel()
+        self.skip_label.setText("skip=5s")
+        self.skip_label.setFixedHeight(15)
+        self.skip_label.setStyleSheet("border:1px solid rgb(0, 0, 255); ")
+
+        self.vol_label = QLabel()
+        self.vol_label.setText(f"vol={round(PlayerConfigs.default_volume*100)}%")
+        self.vol_label.setFixedHeight(15)
+        self.vol_label.setStyleSheet("border:1px solid rgb(0, 255, 0); ")
+
+        self.time_label_init_value = self.time_label.text()
+        self.speed_label_init_value = self.speed_label.text()
+        self.skip_label_init_value = self.skip_label.text()
+        self.vol_label_init_value = self.vol_label.text()
+        
 
         self.preview_widget = PreviewWidgetNew(self.update, self.get_preview_window_state(), self.get_preview_window_signal())
         vbox = QVBoxLayout()
         vbox.addWidget(self.preview_widget)
         vbox.addWidget(self.slider)
-        vbox.addWidget(self.label)
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.time_label)
+        hbox.addWidget(self.speed_label)
+        hbox.addWidget(self.skip_label)
+        hbox.addWidget(self.vol_label)
+        hbox.addStretch()
+
+        vbox.addLayout(hbox)
 
         vbox.setContentsMargins(0, 0, 0, 0)
 
@@ -105,9 +135,15 @@ class PreviewWindow(QWidget):
             speed_txt = 'max' if self.get_preview_window_state().is_max_speed else 'normal'
             skip_txt = self.__build_skip_label_txt()
 
-            self.label.setText(f'{cur_time_str}/{total_time_str}  speed={speed_txt}  skip={skip_txt}')
+            self.time_label.setText(f'{cur_time_str}/{total_time_str}')
+            self.speed_label.setText(f'speed={speed_txt}')
+            self.skip_label.setText(f'skip={skip_txt}')
+            self.vol_label.setText(f'vol={round(self.get_preview_window_state().volume*100)}%')
         else:
-            self.label.setText('you suck')
+            self.time_label.setText(self.time_label_init_value)
+            self.speed_label.setText(self.speed_label_init_value)
+            self.skip_label.setText(self.skip_label_init_value)
+            self.vol_label.setText(self.vol_label_init_value)
 
     def update_slider(self):
         if self.preview_widget.cap is not None:
@@ -224,6 +260,12 @@ class PreviewWindow(QWidget):
             if self.preview_widget.cap is not None:
                 pw_state = self.get_preview_window_state()
                 self.dialog.show_dialog(pw_state.fps, current_frame=pw_state.current_frame_no, max_frame=pw_state.total_frames, min_frame=1)
+        elif is_key_press(event, Qt.Key_V):
+            cur_volume = round(self.get_preview_window_state().volume * 100)
+            max_volume = round(PlayerConfigs.max_volume * 100)
+            volume, ok = QInputDialog.getInt(self, 'Enter Volume', 'Volume (pct):', value=cur_volume, min=0, max=max_volume)
+            if ok:
+                self.get_preview_window_signal().update_volume.emit(volume/100)
         else:
             super().keyPressEvent(event)
 

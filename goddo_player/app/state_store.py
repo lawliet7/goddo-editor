@@ -33,6 +33,7 @@ class PreviewWindowState:
     cur_start_frame: int = field(default=0)
     cur_end_frame: int = field(default=0)
     restrict_frame_interval: bool = field(default=False)
+    volume: float = field(default=PlayerConfigs.default_volume)
 
     def __post_init__(self):
         self.restrict_frame_interval = True if self.name == WINDOW_NAME_OUTPUT else False
@@ -50,6 +51,7 @@ class PreviewWindowState:
             "cur_start_frame": self.cur_start_frame,
             "cur_end_frame": self.cur_end_frame,
             "restrict_frame_interval": self.restrict_frame_interval,
+            "volume": self.volume,
         }
 
     @staticmethod
@@ -67,6 +69,7 @@ class PreviewWindowState:
         prev_wind_state.cur_start_frame = json_dict['cur_start_frame']
         prev_wind_state.cur_end_frame = json_dict['cur_end_frame']
         prev_wind_state.restrict_frame_interval = json_dict['restrict_frame_interval']
+        prev_wind_state.volume = json_dict['volume']
         return prev_wind_state
 
 

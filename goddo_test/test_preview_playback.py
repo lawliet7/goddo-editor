@@ -389,8 +389,7 @@ def test_go_back_prev_5_frames_at_beginning_should_do_nothing(app_thread, window
                 assert_blank_timeline)
 
 def check_skip_label(windows_container):
-        _, _, skip_label = [x for x in windows_container.preview_window.label.text().split(' ') if x.strip() != '']
-        return skip_label
+    return windows_container.preview_window.skip_label.text()
 
 def get_slider_range(windows_container, old_frame_no, is_fwd, wheel_amt = 5, threshold = 0.01):
     fps = windows_container.preview_window.state.preview_window.fps

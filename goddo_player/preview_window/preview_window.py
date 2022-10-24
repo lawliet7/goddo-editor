@@ -261,11 +261,11 @@ class PreviewWindow(QWidget):
                 pw_state = self.get_preview_window_state()
                 self.dialog.show_dialog(pw_state.fps, current_frame=pw_state.current_frame_no, max_frame=pw_state.total_frames, min_frame=1)
         elif is_key_press(event, Qt.Key_V):
-            cur_volume = round(self.state.preview_window.volume * 100)
+            cur_volume = round(self.get_preview_window_state().volume * 100)
             max_volume = round(PlayerConfigs.max_volume * 100)
             volume, ok = QInputDialog.getInt(self, 'Enter Volume', 'Volume (pct):', value=cur_volume, min=0, max=max_volume)
             if ok:
-                self.signals.preview_window.update_volume.emit(volume/100)
+                self.get_preview_window_signal().update_volume.emit(volume/100)
         else:
             super().keyPressEvent(event)
 

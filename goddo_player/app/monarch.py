@@ -74,6 +74,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.switch_speed_slot.connect(self.__on_switch_speed)
         self.signals.preview_window.update_skip_slot.connect(self.__on_preview_window_update_skip)
         self.signals.preview_window.update_volume.connect(self.__on_preview_window_update_volume)
+        self.signals.preview_window_output.update_volume.connect(self.__on_preview_window_update_volume)
         self.signals.preview_window_output.update_skip_slot.connect(self.__on_preview_window_update_skip)
         self.signals.preview_window_output.switch_restrict_frame_slot.connect(self.__on_switch_restrict_frame_slot)
         self.signals.timeline_delete_selected_clip_slot.connect(self.__on_timeline_delete_selected_clip)

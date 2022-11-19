@@ -7,8 +7,7 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
-from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QInputDialog)
+from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
 from goddo_player.preview_window.frame_in_out import FrameInOut
 
 from goddo_player.utils.event_helper import is_key_with_modifiers
@@ -17,10 +16,9 @@ from goddo_player.app.signals import PlayCommand, StateStoreSignals
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
-from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.base_qwidget import BaseQWidget
 from goddo_player.widgets.flow import FlowLayout
-from goddo_player.widgets.tag import TagWidget
+from goddo_player.widgets.tag import TagWidget, TagDialogBox
 from goddo_player.list_window.screenshot_thread import ScreenshotThread
 
 
@@ -51,7 +49,7 @@ class ClipItemWidget(QWidget):
         widget.setLayout(flow)
         self.flow_layout = flow
 
-        scroll = FileScrollArea(self)
+        scroll = ListFileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
@@ -84,20 +82,26 @@ class ClipItemWidget(QWidget):
                     tag_widget.deleteLater()
                 break
 
+    def get_tags(self):
+        tags = []
+        for i in range(self.flow_layout.count()):
+            tag_widget = self.flow_layout.itemAt(i).widget()
+            tags.append(tag_widget.text())
+        return tags
 
-class FileScrollArea(QScrollArea):
+
+class ListFileScrollArea(QScrollArea):
     def __init__(self, item_widget: 'ClipItemWidget', parent=None):
         super().__init__(parent)
         self.item_widget = item_widget
 
         self.signals = StateStoreSignals()
+        self.tag_dialog_box = TagDialogBox()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info(f'double click @ {event.pos()}')
-
-        text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
-        if ok:
-            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, text)
+        
+        self.tag_dialog_box.open_modal_dialog(self.item_widget.video_path, self.item_widget.get_tags())
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:

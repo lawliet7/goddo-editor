@@ -50,7 +50,7 @@ class ClipItemWidget(QWidget):
         # vbox.addWidget(groupBox)
         widget.setLayout(self.flow_layout)
 
-        scroll = FileScrollArea(self)
+        scroll = ListFileScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
@@ -83,7 +83,7 @@ class ClipItemWidget(QWidget):
                 break
 
 
-class FileScrollArea(QScrollArea):
+class ListFileScrollArea(QScrollArea):
     def __init__(self, item_widget: 'ClipItemWidget', parent=None):
         super().__init__(parent)
         self.item_widget = item_widget

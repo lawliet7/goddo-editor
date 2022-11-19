@@ -523,9 +523,13 @@ class MonarchSystem(QObject):
         preview_window = self.get_preview_window_from_signal(self.sender())
         before_toggle_is_playing = preview_window.preview_widget.is_playing()
 
-        preview_window_state = self.get_preview_window_state_from_signal(self.sender())
+        preview_window_state = preview_window.get_preview_window_state()
+        preview_window_signals = preview_window.get_preview_window_signal()
 
         preview_window.toggle_play_pause(play_cmd)
 
-        if play_cmd == PlayCommand.PAUSE or before_toggle_is_playing:
+        if not preview_window.preview_widget.is_playing() or before_toggle_is_playing:
             preview_window_state.current_frame_no = preview_window.preview_widget.get_cur_frame_no()
+
+        if not preview_window.preview_widget.is_playing() and preview_window_state.is_max_speed:
+           preview_window_signals.switch_speed_slot.emit()

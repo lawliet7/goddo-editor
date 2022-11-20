@@ -41,7 +41,7 @@ class VideoPath:
 
         return False
 
-    def file_name(self, include_ext=True):
+    def file_name(self, include_ext=True) -> str:
         if include_ext:
             return self.url().fileName()
         else:

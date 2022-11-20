@@ -7,7 +7,6 @@ from PyQt5.QtCore import QRect, Qt, QTimer
 from PyQt5.QtGui import QPainter, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget
 
-from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import PlayCommand, StateStoreSignals
 from goddo_player.utils.enums import PositionType
 from goddo_player.utils.video_path import VideoPath

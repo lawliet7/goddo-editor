@@ -11,6 +11,7 @@ from tinydb.table import Table
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.utils.mru_priority_set import MRUPrioritySet
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
@@ -255,6 +256,7 @@ class StateStore(QObject):
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.clip_list = ClipListState()
+        self.video_tag_cache = MRUPrioritySet(PlayerConfigs.max_tags_in_dropdown)
         self.timeline = TimelineState()
         self.cur_save_file = VideoPath(file_to_url(PlayerConfigs.default_save_file))
 

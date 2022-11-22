@@ -13,6 +13,7 @@ class PlayerConfigs:
     audio_thread_pool_size = 1
     default_volume = 1
     max_volume = 1
+    max_tags_in_dropdown = 1000
 
     # a.json on goddo player's root / saves
     default_save_file = pathlib.Path(__file__).parent.parent.parent.joinpath('saves').joinpath('a.json').resolve()

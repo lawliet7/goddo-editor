@@ -56,6 +56,7 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.update_file_details_slot.connect(self.__on_update_file_details)
         self.signals.add_file_slot.connect(self.__on_add_file)
         self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
+        self.signals.add_clip_slot.connect(self.__on_add_clip_slot)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
         self.signals.close_file_slot.connect(self.__on_close_file)
@@ -321,6 +322,16 @@ class MonarchSystem(QObject):
                             f"your system doesn't support file format dropped! - {video_path.str()}")
         else:
             show_error_box(self.tabbed_list_window.videos_tab, 'video already exists!', title='Duplicate Video')
+
+    def __on_add_clip_slot(self, clip_name: str, clip_idx: int):
+        logging.info('add clip')
+        clip = self.state.timeline.clips[clip_idx]
+        # todo: add clip to state and widget
+        # clip_item = self.state.clip_list.create_file_item(clip.video_path.url(), clip.frame_in_out)
+        # self.state.clip_list.add_file_item(clip_item)
+        # self.tabbed_list_window.clips_tab.add_video(clip.video_path)
+        self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+        
 
     def __on_save_file(self, video_path: VideoPath):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)

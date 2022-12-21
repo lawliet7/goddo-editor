@@ -165,10 +165,10 @@ class ClipListState:
         return ClipListStateItem(url, frame_in_out)
 
     def add_file_item(self, item: ClipListStateItem):
-        logging.debug(f'before adding {self.files}')
-        self.files.append(item)
-        self.files_dict[item.name.path()] = item
-        logging.debug(f'after adding {self.files}')
+        logging.debug(f'before adding {self.clips}')
+        self.clips.append(item)
+        self.clips_dict[str(item.name)] = item
+        logging.debug(f'after adding {self.clips}')
 
 
 @dataclass

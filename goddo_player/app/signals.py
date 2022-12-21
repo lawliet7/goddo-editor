@@ -81,6 +81,7 @@ class StateStoreSignals(QObject):
     add_file_slot = pyqtSignal(VideoPath)
     add_video_tag_slot = pyqtSignal(VideoPath, str)
     remove_video_tag_slot = pyqtSignal(VideoPath, str)
+    add_clip_slot = pyqtSignal(str,int) #clip index on timeline
     save_slot = pyqtSignal(VideoPath)
     load_slot = pyqtSignal(VideoPath)
     close_file_slot = pyqtSignal()

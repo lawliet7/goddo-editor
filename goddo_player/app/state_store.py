@@ -11,6 +11,7 @@ from tinydb.table import Table
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.utils.mru_priority_set import MRUPrioritySet
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
@@ -193,6 +194,9 @@ class FileListState:
         self.files_dict[item.name.str()] = item
         logging.debug(f'after adding {self.files}')
 
+    def __contains__(self, item):
+        return str(item) in self.files_dict
+
 
 @dataclass(frozen=True)
 class VideoClip:
@@ -255,6 +259,7 @@ class StateStore(QObject):
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
         self.clip_list = ClipListState()
+        self.video_tag_cache = MRUPrioritySet(PlayerConfigs.max_tags_in_dropdown)
         self.timeline = TimelineState()
         self.cur_save_file = VideoPath(file_to_url(PlayerConfigs.default_save_file))
 
@@ -364,7 +369,7 @@ class StateStore(QObject):
                 handle_file_fn(file_dict)
 
             for prev_wind_dict in table_preview_windows.all():
-                if prev_wind_dict['video_path']:
+                if prev_wind_dict['video_path'] and prev_wind_dict['video_path'] in self.file_list:
                     timeline_dict = self._get_first_row(table_timelines)
                     prev_wind_outputs_dict = self._get_first_row(table_preview_window_outputs)
 

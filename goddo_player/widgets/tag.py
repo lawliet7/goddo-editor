@@ -155,8 +155,8 @@ class TagDialogBox(QDialog):
         for tag in tags:
             self._add_tag(tag)
         logging.info(f'flow layout count after adding tags {self.flow_layout.count()}')
-        self.open()
         self.input_box.setFocus()
+        self.exec_()
 
     def _add_tag_in_textbox(self):
         self._add_tag(self.input_box.text())

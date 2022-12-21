@@ -350,10 +350,12 @@ class MonarchSystem(QObject):
 
             my_url = file_to_url(file_dict['name'])
             my_video_path = VideoPath(my_url)
+
             signals.add_file_slot.emit(my_video_path)
 
-            for tag in file_dict['tags']:
-                signals.add_video_tag_slot.emit(my_video_path, tag)
+            if my_video_path in self.state.file_list:
+                for tag in file_dict['tags']:
+                    signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
             pw_signals = StateStoreSignals().preview_window

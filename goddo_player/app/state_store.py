@@ -194,6 +194,9 @@ class FileListState:
         self.files_dict[item.name.str()] = item
         logging.debug(f'after adding {self.files}')
 
+    def __contains__(self, item):
+        return str(item) in self.files_dict
+
 
 @dataclass(frozen=True)
 class VideoClip:
@@ -366,7 +369,7 @@ class StateStore(QObject):
                 handle_file_fn(file_dict)
 
             for prev_wind_dict in table_preview_windows.all():
-                if prev_wind_dict['video_path']:
+                if prev_wind_dict['video_path'] and prev_wind_dict['video_path'] in self.file_list:
                     timeline_dict = self._get_first_row(table_timelines)
                     prev_wind_outputs_dict = self._get_first_row(table_preview_window_outputs)
 

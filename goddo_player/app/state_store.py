@@ -113,7 +113,8 @@ class FileListStateItem:
 
 @dataclass
 class ClipListStateItem:
-    name: QUrl
+    name: str
+    video_path: VideoPath
     frame_in_out: FrameInOut
     tags: List[str] = field(default_factory=list)
 
@@ -123,7 +124,8 @@ class ClipListStateItem:
 
     def as_dict(self):
         return {
-            "name": self.name.path(),
+            "name": self.name,
+            "video_path": self.video_path.path(),                                   
             "frame_in_out": asdict(self.frame_in_out),
             "tags": self.tags,
         }
@@ -132,7 +134,7 @@ class ClipListStateItem:
     def from_dict(json_dict):
         frame_in_out_dict = json_dict['frame_in_out']
         frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
-        return ClipListStateItem(name=QUrl.fromLocalFile(json_dict['name']),
+        return ClipListStateItem(name=json_dict['name'],video_path=QUrl.fromLocalFile(json_dict['video_path']),
                                  frame_in_out=frame_in_out, tags=json_dict['tags'])
 
     def add_tag(self, tag: str):
@@ -161,8 +163,8 @@ class ClipListState:
         }
 
     @staticmethod
-    def create_file_item(url: QUrl, frame_in_out: FrameInOut):
-        return ClipListStateItem(url, frame_in_out)
+    def create_file_item(name: str, file: VideoPath, frame_in_out: FrameInOut):
+        return ClipListStateItem(name, file, frame_in_out)
 
     def add_file_item(self, item: ClipListStateItem):
         logging.debug(f'before adding {self.clips}')

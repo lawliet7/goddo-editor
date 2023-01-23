@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
 from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.utils import open_cv_utils
 
 from goddo_player.utils.event_helper import is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
@@ -22,7 +23,7 @@ from goddo_player.widgets.tag import TagWidget, TagDialogBox
 from goddo_player.list_window.screenshot_thread import ScreenshotThread
 
 
-class ClipItemWidget(QWidget):
+class FileItemWidget(QWidget):
     def __init__(self, video_path: VideoPath, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
@@ -91,7 +92,7 @@ class ClipItemWidget(QWidget):
 
 
 class ListFileScrollArea(QScrollArea):
-    def __init__(self, item_widget: 'ClipItemWidget', parent=None):
+    def __init__(self, item_widget: 'FileItemWidget', parent=None):
         super().__init__(parent)
         self.item_widget = item_widget
 
@@ -172,11 +173,13 @@ class ScreenshotThread(QRunnable):
     def run(self):
         logging.debug("started thread to get screenshot")
 
-        cap = cv2.VideoCapture(self.video_path.str())
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
-        _, frame = cap.read()
+        cap = open_cv_utils.create_video_capture(self.video_path.str())
+        open_cv_utils.set_cap_pos(cap, int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / 2))
+        frame = open_cv_utils.get_next_frame(cap)
         frame = imutils.resize(frame, height=108)
         pixmap = numpy_to_pixmap(frame)
+
+        open_cv_utils.free_resources(cap)
 
         logging.debug(f'emitting pixmap back to file list')
         self.signal.emit(pixmap, self.item)
@@ -206,10 +209,10 @@ class FileListWindow(BaseQWidget):
 
         self.update_screenshot_slot.connect(self.update_screenshot_on_item)
 
-        self.clip_list_dict: Dict[str, ClipItemWidget] = {}
+        self.clip_list_dict: Dict[str, FileItemWidget] = {}
 
     def update_screenshot_on_item(self, pixmap: QPixmap, item: QListWidgetItem):
-        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
+        item_widget: FileItemWidget = self.list_widget.itemWidget(item)
         item_widget.screenshot_label.setPixmap(pixmap)
 
     def add_video(self, video_path: VideoPath):
@@ -219,7 +222,7 @@ class FileListWindow(BaseQWidget):
         item = QListWidgetItem(self.list_widget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(video_path, self.list_widget, self.black_pixmap)
+        row = FileItemWidget(video_path, self.list_widget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.list_widget.addItem(item)
@@ -231,7 +234,7 @@ class FileListWindow(BaseQWidget):
         self.clip_list_dict[video_path.str()] = row
 
     def double_clicked(self, item):
-        item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
+        item_widget: FileItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
         fn_id = self.signals.fn_repo.push(lambda: self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY))
         logging.info(f'=== playing with fn id {fn_id}')

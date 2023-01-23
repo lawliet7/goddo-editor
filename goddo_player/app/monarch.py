@@ -323,13 +323,16 @@ class MonarchSystem(QObject):
         else:
             show_error_box(self.tabbed_list_window.videos_tab, 'video already exists!', title='Duplicate Video')
 
+        self.tabbed_list_window.setActiveTabAsFileList()
+        self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+
     def __on_add_clip_slot(self, clip_name: str, clip_idx: int):
         logging.info('add clip')
         clip = self.state.timeline.clips[clip_idx]
-        # todo: add clip to state and widget
-        # clip_item = self.state.clip_list.create_file_item(clip.video_path.url(), clip.frame_in_out)
-        # self.state.clip_list.add_file_item(clip_item)
-        # self.tabbed_list_window.clips_tab.add_video(clip.video_path)
+        clip_item = self.state.clip_list.create_file_item(clip_name, clip.video_path, clip.frame_in_out)
+        self.state.clip_list.add_file_item(clip_item)
+        self.tabbed_list_window.clips_tab.add_clip(clip_item)
+        self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
         
 

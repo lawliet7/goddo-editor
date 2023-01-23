@@ -29,3 +29,9 @@ class TabbedListWindow(BaseQWidget):
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
+    
+    def setActiveTabAsFileList(self):
+        self.tabs.setCurrentIndex(0)
+
+    def setActiveTabAsClipList(self):
+        self.tabs.setCurrentIndex(1)

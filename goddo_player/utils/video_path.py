@@ -5,6 +5,8 @@ from pathlib import Path
 
 from PyQt5.QtCore import QUrl
 
+from goddo_player.utils.url_utils import file_to_url
+
 
 class VideoPath:
 
@@ -15,6 +17,10 @@ class VideoPath:
     # @typing.overload
     def __init__(self, url: QUrl) -> None:
         self.__url = url
+
+    @staticmethod
+    def from_str_path(path: str):
+        return VideoPath(file_to_url(path))
 
     def url(self) -> QUrl:
         return self.__url

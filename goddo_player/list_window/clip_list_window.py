@@ -139,33 +139,33 @@ class ClipListWidget(QListWidget):
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
-    @staticmethod
-    def __should_accept_drop(video_path: VideoPath):
-        if video_path.ext().lower() in PlayerConfigs.supported_video_exts:
-            return True
-        else:
-            return False
+    # @staticmethod
+    # def __should_accept_drop(video_path: VideoPath):
+    #     if video_path.ext().lower() in PlayerConfigs.supported_video_exts:
+    #         return True
+    #     else:
+    #         return False
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        logging.info(f'drag enter: {event.mimeData().urls()}')
-        mime_data = event.mimeData()
-        if mime_data.hasUrls():
-            for url in mime_data.urls():
-                if not self.__should_accept_drop(VideoPath(url)):
-                    return
-            event.accept()
+    # def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+    #     logging.info(f'drag enter: {event.mimeData().urls()}')
+    #     mime_data = event.mimeData()
+    #     if mime_data.hasUrls():
+    #         for url in mime_data.urls():
+    #             if not self.__should_accept_drop(VideoPath(url)):
+    #                 return
+    #         event.accept()
 
-    # parent class prevents accepting
-    def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
-        pass
+    # # parent class prevents accepting
+    # def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
+    #     pass
 
-    def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        for url in event.mimeData().urls():
-            self.signals.add_clip_slot.emit(VideoPath(url))
+    # def dropEvent(self, event: QtGui.QDropEvent) -> None:
+    #     for url in event.mimeData().urls():
+    #         self.signals.add_clip_slot.emit(VideoPath(url))
 
-            # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
-            # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
-            self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+    #         # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
+    #         # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
+    #         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
     def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)

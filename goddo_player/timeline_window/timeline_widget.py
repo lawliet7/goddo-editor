@@ -100,7 +100,8 @@ class TimelineWidget(QWidget):
                 text, ok = show_input_msg_box(self, 'Create Clip', 'clip name: ')
                 if ok:
                     if len(text.strip()) > 2:
-                        self.signals.add_clip_slot.emit(text.strip(), found_idx)
+                        clip = self.state.timeline.clips[found_idx]
+                        self.signals.add_clip_slot.emit(text.strip(), clip.video_path, clip.frame_in_out)
                     else:
                         show_error_box(self, 'Please enter more than 2 characters')
 

@@ -125,7 +125,7 @@ class ClipListStateItem:
     def as_dict(self):
         return {
             "name": self.name,
-            "video_path": self.video_path.path(),                                   
+            "video_path": self.video_path.str(),                                   
             "frame_in_out": asdict(self.frame_in_out),
             "tags": self.tags,
         }
@@ -134,7 +134,7 @@ class ClipListStateItem:
     def from_dict(json_dict):
         frame_in_out_dict = json_dict['frame_in_out']
         frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
-        return ClipListStateItem(name=json_dict['name'],video_path=QUrl.fromLocalFile(json_dict['video_path']),
+        return ClipListStateItem(name=json_dict['name'],video_path=VideoPath.from_str_path(json_dict['video_path']),
                                  frame_in_out=frame_in_out, tags=json_dict['tags'])
 
     def add_tag(self, tag: str):
@@ -326,11 +326,16 @@ class StateStore(QObject):
             table_preview_windows: Table = db.table('preview_windows')
             table_preview_window_outputs: Table = db.table('preview_window_outputs')
             table_files: Table = db.table('files')
+            table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
 
             table_files.truncate()
             for _, file in enumerate(self.file_list.files):
                 table_files.insert(file.as_dict())
+
+            table_clips.truncate()
+            for _, clip in enumerate(self.clip_list.clips):
+                table_clips.insert(clip.as_dict())
 
             table_preview_windows.truncate()
             table_preview_windows.insert(self.preview_window.as_dict())
@@ -351,7 +356,7 @@ class StateStore(QObject):
         if len(all) > 0:
             return all.pop()
 
-    def load_file(self, video_path: VideoPath, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn):
+    def load_file(self, video_path: VideoPath, handle_file_fn, handle_clip_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn):
         logging.info(f'loading {video_path}')
         # todo msg box to select save file
 
@@ -364,11 +369,16 @@ class StateStore(QObject):
             table_preview_windows: Table = db.table('preview_windows')
             table_preview_window_outputs: Table = db.table('preview_window_outputs')
             table_files: Table = db.table('files')
+            table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
 
             all_files = table_files.all()
             for file_dict in all_files:
                 handle_file_fn(file_dict)
+
+            all_clips = table_clips.all()
+            for clip_dict in all_clips:
+                handle_clip_fn(clip_dict)
 
             for prev_wind_dict in table_preview_windows.all():
                 if prev_wind_dict['video_path'] and prev_wind_dict['video_path'] in self.file_list:

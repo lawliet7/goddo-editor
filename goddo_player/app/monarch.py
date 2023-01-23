@@ -326,10 +326,10 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.setActiveTabAsFileList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
-    def __on_add_clip_slot(self, clip_name: str, clip_idx: int):
+    def __on_add_clip_slot(self, clip_name: str, video_path: VideoPath, frame_in_out: FrameInOut):
         logging.info('add clip')
-        clip = self.state.timeline.clips[clip_idx]
-        clip_item = self.state.clip_list.create_file_item(clip_name, clip.video_path, clip.frame_in_out)
+        # clip = self.state.timeline.clips[clip_idx]
+        clip_item = self.state.clip_list.create_file_item(clip_name, video_path, frame_in_out)
         self.state.clip_list.add_file_item(clip_item)
         self.tabbed_list_window.clips_tab.add_clip(clip_item)
         self.tabbed_list_window.setActiveTabAsClipList()
@@ -367,9 +367,23 @@ class MonarchSystem(QObject):
 
             signals.add_file_slot.emit(my_video_path)
 
-            if my_video_path in self.state.file_list:
-                for tag in file_dict['tags']:
-                    signals.add_video_tag_slot.emit(my_video_path, tag)
+            # if my_video_path in self.state.file_list:
+            for tag in file_dict['tags']:
+                signals.add_video_tag_slot.emit(my_video_path, tag)
+
+        def handle_clip_fn(clip_dict):
+            signals = StateStoreSignals()
+
+            my_video_path = VideoPath.from_str_path(clip_dict['video_path'])
+
+            frame_in_out_dict = clip_dict['frame_in_out']
+            frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))
+
+            signals.add_clip_slot.emit(clip_dict['name'], my_video_path, frame_in_out)
+
+            # if my_video_path in self.state.clip_list:
+            # for tag in clip_dict['tags']:
+            #     signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
             pw_signals = StateStoreSignals().preview_window
@@ -469,7 +483,7 @@ class MonarchSystem(QObject):
                 fn_id = self.signals.fn_repo.push(fn)
                 self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip, fn_id)
 
-        self.state.load_file(video_path, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn)
+        self.state.load_file(video_path, handle_file_fn, handle_clip_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn)
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')

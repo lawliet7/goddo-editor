@@ -11,10 +11,11 @@ from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
 from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils import open_cv_utils
+from goddo_player.utils.enums import PositionType
 
 from goddo_player.utils.event_helper import is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import PlayCommand, StateStoreSignals
+from goddo_player.app.signals import PlayCommand, SignalFunctionId, StateStoreSignals
 from goddo_player.app.state_store import ClipListStateItem, StateStore
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
@@ -30,6 +31,7 @@ class ClipItemWidget(QWidget):
         self.v_margin = 6
         self.list_widget = list_widget
         self.video_path = video_path
+        self.frame_in_out = frame_in_out
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -250,12 +252,22 @@ class ClipListWindow(BaseQWidget):
         self.clip_list_dict[clip_item.video_path.str()] = row
 
     def double_clicked(self, item):
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         logging.info(f'playing {item_widget.video_path}')
-        fn_id = self.signals.fn_repo.push(lambda: self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY))
-        logging.info(f'=== playing with fn id {fn_id}')
-        logging.info(f'=== emitting {fn_id}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.video_path, FrameInOut(), fn_id)
+
+        self.state.timeline.opened_clip_index = -1
+
+        def callback_fn():
+            if self.state.preview_window_output.is_max_speed:
+                self.signals.preview_window_output.switch_speed_slot.emit()
+
+            self.signals.preview_window_output.seek_slot.emit(item_widget.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
+            self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PLAY)
+
+        fn_id = self.signals.fn_repo.push(callback_fn)
+        self.signals.preview_window_output.switch_video_slot.emit(item_widget.video_path, item_widget.frame_in_out, fn_id)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if is_key_with_modifiers(event, Qt.Key_W, ctrl=True):

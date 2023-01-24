@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPainter, QColor, QMouseEvent, QBrush
 from PyQt5.QtWidgets import QWidget, QToolTip, QMenu, QInputDialog
 
 from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import SignalFunctionId, StateStoreSignals
+from goddo_player.app.signals import PlayCommand, SignalFunctionId, StateStoreSignals
 from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.time_frame_utils import frames_to_time_components, build_time_str_least_chars, \
     build_time_ms_str_least_chars
@@ -73,6 +73,7 @@ class TimelineWidget(QWidget):
                     break
 
             if clip:
+                self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
                 self.signals.timeline_clip_double_click_slot.emit(clip_idx, clip, SignalFunctionId.no_function())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

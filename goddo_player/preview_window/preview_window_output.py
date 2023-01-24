@@ -252,15 +252,23 @@ class PreviewWindowOutput(QWidget):
         else:
             self._update_state_for_new_video(video_path, frame_in_out)
             name = video_path.file_name(include_ext=False)
-            clip_idx = self.state.timeline.opened_clip_index + 1
-            self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
-            self.slider.setDisabled(False)
+            if self._is_connected_to_clip():
+                clip_idx = self.state.timeline.opened_clip_index + 1
+                self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
+                self.slider.setDisabled(False)
+            else:
+                self.setWindowTitle(f'{self.base_title}')
+                self.slider.setDisabled(True)
+            
 
         self.update()
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         if self.preview_widget.cap:
             self.preview_widget.exec_play_cmd(cmd)
+
+    def _is_connected_to_clip(self):
+        return self.state.timeline.opened_clip_index > -1
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)
@@ -270,17 +278,21 @@ class PreviewWindowOutput(QWidget):
         elif is_key_press(event, Qt.Key_S):
             self.get_preview_window_signal().switch_speed_slot.emit()
         elif is_key_press(event, Qt.Key_I):
-            self.get_preview_window_signal().in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
-            self.get_preview_window_signal().in_frame_slot.emit(None)
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().in_frame_slot.emit(None)
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_press(event, Qt.Key_O):
-            self.get_preview_window_signal().out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
-            self.get_preview_window_signal().out_frame_slot.emit(None)
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().out_frame_slot.emit(None)
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_press(event, Qt.Key_Right):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
             self.get_preview_window_signal().seek_slot.emit(1, PositionType.RELATIVE)

@@ -367,9 +367,10 @@ class MonarchSystem(QObject):
 
             signals.add_file_slot.emit(my_video_path)
 
-            # if my_video_path in self.state.file_list:
-            for tag in file_dict['tags']:
-                signals.add_video_tag_slot.emit(my_video_path, tag)
+            # if add file fails due to file is deleted/moved
+            if my_video_path in self.state.file_list:
+                for tag in file_dict['tags']:
+                    signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_clip_fn(clip_dict):
             signals = StateStoreSignals()

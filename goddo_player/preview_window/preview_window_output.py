@@ -252,14 +252,10 @@ class PreviewWindowOutput(QWidget):
         else:
             self._update_state_for_new_video(video_path, frame_in_out)
             name = video_path.file_name(include_ext=False)
+            self.slider.setDisabled(False)
             if self._is_connected_to_clip():
                 clip_idx = self.state.timeline.opened_clip_index + 1
-                self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
-                self.slider.setDisabled(False)
-            else:
-                self.setWindowTitle(f'{self.base_title}')
-                self.slider.setDisabled(True)
-            
+                self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')            
 
         self.update()
 

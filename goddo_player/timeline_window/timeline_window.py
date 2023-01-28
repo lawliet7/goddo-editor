@@ -1,4 +1,5 @@
 import logging
+import pickle
 import platform
 import subprocess
 import time
@@ -8,6 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
+from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
 from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
@@ -127,11 +129,10 @@ class TimelineWindow(QMainWindow):
         logging.info('output generated!!')
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
-        if event.mimeData().text() == 'source':
+        if len(event.mimeData().data(VIDEO_CLIP_DRAG_MIME_TYPE)) > 0:
             event.accept()
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        pw_state = self.state.preview_window
-        clip = VideoClip(pw_state.video_path, pw_state.fps, pw_state.total_frames, pw_state.frame_in_out)
-
+        dict = pickle.loads(event.mimeData().data(VIDEO_CLIP_DRAG_MIME_TYPE))
+        clip = VideoClip.from_dict(dict)
         self.signals.add_timeline_clip_slot.emit(clip, -1)

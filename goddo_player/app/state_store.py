@@ -251,6 +251,27 @@ class TimelineState:
             clipboard_clip=VideoClip.from_dict(json_dict['clipboard_clip']),
             )
 
+@dataclass
+class FileRuntimeDetails:
+    video_path: VideoPath
+    fps: float
+    total_frames: int
+    
+    def as_dict(self):
+        return {
+            "video_path": self.video_path.str(),
+            "fps": self.fps,
+            "total_frames": self.total_frames
+        }
+
+    @staticmethod
+    def from_dict(json_dict):
+        return FileRuntimeDetails(
+            VideoPath(file_to_url(json_dict['video_path'])),
+            json_dict['fps'],
+            json_dict['total_frames']
+        )
+
 @singleton
 class StateStore(QObject):
     def __init__(self):
@@ -260,6 +281,7 @@ class StateStore(QObject):
         self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
+        self.file_runtime_details_dict: Dict[str,FileRuntimeDetails] = {}
         self.clip_list = ClipListState()
         self.video_tag_cache = MRUPrioritySet(PlayerConfigs.max_tags_in_dropdown)
         self.timeline = TimelineState()

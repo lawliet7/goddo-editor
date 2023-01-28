@@ -2,19 +2,20 @@ import datetime
 import logging
 import os
 from pathlib import Path
+import pickle
 import webbrowser
 
 from PyQt5.QtCore import QRect, Qt, QMimeData
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, QResizeEvent, QWheelEvent, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QInputDialog, QMenu, QFileDialog, QMessageBox, QPushButton
 
-from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
+from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
-from goddo_player.app.state_store import StateStore
+from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
 from goddo_player.utils.message_box_utils import show_error_box, show_info_box
 import goddo_player.utils.open_cv_utils as cv_utils
@@ -327,7 +328,11 @@ class PreviewWindow(QWidget):
             if frame_in_out.in_frame is not None or frame_in_out.out_frame is not None:
                 drag = QDrag(self)
                 mime_data = QMimeData()
-                mime_data.setText('source')
+                pw_state = self.get_preview_window_state()
+                file_runtime_details = self.state.file_runtime_details_dict[pw_state.video_path.str()]
+                video_clip = VideoClip(pw_state.video_path, file_runtime_details.fps, file_runtime_details.total_frames, pw_state.frame_in_out)
+                data = pickle.dumps(video_clip.as_dict())
+                mime_data.setData(VIDEO_CLIP_DRAG_MIME_TYPE,data)
                 drag.setMimeData(mime_data)
                 drag.exec()
 

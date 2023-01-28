@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import SignalFunctionId, StateStoreSignals, PlayCommand, PositionType
-from goddo_player.app.state_store import StateStore, VideoClip
+from goddo_player.app.state_store import FileRuntimeDetails, StateStore, VideoClip
+from goddo_player.utils import open_cv_utils
 from goddo_player.utils.loading_dialog import LoadingDialog
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.frame_in_out import FrameInOut
@@ -306,14 +307,16 @@ class MonarchSystem(QObject):
 
     def __on_add_file(self, video_path: VideoPath):
         if not video_path.str() in self.tabbed_list_window.videos_tab.clip_list_dict:
-            cap = cv2.VideoCapture(video_path.str())
-            fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            cap = open_cv_utils.create_video_capture(video_path.str())
+            fps = open_cv_utils.get_fps(cap)
+            total_frames = open_cv_utils.get_total_frames(cap)
             cap.release()
 
             if fps > 0:
                 item = self.state.file_list.create_file_item(video_path)
                 self.state.file_list.add_file_item(item)
                 self.tabbed_list_window.videos_tab.add_video(video_path)
+                self.state.file_runtime_details_dict[video_path.str()] = FileRuntimeDetails(video_path,fps,total_frames)
             elif not os.path.exists(video_path.str()):
                 show_error_box(self.tabbed_list_window.videos_tab,
                             f"file not found! - {video_path.str()}")

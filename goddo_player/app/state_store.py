@@ -166,7 +166,7 @@ class ClipListState:
     def create_file_item(name: str, file: VideoPath, frame_in_out: FrameInOut):
         return ClipListStateItem(name, file, frame_in_out)
 
-    def add_file_item(self, item: ClipListStateItem):
+    def add_clip_item(self, item: ClipListStateItem):
         logging.debug(f'before adding {self.clips}')
         self.clips.append(item)
         self.clips_dict[str(item.name)] = item

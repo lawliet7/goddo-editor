@@ -329,12 +329,12 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.setActiveTabAsFileList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
-    def __on_add_clip_slot(self, clip_name: str, video_path: VideoPath, frame_in_out: FrameInOut):
+    def __on_add_clip_slot(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
         # clip = self.state.timeline.clips[clip_idx]
-        clip_item = self.state.clip_list.create_file_item(clip_name, video_path, frame_in_out)
-        self.state.clip_list.add_file_item(clip_item)
-        self.tabbed_list_window.clips_tab.add_clip(clip_item)
+        clip_item = self.state.clip_list.create_file_item(clip_name, video_clip.video_path, video_clip.frame_in_out)
+        self.state.clip_list.add_clip_item(clip_item)
+        self.tabbed_list_window.clips_tab.add_clip(clip_name, video_clip)
         self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
         
@@ -383,14 +383,16 @@ class MonarchSystem(QObject):
             frame_in_out_dict = clip_dict['frame_in_out']
             frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))
 
-            signals.add_clip_slot.emit(clip_dict['name'], my_video_path, frame_in_out)
+            file_runtime_details = self.state.file_runtime_details_dict[my_video_path.str()]
+            video_clip = VideoClip(my_video_path, file_runtime_details.fps, file_runtime_details.total_frames, frame_in_out)
+            signals.add_clip_slot.emit(clip_dict['name'], video_clip)
 
             # if my_video_path in self.state.clip_list:
             # for tag in clip_dict['tags']:
             #     signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
-            pw_signals = StateStoreSignals().preview_window
+            pw_signals = self.signals.preview_window
 
             def fn():
                 logging.debug(f"loading in out {prev_wind_dict['frame_in_out']}")
@@ -424,7 +426,7 @@ class MonarchSystem(QObject):
             
 
         def handle_prev_wind_output_fn(prev_wind_out_dict):
-            pw_signals = StateStoreSignals().preview_window_output
+            pw_signals = self.signals.preview_window_output
 
             if self.state.timeline.opened_clip_index > -1:
 
@@ -455,24 +457,24 @@ class MonarchSystem(QObject):
 
         def handle_timeline_fn(timeline_dict, preview_output_window_dict):
             for clip_dict in timeline_dict['clips']:
-                StateStoreSignals().add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
+                self.signals.add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
 
             if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
                 if width_of_one_min > PlayerConfigs.timeline_initial_width_of_one_min:
                     iterations = int((width_of_one_min - PlayerConfigs.timeline_initial_width_of_one_min) / 6)
                     for _ in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.INC)
+                        self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.INC)
                 elif width_of_one_min < PlayerConfigs.timeline_initial_width_of_one_min:
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for _ in range(iterations):
-                        StateStoreSignals().timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
+                        self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
             
             if timeline_dict.get('selected_clip_index') > -1:
-                StateStoreSignals().timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
+                self.signals.timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
 
             if timeline_dict.get('clipboard_clip'):
-                StateStoreSignals().timeline_set_clipboard_clip_slot.emit(VideoClip.from_dict(timeline_dict.get('clipboard_clip')))
+                self.signals.timeline_set_clipboard_clip_slot.emit(VideoClip.from_dict(timeline_dict.get('clipboard_clip')))
 
             if timeline_dict.get('opened_clip_index') > -1:
                 idx = timeline_dict.get('opened_clip_index')

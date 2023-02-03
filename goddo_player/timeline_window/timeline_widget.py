@@ -102,7 +102,7 @@ class TimelineWidget(QWidget):
                 if ok:
                     if len(text.strip()) > 2:
                         clip = self.state.timeline.clips[found_idx]
-                        self.signals.add_clip_slot.emit(text.strip(), clip.video_path, clip.frame_in_out)
+                        self.signals.add_clip_slot.emit(text.strip(), clip)
                     else:
                         show_error_box(self, 'Please enter more than 2 characters')
 

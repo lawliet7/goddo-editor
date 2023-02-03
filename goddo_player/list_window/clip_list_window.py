@@ -75,7 +75,7 @@ class ClipItemWidget(QWidget):
         self.setLayout(v_layout1)
 
     def __add_tag_callback(self, tag):
-        self.signals.remove_video_tag_slot.emit(self.video_clip.video_path, tag)
+        self.signals.remove_clip_tag_slot.emit(self.video_clip, tag)
 
     def add_tag(self, tag: str):
         self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
@@ -124,7 +124,14 @@ class ListClipScrollArea(QScrollArea):
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info(f'double click @ {event.pos()}')
         
-        self.tag_dialog_box.open_modal_dialog(self.item_widget.video_clip.video_path, self.item_widget.get_tags())
+        def remove_tag(tag):
+            self.signals.remove_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+
+        def add_tag(tag):
+            self.signals.add_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+
+        self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
+
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:

@@ -57,7 +57,10 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.update_file_details_slot.connect(self.__on_update_file_details)
         self.signals.add_file_slot.connect(self.__on_add_file)
         self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
-        self.signals.add_clip_slot.connect(self.__on_add_clip_slot)
+        self.signals.remove_video_tag_slot.connect(self.__on_remove_video_tag)
+        self.signals.add_clip_slot.connect(self.__on_add_clip)
+        self.signals.add_clip_tag_slot.connect(self.__on_add_clip_tag)
+        self.signals.remove_clip_tag_slot.connect(self.__on_remove_clip_tag)
         self.signals.save_slot.connect(self.__on_save_file)
         self.signals.load_slot.connect(self.__on_load_file)
         self.signals.close_file_slot.connect(self.__on_close_file)
@@ -69,7 +72,6 @@ class MonarchSystem(QObject):
         self.signals.preview_window_output.play_cmd_slot.connect(self.__on_preview_window_play_cmd)
         self.signals.add_timeline_clip_slot.connect(self.__on_add_timeline_clip)
         self.signals.timeline_select_clip.connect(self.__on_timeline_select_clip)
-        self.signals.remove_video_tag_slot.connect(self.__on_remove_video_tag)
         self.signals.preview_window.seek_slot.connect(self.__on_preview_window_seek)
         self.signals.preview_window_output.seek_slot.connect(self.__on_preview_window_seek)
         self.signals.preview_window.switch_speed_slot.connect(self.__on_switch_speed)
@@ -120,6 +122,14 @@ class MonarchSystem(QObject):
     def __on_add_video_tag(self, video_path: VideoPath, tag: str):
         self.state.file_list.files_dict[video_path.str()].add_tag(tag)
         self.tabbed_list_window.videos_tab.clip_list_dict[video_path.str()].add_tag(tag)
+
+    def __on_remove_clip_tag(self, video_clip: VideoClip, tag: str):
+        self.state.clip_list.clips_dict[video_clip.name].delete_tag(tag)
+        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.name].delete_tag(tag)
+
+    def __on_add_clip_tag(self, video_clip: VideoClip, tag: str):
+        self.state.clip_list.clips_dict[video_clip.name].add_tag(tag)
+        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.name].add_tag(tag)
 
     def __on_activate_all_windows(self, window_to_activate: str):
         cur_active_window = QApplication.activeWindow()
@@ -329,7 +339,7 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.setActiveTabAsFileList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
-    def __on_add_clip_slot(self, clip_name: str, video_clip: VideoClip):
+    def __on_add_clip(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
         # clip = self.state.timeline.clips[clip_idx]
         clip_item = self.state.clip_list.create_file_item(clip_name, video_clip.video_path, video_clip.frame_in_out)
@@ -379,17 +389,18 @@ class MonarchSystem(QObject):
             signals = StateStoreSignals()
 
             my_video_path = VideoPath.from_str_path(clip_dict['video_path'])
+            clip_name = clip_dict['name']
 
             frame_in_out_dict = clip_dict['frame_in_out']
             frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))
 
             file_runtime_details = self.state.file_runtime_details_dict[my_video_path.str()]
-            video_clip = VideoClip(my_video_path, file_runtime_details.fps, file_runtime_details.total_frames, frame_in_out)
-            signals.add_clip_slot.emit(clip_dict['name'], video_clip)
+            video_clip = VideoClip(clip_name, my_video_path, file_runtime_details.fps, file_runtime_details.total_frames, frame_in_out)
+            signals.add_clip_slot.emit(clip_name, video_clip)
 
-            # if my_video_path in self.state.clip_list:
-            # for tag in clip_dict['tags']:
-            #     signals.add_video_tag_slot.emit(my_video_path, tag)
+            if clip_name in self.state.clip_list.clips_dict:
+                for tag in clip_dict['tags']:
+                    signals.add_clip_tag_slot.emit(video_clip, tag)
 
         def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
             pw_signals = self.signals.preview_window
@@ -507,7 +518,7 @@ class MonarchSystem(QObject):
 
             if timeline_in_frame != new_pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-                new_clip = VideoClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
@@ -530,7 +541,7 @@ class MonarchSystem(QObject):
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
             if timeline_out_frame != new_pos:
-                new_clip = VideoClip(video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
+                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
                                         frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()

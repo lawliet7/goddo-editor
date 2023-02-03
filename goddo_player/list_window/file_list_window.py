@@ -102,7 +102,13 @@ class ListFileScrollArea(QScrollArea):
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info(f'double click @ {event.pos()}')
         
-        self.tag_dialog_box.open_modal_dialog(self.item_widget.video_path, self.item_widget.get_tags())
+        def remove_tag(tag):
+            self.signals.remove_video_tag_slot.emit(self.item_widget.video_path, tag)
+
+        def add_tag(tag):
+            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, tag)
+
+        self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:

@@ -101,10 +101,10 @@ class TagDialogBox(QDialog):
     def __init__(self):
         super().__init__()
 
-        self.video_path = None
         self.orig_tags = []
         self.tags = []
-        self.signals = StateStoreSignals()
+        self.add_tag_fn = None
+        self.remove_tag_fn = None
 
         self.setWindowTitle("Enter Tags")
         self.setModal(True)
@@ -146,11 +146,12 @@ class TagDialogBox(QDialog):
 
         self.setLayout(v_layout)
 
-    def open_modal_dialog(self, video_path: VideoPath, tags: List[str]):
+    def open_modal_dialog(self, tags: List[str], add_tag_fn, remove_tag_fn):
         logging.info('opening dialog')
         logging.info(f'flow layout count {self.flow_layout.count()}')
 
-        self.video_path = video_path
+        self.add_tag_fn = add_tag_fn
+        self.remove_tag_fn = remove_tag_fn
         self.orig_tags = tags[:]
         for tag in tags:
             self._add_tag(tag)
@@ -159,7 +160,8 @@ class TagDialogBox(QDialog):
         self.exec_()
 
     def _add_tag_in_textbox(self):
-        self._add_tag(self.input_box.text())
+        if len(self.input_box.text().strip()) > 0:
+            self._add_tag(self.input_box.text())
 
     def _add_tag(self, tag: str):
         logging.debug(f'adding tag: {tag}')
@@ -192,11 +194,11 @@ class TagDialogBox(QDialog):
     def _submit_tags(self):
         for tag in self.orig_tags:
             logging.info(f'removing tag {tag}')
-            self.signals.remove_video_tag_slot.emit(self.video_path, tag)
+            self.remove_tag_fn(tag)
 
         for tag in self.tags:
             logging.info(f'adding tag {tag}')
-            self.signals.add_video_tag_slot.emit(self.video_path, tag)
+            self.add_tag_fn(tag)
         
         self.close()
 

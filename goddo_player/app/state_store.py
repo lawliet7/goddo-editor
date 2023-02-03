@@ -202,6 +202,7 @@ class FileListState:
 
 @dataclass(frozen=True)
 class VideoClip:
+    name: str
     video_path: VideoPath
     fps: float
     total_frames: int
@@ -209,6 +210,7 @@ class VideoClip:
 
     def as_dict(self):
         return {
+            "name": self.name,
             "video_path": self.video_path.str(),
             "fps": self.fps,
             "total_frames": self.total_frames,
@@ -217,7 +219,8 @@ class VideoClip:
 
     @staticmethod
     def from_dict(json_dict):
-        return VideoClip(VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
+        return VideoClip(json_dict['name'],
+                            VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
                             json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
 
     def get_total_time_str(self, overridden_total_frames=None):

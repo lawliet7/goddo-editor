@@ -330,7 +330,7 @@ class PreviewWindow(QWidget):
                 mime_data = QMimeData()
                 pw_state = self.get_preview_window_state()
                 file_runtime_details = self.state.file_runtime_details_dict[pw_state.video_path.str()]
-                video_clip = VideoClip(pw_state.video_path, file_runtime_details.fps, file_runtime_details.total_frames, pw_state.frame_in_out)
+                video_clip = VideoClip('',pw_state.video_path, file_runtime_details.fps, file_runtime_details.total_frames, pw_state.frame_in_out)
                 data = pickle.dumps(video_clip.as_dict())
                 mime_data.setData(VIDEO_CLIP_DRAG_MIME_TYPE,data)
                 drag.setMimeData(mime_data)

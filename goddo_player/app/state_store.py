@@ -111,31 +111,56 @@ class FileListStateItem:
             return -1
 
 
-@dataclass
-class ClipListStateItem:
+@dataclass(frozen=True)
+class VideoClip:
     name: str
     video_path: VideoPath
+    fps: float
+    total_frames: int
     frame_in_out: FrameInOut
-    tags: List[str] = field(default_factory=list)
-
-    def __post_init__(self):
-        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame is None:
-            raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
 
     def as_dict(self):
         return {
             "name": self.name,
-            "video_path": self.video_path.str(),                                   
+            "video_path": self.video_path.str(),
+            "fps": self.fps,
+            "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out),
+        }
+
+    def get_key(self):
+        return f'{self.name}|{self.video_path.str()}'
+
+    @staticmethod
+    def from_dict(json_dict):
+        return VideoClip(json_dict['name'],
+                            VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
+                            json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
+
+    def get_total_time_str(self, overridden_total_frames=None):
+        final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
+        return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
+
+@dataclass
+class ClipListStateItem:
+    video_clip: VideoClip
+    tags: List[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        frame_in_out = self.video_clip.frame_in_out
+        if frame_in_out.in_frame is None or frame_in_out.out_frame is None:
+            raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
+
+    def as_dict(self):
+        return {
+            "video_clip": self.video_clip.as_dict(),
             "tags": self.tags,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        frame_in_out_dict = json_dict['frame_in_out']
-        frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
-        return ClipListStateItem(name=json_dict['name'],video_path=VideoPath.from_str_path(json_dict['video_path']),
-                                 frame_in_out=frame_in_out, tags=json_dict['tags'])
+        video_clip = VideoClip.from_dict(json_dict)
+        return ClipListStateItem(video_clip, tags=json_dict['tags'])
 
     def add_tag(self, tag: str):
         new_tags = self.tags[:]
@@ -163,13 +188,13 @@ class ClipListState:
         }
 
     @staticmethod
-    def create_file_item(name: str, file: VideoPath, frame_in_out: FrameInOut):
-        return ClipListStateItem(name, file, frame_in_out)
+    def create_file_item(video_clip):
+        return ClipListStateItem(video_clip)
 
     def add_clip_item(self, item: ClipListStateItem):
         logging.debug(f'before adding {self.clips}')
         self.clips.append(item)
-        self.clips_dict[str(item.name)] = item
+        self.clips_dict[item.video_clip.get_key()] = item
         logging.debug(f'after adding {self.clips}')
 
 
@@ -198,34 +223,6 @@ class FileListState:
 
     def __contains__(self, item):
         return str(item) in self.files_dict
-
-
-@dataclass(frozen=True)
-class VideoClip:
-    name: str
-    video_path: VideoPath
-    fps: float
-    total_frames: int
-    frame_in_out: FrameInOut
-
-    def as_dict(self):
-        return {
-            "name": self.name,
-            "video_path": self.video_path.str(),
-            "fps": self.fps,
-            "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out),
-        }
-
-    @staticmethod
-    def from_dict(json_dict):
-        return VideoClip(json_dict['name'],
-                            VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
-                            json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
-
-    def get_total_time_str(self, overridden_total_frames=None):
-        final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
-        return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
 
 @dataclass
 class TimelineState:

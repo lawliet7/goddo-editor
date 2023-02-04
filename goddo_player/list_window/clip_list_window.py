@@ -250,14 +250,14 @@ class ClipListWindow(BaseQWidget):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         item_widget.screenshot_label.setPixmap(pixmap)
 
-    def add_clip(self, clip_name: str, video_clip: VideoClip):
+    def add_clip(self, video_clip: VideoClip):
         logging.info(f'adding clip {video_clip}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.list_widget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(clip_name, video_clip, self.list_widget, self.black_pixmap)
+        row = ClipItemWidget(video_clip.name, video_clip, self.list_widget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.list_widget.addItem(item)
@@ -266,7 +266,7 @@ class ClipListWindow(BaseQWidget):
         th = ScreenshotThread(video_clip, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[clip_name] = row
+        self.clip_list_dict[f'{video_clip.name}|{video_clip.video_path.str()}'] = row
 
     def double_clicked(self, item):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)

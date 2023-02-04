@@ -124,12 +124,12 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.videos_tab.clip_list_dict[video_path.str()].add_tag(tag)
 
     def __on_remove_clip_tag(self, video_clip: VideoClip, tag: str):
-        self.state.clip_list.clips_dict[video_clip.name].delete_tag(tag)
-        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.name].delete_tag(tag)
+        self.state.clip_list.clips_dict[video_clip.get_key()].delete_tag(tag)
+        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.get_key()].delete_tag(tag)
 
     def __on_add_clip_tag(self, video_clip: VideoClip, tag: str):
-        self.state.clip_list.clips_dict[video_clip.name].add_tag(tag)
-        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.name].add_tag(tag)
+        self.state.clip_list.clips_dict[video_clip.get_key()].add_tag(tag)
+        self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.get_key()].add_tag(tag)
 
     def __on_activate_all_windows(self, window_to_activate: str):
         cur_active_window = QApplication.activeWindow()
@@ -341,10 +341,9 @@ class MonarchSystem(QObject):
 
     def __on_add_clip(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
-        # clip = self.state.timeline.clips[clip_idx]
-        clip_item = self.state.clip_list.create_file_item(clip_name, video_clip.video_path, video_clip.frame_in_out)
+        clip_item = self.state.clip_list.create_file_item(video_clip)
         self.state.clip_list.add_clip_item(clip_item)
-        self.tabbed_list_window.clips_tab.add_clip(clip_name, video_clip)
+        self.tabbed_list_window.clips_tab.add_clip(video_clip)
         self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
         
@@ -388,17 +387,13 @@ class MonarchSystem(QObject):
         def handle_clip_fn(clip_dict):
             signals = StateStoreSignals()
 
-            my_video_path = VideoPath.from_str_path(clip_dict['video_path'])
-            clip_name = clip_dict['name']
+            video_clip = VideoClip.from_dict(clip_dict['video_clip'])
 
-            frame_in_out_dict = clip_dict['frame_in_out']
-            frame_in_out = FrameInOut(frame_in_out_dict.get('in_frame'), frame_in_out_dict.get('out_frame'))
+            file_runtime_details = self.state.file_runtime_details_dict[video_clip.video_path.str()]
+            video_clip = VideoClip(video_clip.name, video_clip.video_path, file_runtime_details.fps, file_runtime_details.total_frames, video_clip.frame_in_out)
+            signals.add_clip_slot.emit(video_clip.name, video_clip)
 
-            file_runtime_details = self.state.file_runtime_details_dict[my_video_path.str()]
-            video_clip = VideoClip(clip_name, my_video_path, file_runtime_details.fps, file_runtime_details.total_frames, frame_in_out)
-            signals.add_clip_slot.emit(clip_name, video_clip)
-
-            if clip_name in self.state.clip_list.clips_dict:
+            if video_clip.get_key() in self.state.clip_list.clips_dict:
                 for tag in clip_dict['tags']:
                     signals.add_clip_tag_slot.emit(video_clip, tag)
 

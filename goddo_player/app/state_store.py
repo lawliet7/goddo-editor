@@ -115,16 +115,12 @@ class FileListStateItem:
 class VideoClip:
     name: str
     video_path: VideoPath
-    fps: float
-    total_frames: int
     frame_in_out: FrameInOut
 
     def as_dict(self):
         return {
             "name": self.name,
             "video_path": self.video_path.str(),
-            "fps": self.fps,
-            "total_frames": self.total_frames,
             "frame_in_out": asdict(self.frame_in_out),
         }
 
@@ -133,13 +129,11 @@ class VideoClip:
 
     @staticmethod
     def from_dict(json_dict):
-        return VideoClip(json_dict['name'],
-                            VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
-                            json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
+        return VideoClip(json_dict['name'], VideoPath(file_to_url(json_dict['video_path'])), FrameInOut(**json_dict['frame_in_out']))
 
-    def get_total_time_str(self, overridden_total_frames=None):
-        final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
-        return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
+    # def get_total_time_str(self, overridden_total_frames=None):
+    #     final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
+    #     return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
 
 @dataclass
 class ClipListStateItem:

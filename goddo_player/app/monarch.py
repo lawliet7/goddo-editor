@@ -385,17 +385,12 @@ class MonarchSystem(QObject):
                     signals.add_video_tag_slot.emit(my_video_path, tag)
 
         def handle_clip_fn(clip_dict):
-            signals = StateStoreSignals()
-
             video_clip = VideoClip.from_dict(clip_dict['video_clip'])
-
-            file_runtime_details = self.state.file_runtime_details_dict[video_clip.video_path.str()]
-            video_clip = VideoClip(video_clip.name, video_clip.video_path, file_runtime_details.fps, file_runtime_details.total_frames, video_clip.frame_in_out)
-            signals.add_clip_slot.emit(video_clip.name, video_clip)
+            self.signals.add_clip_slot.emit(video_clip.name, video_clip)
 
             if video_clip.get_key() in self.state.clip_list.clips_dict:
                 for tag in clip_dict['tags']:
-                    signals.add_clip_tag_slot.emit(video_clip, tag)
+                    self.signals.add_clip_tag_slot.emit(video_clip, tag)
 
         def handle_prev_wind_fn(prev_wind_dict, timeline_dict, preview_output_window_dict):
             pw_signals = self.signals.preview_window
@@ -513,8 +508,7 @@ class MonarchSystem(QObject):
 
             if timeline_in_frame != new_pos:
                 clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
-                                        frame_in_out=preview_window_state.frame_in_out)
+                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()
@@ -536,8 +530,7 @@ class MonarchSystem(QObject):
             timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
 
             if timeline_out_frame != new_pos:
-                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, fps=clip.fps, total_frames=clip.total_frames,
-                                        frame_in_out=preview_window_state.frame_in_out)
+                new_clip = VideoClip(name=clip.name, video_path=clip.video_path, frame_in_out=preview_window_state.frame_in_out)
                 self.state.timeline.clips[self.state.timeline.opened_clip_index] = new_clip
                 self.timeline_window.inner_widget.recalculate_all_clip_rects()
                 self.timeline_window.update()

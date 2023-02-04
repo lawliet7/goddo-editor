@@ -266,7 +266,7 @@ class ClipListWindow(BaseQWidget):
         th = ScreenshotThread(video_clip, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[f'{video_clip.name}|{video_clip.video_path.str()}'] = row
+        self.clip_list_dict[video_clip.get_key()] = row
 
     def double_clicked(self, item):
         self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)

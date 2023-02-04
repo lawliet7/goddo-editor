@@ -38,8 +38,10 @@ class TimelineWidget(QWidget):
         self.setMouseTracking(True)
 
     def calc_rect_for_clip(self, clip: VideoClip, x=0):
-        n_frames = clip.frame_in_out.get_no_of_frames(clip.total_frames)
-        n_mins = n_frames / clip.fps / 60
+        file_runtime_details = self.state.file_runtime_details_dict[clip.video_path.str()]
+
+        n_frames = clip.frame_in_out.get_no_of_frames(file_runtime_details.total_frames)
+        n_mins = n_frames / file_runtime_details.fps / 60
         width = round(n_mins * self.state.timeline.width_of_one_min)
 
         return QRect(x, self.height_of_line + 50, width, 100)
@@ -117,9 +119,11 @@ class TimelineWidget(QWidget):
     def resize_timeline_widget(self):
         required_total_secs = 0
         for _, c in enumerate(self.state.timeline.clips):
+            file_runtime_details = self.state.file_runtime_details_dict[c.video_path.str()]
+
             final_in_frame = c.frame_in_out.get_resolved_in_frame()
-            final_out_frame = c.frame_in_out.get_resolved_out_frame(c.total_frames)
-            required_total_secs += (final_out_frame - final_in_frame) / c.fps
+            final_out_frame = c.frame_in_out.get_resolved_out_frame(file_runtime_details.total_frames)
+            required_total_secs += (final_out_frame - final_in_frame) / file_runtime_details.fps
         cur_total_secs = self.width() / self.state.timeline.width_of_one_min * 60
         logging.debug(f'required_total_secs={required_total_secs} cur_total_secs={cur_total_secs}')
         if required_total_secs + 60 > cur_total_secs or required_total_secs + 60 < cur_total_secs:
@@ -153,8 +157,10 @@ class TimelineWidget(QWidget):
         x = 0
         pen = painter.pen()
         for i, (clip, rect) in enumerate(self.clip_rects):
+            file_runtime_details = self.state.file_runtime_details_dict[clip.video_path.str()]
+
             in_frame = clip.frame_in_out.get_resolved_in_frame()
-            out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
+            out_frame = clip.frame_in_out.get_resolved_out_frame(file_runtime_details.total_frames)
 
             painter.fillRect(rect, Qt.darkRed)
             pen = painter.pen()
@@ -177,9 +183,9 @@ class TimelineWidget(QWidget):
 
             painter.setPen(Qt.white)
             filename = clip.video_path.file_name()
-            logging.debug(f'=== in_frame={in_frame} out_frame={out_frame} fps={clip.fps} total_frames={clip.total_frames}')
-            in_frame_ts = self.build_time_str(in_frame, clip.fps)
-            out_frame_ts = self.build_time_str(out_frame, clip.fps)
+            logging.debug(f'=== in_frame={in_frame} out_frame={out_frame} fps={file_runtime_details.fps} total_frames={file_runtime_details.total_frames}')
+            in_frame_ts = self.build_time_str(in_frame, file_runtime_details.fps)
+            out_frame_ts = self.build_time_str(out_frame, file_runtime_details.fps)
             painter.drawText(rect, Qt.TextWordWrap, f'{filename}\n{in_frame_ts} - {out_frame_ts}')
             x += rect.width()
 
@@ -197,11 +203,15 @@ class TimelineWidget(QWidget):
     def mouseMoveEvent(self, event):
         for c, rect in self.clip_rects:
             if rect.contains(event.pos()):
+                file_runtime_details = self.state.file_runtime_details_dict[c.video_path.str()]
+                fps = file_runtime_details.fps
+                total_frames = file_runtime_details.total_frames
+
                 filename = c.video_path.file_name()
-                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_in_frame(), c.fps))
-                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_out_frame(c.total_frames), c.fps))
-                frame_diff = c.frame_in_out.get_resolved_out_frame(c.total_frames) - c.frame_in_out.get_resolved_in_frame()
-                duration = build_time_ms_str_least_chars(*frames_to_time_components(frame_diff, c.fps))
+                in_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_in_frame(), fps))
+                out_frame_ts = build_time_str_least_chars(*frames_to_time_components(c.frame_in_out.get_resolved_out_frame(total_frames), fps))
+                frame_diff = c.frame_in_out.get_resolved_out_frame(total_frames) - c.frame_in_out.get_resolved_in_frame()
+                duration = build_time_ms_str_least_chars(*frames_to_time_components(frame_diff, fps))
                 msg = f'{filename}\n{in_frame_ts} - {out_frame_ts}\nduration: {duration}'
                 QToolTip.showText(self.mapToGlobal(event.pos()), msg)
                 return

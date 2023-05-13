@@ -1,33 +1,35 @@
 import logging
-import os
 from typing import Dict, List
 
+import imutils
 import numpy as np
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QUrl, QThreadPool, pyqtSignal
-from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap
-from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem,
-                             QScrollArea, QInputDialog)
 
-from goddo_player.app.player_configs import PlayerConfigs
-from goddo_player.app.signals import PlayCommand, StateStoreSignals
-from goddo_player.app.state_store import StateStore
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QMimeData
+from PyQt5.QtGui import QDrag, QMouseEvent, QPixmap, QKeyEvent
+from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
+from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
 from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.utils import open_cv_utils
+from goddo_player.utils.enums import PositionType
+
+from goddo_player.utils.event_helper import is_key_with_modifiers
+from goddo_player.app.signals import PlayCommand, StateStoreSignals
+from goddo_player.app.state_store import ClipListStateItem, StateStore, VideoClip
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
-from goddo_player.utils.message_box_utils import show_error_box
 from goddo_player.widgets.base_qwidget import BaseQWidget
 from goddo_player.widgets.flow import FlowLayout
-from goddo_player.widgets.tag import TagWidget
+from goddo_player.widgets.tag import TagWidget, TagDialogBox
 from goddo_player.list_window.screenshot_thread import ScreenshotThread
 
 
 class ClipItemWidget(QWidget):
-    def __init__(self, video_path: VideoPath, list_widget, default_pixmap: QPixmap):
+    def __init__(self, clip_name: str, video_clip: VideoClip, list_widget, default_pixmap: QPixmap):
         super().__init__()
         self.v_margin = 6
         self.list_widget = list_widget
-        self.video_path = video_path
+        self.video_clip = video_clip
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
@@ -36,36 +38,44 @@ class ClipItemWidget(QWidget):
         self.screenshot_label.setFixedHeight(default_pixmap.height())
         self.screenshot_label.setPixmap(default_pixmap)
 
-        self.file_name_label = QLabel(file_name)
+        v_layout1 = QVBoxLayout()
+        
+        self.clip_name_label = QLabel(clip_name)
+        # self.clip_name_label.setObjectName("name")
+        v_layout1.addWidget(self.clip_name_label)
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(self.screenshot_label)
+
+        v_layout1.addLayout(h_layout)
 
         widget = QWidget()
 
         # groupBox = QGroupBox(f'Tags')
         # vbox = QVBoxLayout()
 
-        self.flow_layout = FlowLayout(margin=1)
+        flow = FlowLayout(margin=1)
         # vbox.addWidget(groupBox)
-        widget.setLayout(self.flow_layout)
+        widget.setLayout(flow)
+        self.flow_layout = flow
 
-        scroll = ListFileScrollArea(self)
+        scroll = ListClipScrollArea(self)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        file_name = video_path.fileName().split(os.sep)[-1]
+        self.file_name_label = QLabel(f'{video_clip.video_path.file_name()} : {video_clip.frame_in_out.in_frame} - {video_clip.frame_in_out.out_frame}')
+        # self.file_name_label.setObjectName("name")
 
-        v_layout = QVBoxLayout()
-        v_layout.addWidget(self.file_name_label)
-        v_layout.addWidget(scroll)
-        h_layout.addLayout(v_layout)
-        self.setLayout(h_layout)
+        v_layout2 = QVBoxLayout()
+        v_layout2.addWidget(self.file_name_label)
+        v_layout2.addWidget(scroll)
+        h_layout.addLayout(v_layout2)
+        self.setLayout(v_layout1)
 
     def __add_tag_callback(self, tag):
-        self.signals.remove_video_tag_slot.emit(self.video_path, tag)
+        self.signals.remove_clip_tag_slot.emit(self.video_clip, tag)
 
     def add_tag(self, tag: str):
         self.flow_layout.addWidget(TagWidget(tag, delete_cb=self.__add_tag_callback))
@@ -82,20 +92,46 @@ class ClipItemWidget(QWidget):
                     tag_widget.deleteLater()
                 break
 
+    def get_tags(self):
+        tags = []
+        for i in range(self.flow_layout.count()):
+            tag_widget = self.flow_layout.itemAt(i).widget()
+            tags.append(tag_widget.text())
+        return tags
 
-class ListFileScrollArea(QScrollArea):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+
+        import pickle
+
+        if event.buttons() == Qt.LeftButton:
+            drag = QDrag(self)
+            mime_data = QMimeData()
+            data = pickle.dumps(self.video_clip.as_dict())
+            mime_data.setData(VIDEO_CLIP_DRAG_MIME_TYPE,data)
+            drag.setMimeData(mime_data)
+            drag.exec()
+
+
+class ListClipScrollArea(QScrollArea):
     def __init__(self, item_widget: 'ClipItemWidget', parent=None):
         super().__init__(parent)
         self.item_widget = item_widget
 
         self.signals = StateStoreSignals()
+        self.tag_dialog_box = TagDialogBox()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        logging.info('double click')
+        logging.info(f'double click @ {event.pos()}')
+        
+        def remove_tag(tag):
+            self.signals.remove_clip_tag_slot.emit(self.item_widget.video_clip, tag)
 
-        text, ok = QInputDialog.getText(self, 'Enter Video Tag Name', 'Tag:')
-        if ok:
-            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, text)
+        def add_tag(tag):
+            self.signals.add_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+
+        self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
+
 
     def eventFilter(self, obj, event: 'QEvent') -> bool:
         if event.type() == QMouseEvent.Enter:
@@ -114,7 +150,7 @@ class ListFileScrollArea(QScrollArea):
         return super().event(event)
 
 
-class FileListWidget(QListWidget):
+class ClipListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -123,33 +159,65 @@ class FileListWidget(QListWidget):
 
         self.signals: StateStoreSignals = StateStoreSignals()
 
-    @staticmethod
-    def __should_accept_drop(url: 'QUrl'):
-        _, ext = os.path.splitext(url.fileName())
-        if ext.lower() in PlayerConfigs.supported_video_exts:
-            return True
-        else:
-            return False
+    # @staticmethod
+    # def __should_accept_drop(video_path: VideoPath):
+    #     if video_path.ext().lower() in PlayerConfigs.supported_video_exts:
+    #         return True
+    #     else:
+    #         return False
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        logging.info(f'drag enter: {event.mimeData().urls()}')
-        mime_data = event.mimeData()
-        if mime_data.hasUrls():
-            for url in mime_data.urls():
-                if not self.__should_accept_drop(url):
-                    return
-            event.accept()
+    # def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+    #     logging.info(f'drag enter: {event.mimeData().urls()}')
+    #     mime_data = event.mimeData()
+    #     if mime_data.hasUrls():
+    #         for url in mime_data.urls():
+    #             if not self.__should_accept_drop(VideoPath(url)):
+    #                 return
+    #         event.accept()
 
-    # parent class prevents accepting
-    def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
-        pass
+    # # parent class prevents accepting
+    # def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
+    #     pass
 
-    def dropEvent(self, event: QtGui.QDropEvent) -> None:
-        for url in event.mimeData().urls():
-            self.signals.add_file_slot.emit(url)
+    # def dropEvent(self, event: QtGui.QDropEvent) -> None:
+    #     for url in event.mimeData().urls():
+    #         self.signals.add_clip_slot.emit(VideoPath(url))
+
+    #         # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
+    #         # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
+    #         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
 
     def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)
+
+
+class ScreenshotThread(QRunnable):
+    def __init__(self, video_clip: VideoClip, signal, item: QListWidgetItem):
+        super().__init__()
+        self.video_clip = video_clip
+        self.signal = signal
+        self.item = item
+
+    @pyqtSlot()
+    def run(self):
+        logging.debug("started thread to get screenshot")
+
+        cap = open_cv_utils.create_video_capture(self.video_clip.video_path.str())
+
+        in_frame = self.video_clip.frame_in_out.get_resolved_in_frame()
+        out_frame = self.video_clip.frame_in_out.get_resolved_out_frame(open_cv_utils.get_total_frames(cap))
+        frame_no = int((out_frame - in_frame) / 2 + in_frame)
+        logging.info(f'getting frame for screenshot in_frame={in_frame},out_frame={out_frame},frame_no={frame_no}')
+        
+        open_cv_utils.set_cap_pos(cap, frame_no)
+        frame = open_cv_utils.get_next_frame(cap)
+        frame = imutils.resize(frame, height=108)
+        pixmap = numpy_to_pixmap(frame)
+
+        open_cv_utils.free_resources(cap)
+
+        logging.debug(f'emitting pixmap back to clip list')
+        self.signal.emit(pixmap, self.item)
 
 
 class ClipListWindow(BaseQWidget):
@@ -165,7 +233,7 @@ class ClipListWindow(BaseQWidget):
         self.state = StateStore()
 
         vbox = QVBoxLayout(self)
-        self.list_widget = FileListWidget()
+        self.list_widget = ClipListWidget()
         self.list_widget.itemDoubleClicked.connect(self.double_clicked)
         vbox.addWidget(self.list_widget)
         self.setLayout(vbox)
@@ -182,28 +250,45 @@ class ClipListWindow(BaseQWidget):
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
         item_widget.screenshot_label.setPixmap(pixmap)
 
-    def add_video(self, video_path: VideoPath):
-        logging.info(f'adding video {video_path}')
+    def add_clip(self, video_clip: VideoClip):
+        logging.info(f'adding clip {video_clip}')
 
         # Add to list a new item (item is simply an entry in your list)
         item = QListWidgetItem(self.list_widget)
 
         # Instantiate a custom widget
-        row = ClipItemWidget(video_path, self.list_widget, self.black_pixmap)
+        row = ClipItemWidget(video_clip.name, video_clip, self.list_widget, self.black_pixmap)
         item.setSizeHint(row.minimumSizeHint())
 
         self.list_widget.addItem(item)
         self.list_widget.setItemWidget(item, row)
 
-        th = ScreenshotThread(video_path, self.update_screenshot_slot, item)
+        th = ScreenshotThread(video_clip, self.update_screenshot_slot, item)
         self.thread_pool.start(th)
 
-        self.clip_list_dict[video_path.str()] = row
+        self.clip_list_dict[video_clip.get_key()] = row
 
     def double_clicked(self, item):
+        self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PAUSE)
+
         item_widget: ClipItemWidget = self.list_widget.itemWidget(item)
-        logging.info(f'playing {item_widget.url}')
-        fn_id = self.signals.fn_repo.push(lambda: self.signals.preview_window.play_cmd_slot.emit(PlayCommand.PLAY))
-        logging.info(f'=== emitting {fn_id}')
-        self.signals.preview_window.switch_video_slot.emit(item_widget.url, FrameInOut(), fn_id)
-        
+        logging.info(f'playing {item_widget.video_clip.video_path}')
+
+        self.state.timeline.opened_clip_index = -1
+
+        def callback_fn():
+            if self.state.preview_window_output.is_max_speed:
+                self.signals.preview_window_output.switch_speed_slot.emit()
+
+            self.signals.preview_window_output.seek_slot.emit(item_widget.video_clip.frame_in_out.get_resolved_in_frame(), PositionType.ABSOLUTE)
+            self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PLAY)
+
+        fn_id = self.signals.fn_repo.push(callback_fn)
+        self.signals.preview_window_output.switch_video_slot.emit(item_widget.video_clip.video_path, item_widget.video_clip.frame_in_out, fn_id)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if is_key_with_modifiers(event, Qt.Key_W, ctrl=True):
+            logging.info('closing clip')
+            self.signals.close_file_slot.emit()
+
+        super().keyPressEvent(event)

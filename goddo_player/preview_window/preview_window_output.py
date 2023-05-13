@@ -11,12 +11,13 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QHBoxLayout, 
 from goddo_player.app.app_constants import WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window.frame_in_out import FrameInOut
-from goddo_player.utils.draw_utils import text_with_color
+from goddo_player.utils.draw_utils import numpy_to_pixmap, text_with_color
 from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
 from goddo_player.app.state_store import StateStore
 from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
-from goddo_player.utils.message_box_utils import show_info_box
+from goddo_player.utils.message_box_utils import show_error_box, show_info_box
+import goddo_player.utils.open_cv_utils as cv_utils
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
@@ -251,15 +252,19 @@ class PreviewWindowOutput(QWidget):
         else:
             self._update_state_for_new_video(video_path, frame_in_out)
             name = video_path.file_name(include_ext=False)
-            clip_idx = self.state.timeline.opened_clip_index + 1
-            self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')
             self.slider.setDisabled(False)
+            if self._is_connected_to_clip():
+                clip_idx = self.state.timeline.opened_clip_index + 1
+                self.setWindowTitle(f'{self.base_title} - clip#{clip_idx} - {name}')            
 
         self.update()
 
     def toggle_play_pause(self, cmd: PlayCommand = PlayCommand.TOGGLE):
         if self.preview_widget.cap:
             self.preview_widget.exec_play_cmd(cmd)
+
+    def _is_connected_to_clip(self):
+        return self.state.timeline.opened_clip_index > -1
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         common_event_handling(event, self.signals, self.state)
@@ -269,17 +274,21 @@ class PreviewWindowOutput(QWidget):
         elif is_key_press(event, Qt.Key_S):
             self.get_preview_window_signal().switch_speed_slot.emit()
         elif is_key_press(event, Qt.Key_I):
-            self.get_preview_window_signal().in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().in_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_I, shift=True):
-            self.get_preview_window_signal().in_frame_slot.emit(None)
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().in_frame_slot.emit(None)
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_press(event, Qt.Key_O):
-            self.get_preview_window_signal().out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().out_frame_slot.emit(self.preview_widget.get_cur_frame_no())
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_with_modifiers(event, Qt.Key_O, shift=True):
-            self.get_preview_window_signal().out_frame_slot.emit(None)
-            self.get_preview_window_signal().slider_update_slot.emit()
+            if self._is_connected_to_clip():
+                self.get_preview_window_signal().out_frame_slot.emit(None)
+                self.get_preview_window_signal().slider_update_slot.emit()
         elif is_key_press(event, Qt.Key_Right):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
             self.get_preview_window_signal().seek_slot.emit(1, PositionType.RELATIVE)
@@ -335,25 +344,39 @@ class PreviewWindowOutput(QWidget):
         if action == save_screenshot_action:
             filename_with_underscores = self.get_preview_window_state().video_path.file_name(include_ext=False).replace(' ','_')
             screenshot_filename = f'screenshot_{filename_with_underscores}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-            screenshot_folder_path = Path(__file__).parent.parent.parent.joinpath('output')
+            screenshot_folder_path = self.state.app_config.last_screenshot_folder
             screenshot_file_path = str(screenshot_folder_path.joinpath(screenshot_filename).resolve())
             logging.debug(screenshot_file_path)
+
+            self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
 
             file, ext = QFileDialog.getSaveFileName(self, 'Save Screenshot file', screenshot_file_path, "*.png;;*.jpg","*.png")
 
             if file:
-                logging.info(f'saving screenshot file: "{file}" in ext {ext}')
-                self.preview_widget.frame_pixmap.save(file, ext[2:])
-                msgBox = QMessageBox(QMessageBox.Information, 'Screenshot Saved', f'Screenshot successfully saved to {file}')
-                msgBox.addButton(QMessageBox.Ok)
-                msgBox.addButton(QMessageBox.Open)
-                open_folder_btn = msgBox.addButton('Open Folder', QMessageBox.ActionRole)
-                btn_id = msgBox.exec_()
-                print(msgBox.clickedButton())
-                if btn_id == QMessageBox.Open:
-                    webbrowser.open(file)
-                elif msgBox.clickedButton() == open_folder_btn:
-                    webbrowser.open(str(screenshot_folder_path.resolve()))
+                cap = cv_utils.create_video_capture(self.get_preview_window_state().video_path.str())
+                cv_utils.set_cap_pos(cap, self.get_preview_window_state().current_frame_no - 1)
+                frame = cv_utils.get_next_frame(cap)
+                if frame is not None:
+                    logging.info(f'saving screenshot file: "{file}" in ext {ext}')
+                    numpy_to_pixmap(frame).save(file, ext[2:])
+                    msgBox = QMessageBox(QMessageBox.Information, 'Screenshot Saved', f'Screenshot successfully saved to {file}')
+
+                    cv_utils.free_resources(cap)
+                    self.signals.update_screenshot_folder_slot.emit(str(Path(file).parent))
+
+                    msgBox.addButton(QMessageBox.Ok)
+                    msgBox.addButton(QMessageBox.Open)
+                    open_folder_btn = msgBox.addButton('Open Folder', QMessageBox.ActionRole)
+                    btn_id = msgBox.exec_()
+                    if btn_id == QMessageBox.Open:
+                        webbrowser.open(file)
+                    elif msgBox.clickedButton() == open_folder_btn:
+                        webbrowser.open(str(screenshot_folder_path.resolve()))
+                else:
+                    cv_utils.free_resources(cap)
+                    show_error_box(self,"unable to retrieve frame for saving screenshot!")
+
+                cv_utils.free_resources(cap)                
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)

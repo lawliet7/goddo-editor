@@ -2,20 +2,23 @@ import datetime
 import logging
 import os
 from pathlib import Path
+import pickle
 import webbrowser
 
 from PyQt5.QtCore import QRect, Qt, QMimeData
 from PyQt5.QtGui import QPainter, QKeyEvent, QPaintEvent, QColor, QMouseEvent, QDrag, QResizeEvent, QWheelEvent, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QInputDialog, QMenu, QFileDialog, QMessageBox, QPushButton
 
-from goddo_player.app.app_constants import WINDOW_NAME_SOURCE
+from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.preview_window.frame_in_out import FrameInOut
+from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.signals import StateStoreSignals, PlayCommand, PositionType
-from goddo_player.app.state_store import StateStore
+from goddo_player.app.state_store import StateStore, VideoClip
 from goddo_player.utils.go_to_frame_dialog import GoToFrameDialog
-from goddo_player.utils.message_box_utils import show_info_box
+from goddo_player.utils.message_box_utils import show_error_box, show_info_box
+import goddo_player.utils.open_cv_utils as cv_utils
 from goddo_player.utils.time_in_frames_edit import TimeInFramesEdit
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.preview_window.click_slider import ClickSlider
@@ -288,26 +291,37 @@ class PreviewWindow(QWidget):
         if action == save_screenshot_action:
             filename_with_underscores = self.get_preview_window_state().video_path.file_name(include_ext=False).replace(' ','_')
             screenshot_filename = f'screenshot_{filename_with_underscores}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-            screenshot_folder_path = Path(__file__).parent.parent.parent.joinpath('output')
+            screenshot_folder_path = self.state.app_config.last_screenshot_folder
             screenshot_file_path = str(screenshot_folder_path.joinpath(screenshot_filename).resolve())
             logging.debug(screenshot_file_path)
+
+            self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
 
             file, ext = QFileDialog.getSaveFileName(self, 'Save Screenshot file', screenshot_file_path, "*.png;;*.jpg","*.png")
 
             if file:
-                logging.info(f'saving screenshot file: "{file}" in ext {ext}')
-                self.preview_widget.frame_pixmap.save(file, ext[2:])
-                msgBox = QMessageBox(QMessageBox.Information, 'Screenshot Saved', f'Screenshot successfully saved to {file}')
-                msgBox.addButton(QMessageBox.Ok)
-                msgBox.addButton(QMessageBox.Open)
-                open_folder_btn = msgBox.addButton('Open Folder', QMessageBox.ActionRole)
-                btn_id = msgBox.exec_()
-                print(msgBox.clickedButton())
-                if btn_id == QMessageBox.Open:
-                    webbrowser.open(file)
-                elif msgBox.clickedButton() == open_folder_btn:
-                    webbrowser.open(str(screenshot_folder_path.resolve()))
-                
+                cap = cv_utils.create_video_capture(self.get_preview_window_state().video_path.str())
+                cv_utils.set_cap_pos(cap, self.get_preview_window_state().current_frame_no - 1)
+                frame = cv_utils.get_next_frame(cap)
+                if frame is not None:
+                    logging.info(f'saving screenshot file: "{file}" in ext {ext}')
+                    numpy_to_pixmap(frame).save(file, ext[2:])
+                    msgBox = QMessageBox(QMessageBox.Information, 'Screenshot Saved', f'Screenshot successfully saved to {file}')
+
+                    cv_utils.free_resources(cap)
+                    self.signals.update_screenshot_folder_slot.emit(str(Path(file).parent))
+
+                    msgBox.addButton(QMessageBox.Ok)
+                    msgBox.addButton(QMessageBox.Open)
+                    open_folder_btn = msgBox.addButton('Open Folder', QMessageBox.ActionRole)
+                    btn_id = msgBox.exec_()
+                    if btn_id == QMessageBox.Open:
+                        webbrowser.open(file)
+                    elif msgBox.clickedButton() == open_folder_btn:
+                        webbrowser.open(str(screenshot_folder_path.resolve()))
+                else:
+                    cv_utils.free_resources(cap)
+                    show_error_box(self,"unable to retrieve frame for saving screenshot!")          
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         super().mousePressEvent(event)
@@ -317,7 +331,10 @@ class PreviewWindow(QWidget):
             if frame_in_out.in_frame is not None or frame_in_out.out_frame is not None:
                 drag = QDrag(self)
                 mime_data = QMimeData()
-                mime_data.setText('source')
+                pw_state = self.get_preview_window_state()
+                video_clip = VideoClip('',pw_state.video_path, pw_state.frame_in_out)
+                data = pickle.dumps(video_clip.as_dict())
+                mime_data.setData(VIDEO_CLIP_DRAG_MIME_TYPE,data)
                 drag.setMimeData(mime_data)
                 drag.exec()
 

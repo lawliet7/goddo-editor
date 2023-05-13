@@ -11,6 +11,7 @@ from tinydb.table import Table
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.utils.file_utils import get_default_screenshot_folder_path
 from goddo_player.utils.mru_priority_set import MRUPrioritySet
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 from goddo_player.utils.video_path import VideoPath
@@ -77,10 +78,23 @@ class PreviewWindowState:
 @dataclass
 class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+    last_screenshot_folder: pathlib.Path = field(default_factory=get_default_screenshot_folder_path)
 
     def as_dict(self):
-        return asdict(self)
+        return {
+            'extra_frames_in_secs_config': self.extra_frames_in_secs_config,
+            'last_screenshot_folder': str(self.last_screenshot_folder),
+        }
 
+    @staticmethod
+    def from_dict(json_dict):
+        app_config = AppConfig()
+
+        if 'extra_frames_in_secs_config' in json_dict:
+            app_config.extra_frames_in_secs_config = json_dict['extra_frames_in_secs_config']
+        
+        if 'last_screenshot_folder' in json_dict:
+            app_config.last_screenshot_folder = pathlib.Path(json_dict['last_screenshot_folder'])
 
 @dataclass
 class FileListStateItem:
@@ -111,29 +125,50 @@ class FileListStateItem:
             return -1
 
 
+@dataclass(frozen=True)
+class VideoClip:
+    name: str
+    video_path: VideoPath
+    frame_in_out: FrameInOut
+
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "video_path": self.video_path.str(),
+            "frame_in_out": asdict(self.frame_in_out),
+        }
+
+    def get_key(self):
+        return f'{self.name}|{self.video_path.str()}'
+
+    @staticmethod
+    def from_dict(json_dict):
+        return VideoClip(json_dict['name'], VideoPath(file_to_url(json_dict['video_path'])), FrameInOut(**json_dict['frame_in_out']))
+
+    # def get_total_time_str(self, overridden_total_frames=None):
+    #     final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
+    #     return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
+
 @dataclass
 class ClipListStateItem:
-    name: QUrl
-    frame_in_out: FrameInOut
+    video_clip: VideoClip
     tags: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        if self.frame_in_out.in_frame is None or self.frame_in_out.out_frame is None:
+        frame_in_out = self.video_clip.frame_in_out
+        if frame_in_out.in_frame is None or frame_in_out.out_frame is None:
             raise Exception(f'For clip item, the frame in/out cannot be blank. frame_in_out={self.frame_in_out}')
 
     def as_dict(self):
         return {
-            "name": self.name.path(),
-            "frame_in_out": asdict(self.frame_in_out),
+            "video_clip": self.video_clip.as_dict(),
             "tags": self.tags,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        frame_in_out_dict = json_dict['frame_in_out']
-        frame_in_out = FrameInOut(frame_in_out_dict['in_frame'], frame_in_out_dict['out_frame'])
-        return ClipListStateItem(name=QUrl.fromLocalFile(json_dict['name']),
-                                 frame_in_out=frame_in_out, tags=json_dict['tags'])
+        video_clip = VideoClip.from_dict(json_dict)
+        return ClipListStateItem(video_clip, tags=json_dict['tags'])
 
     def add_tag(self, tag: str):
         new_tags = self.tags[:]
@@ -161,14 +196,14 @@ class ClipListState:
         }
 
     @staticmethod
-    def create_file_item(url: QUrl, frame_in_out: FrameInOut):
-        return ClipListStateItem(url, frame_in_out)
+    def create_file_item(video_clip):
+        return ClipListStateItem(video_clip)
 
-    def add_file_item(self, item: ClipListStateItem):
-        logging.debug(f'before adding {self.files}')
-        self.files.append(item)
-        self.files_dict[item.name.path()] = item
-        logging.debug(f'after adding {self.files}')
+    def add_clip_item(self, item: ClipListStateItem):
+        logging.debug(f'before adding {self.clips}')
+        self.clips.append(item)
+        self.clips_dict[item.video_clip.get_key()] = item
+        logging.debug(f'after adding {self.clips}')
 
 
 @dataclass
@@ -197,31 +232,6 @@ class FileListState:
     def __contains__(self, item):
         return str(item) in self.files_dict
 
-
-@dataclass(frozen=True)
-class VideoClip:
-    video_path: VideoPath
-    fps: float
-    total_frames: int
-    frame_in_out: FrameInOut
-
-    def as_dict(self):
-        return {
-            "video_path": self.video_path.str(),
-            "fps": self.fps,
-            "total_frames": self.total_frames,
-            "frame_in_out": asdict(self.frame_in_out),
-        }
-
-    @staticmethod
-    def from_dict(json_dict):
-        return VideoClip(VideoPath(file_to_url(json_dict['video_path'])), json_dict['fps'],
-                            json_dict['total_frames'], FrameInOut(**json_dict['frame_in_out']))
-
-    def get_total_time_str(self, overridden_total_frames=None):
-        final_total_frames = overridden_total_frames if overridden_total_frames else self.total_frames
-        return build_time_str(*frames_to_time_components(final_total_frames, self.fps))
-
 @dataclass
 class TimelineState:
     clips: List[VideoClip] = field(default_factory=list)
@@ -249,6 +259,27 @@ class TimelineState:
             clipboard_clip=VideoClip.from_dict(json_dict['clipboard_clip']),
             )
 
+@dataclass
+class FileRuntimeDetails:
+    video_path: VideoPath
+    fps: float
+    total_frames: int
+    
+    def as_dict(self):
+        return {
+            "video_path": self.video_path.str(),
+            "fps": self.fps,
+            "total_frames": self.total_frames
+        }
+
+    @staticmethod
+    def from_dict(json_dict):
+        return FileRuntimeDetails(
+            VideoPath(file_to_url(json_dict['video_path'])),
+            json_dict['fps'],
+            json_dict['total_frames']
+        )
+
 @singleton
 class StateStore(QObject):
     def __init__(self):
@@ -258,6 +289,7 @@ class StateStore(QObject):
         self.preview_window_output: PreviewWindowState = PreviewWindowState(WINDOW_NAME_OUTPUT)
         self.app_config: AppConfig = AppConfig()
         self.file_list = FileListState()
+        self.file_runtime_details_dict: Dict[str,FileRuntimeDetails] = {}
         self.clip_list = ClipListState()
         self.video_tag_cache = MRUPrioritySet(PlayerConfigs.max_tags_in_dropdown)
         self.timeline = TimelineState()
@@ -324,11 +356,17 @@ class StateStore(QObject):
             table_preview_windows: Table = db.table('preview_windows')
             table_preview_window_outputs: Table = db.table('preview_window_outputs')
             table_files: Table = db.table('files')
+            table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
+            table_app_config: Table = db.table('app_config')
 
             table_files.truncate()
             for _, file in enumerate(self.file_list.files):
                 table_files.insert(file.as_dict())
+
+            table_clips.truncate()
+            for _, clip in enumerate(self.clip_list.clips):
+                table_clips.insert(clip.as_dict())
 
             table_preview_windows.truncate()
             table_preview_windows.insert(self.preview_window.as_dict())
@@ -338,6 +376,9 @@ class StateStore(QObject):
 
             table_timelines.truncate()
             table_timelines.insert(self.timeline.as_dict())
+
+            table_app_config.truncate()
+            table_app_config.insert(self.app_config.as_dict())
 
         # db.close()
 
@@ -349,7 +390,7 @@ class StateStore(QObject):
         if len(all) > 0:
             return all.pop()
 
-    def load_file(self, video_path: VideoPath, handle_file_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn):
+    def load_file(self, video_path: VideoPath, handle_app_config_fn, handle_file_fn, handle_clip_fn, handle_prev_wind_fn):
         logging.info(f'loading {video_path}')
         # todo msg box to select save file
 
@@ -362,11 +403,19 @@ class StateStore(QObject):
             table_preview_windows: Table = db.table('preview_windows')
             table_preview_window_outputs: Table = db.table('preview_window_outputs')
             table_files: Table = db.table('files')
+            table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
+            table_app_config: Table = db.table('app_config')
+
+            handle_app_config_fn(table_app_config.all()[0])
 
             all_files = table_files.all()
             for file_dict in all_files:
                 handle_file_fn(file_dict)
+
+            all_clips = table_clips.all()
+            for clip_dict in all_clips:
+                handle_clip_fn(clip_dict)
 
             for prev_wind_dict in table_preview_windows.all():
                 if prev_wind_dict['video_path'] and prev_wind_dict['video_path'] in self.file_list:

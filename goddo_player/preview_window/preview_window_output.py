@@ -344,7 +344,7 @@ class PreviewWindowOutput(QWidget):
         if action == save_screenshot_action:
             filename_with_underscores = self.get_preview_window_state().video_path.file_name(include_ext=False).replace(' ','_')
             screenshot_filename = f'screenshot_{filename_with_underscores}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-            screenshot_folder_path = Path(__file__).parent.parent.parent.joinpath('output')
+            screenshot_folder_path = self.state.app_config.last_screenshot_folder
             screenshot_file_path = str(screenshot_folder_path.joinpath(screenshot_filename).resolve())
             logging.debug(screenshot_file_path)
 
@@ -360,6 +360,10 @@ class PreviewWindowOutput(QWidget):
                     logging.info(f'saving screenshot file: "{file}" in ext {ext}')
                     numpy_to_pixmap(frame).save(file, ext[2:])
                     msgBox = QMessageBox(QMessageBox.Information, 'Screenshot Saved', f'Screenshot successfully saved to {file}')
+
+                    cv_utils.free_resources(cap)
+                    self.signals.update_screenshot_folder_slot.emit(str(Path(file).parent))
+
                     msgBox.addButton(QMessageBox.Ok)
                     msgBox.addButton(QMessageBox.Open)
                     open_folder_btn = msgBox.addButton('Open Folder', QMessageBox.ActionRole)
@@ -369,6 +373,7 @@ class PreviewWindowOutput(QWidget):
                     elif msgBox.clickedButton() == open_folder_btn:
                         webbrowser.open(str(screenshot_folder_path.resolve()))
                 else:
+                    cv_utils.free_resources(cap)
                     show_error_box(self,"unable to retrieve frame for saving screenshot!")
 
                 cv_utils.free_resources(cap)                

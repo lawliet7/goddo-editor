@@ -89,6 +89,7 @@ class MonarchSystem(QObject):
         self.signals.timeline_set_clipboard_clip_slot.connect(self.__on_timeline_set_clipboard_clip)
         self.signals.timeline_clear_clipboard_clip_slot.connect(self.__on_timeline_clear_clipboard_clip)
         self.signals.activate_all_windows_slot.connect(self.__on_activate_all_windows)
+        self.signals.update_screenshot_folder_slot.connect(self.__on_update_screenshot_folder)
 
     def _ensure_required_folders_exists(self):
         from pathlib import Path
@@ -490,7 +491,10 @@ class MonarchSystem(QObject):
                 fn_id = self.signals.fn_repo.push(fn)
                 self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip, fn_id)
 
-        self.state.load_file(video_path, handle_file_fn, handle_clip_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn)
+        def handle_app_config_fn(app_config_dict):
+            self.signals.update_screenshot_folder_slot.emit(app_config_dict['last_screenshot_folder'])
+
+        self.state.load_file(video_path, handle_app_config_fn, handle_file_fn, handle_clip_fn, handle_prev_wind_fn)
 
     def __on_preview_video_in_frame(self, pos: int):
         logging.info(f'update in frame to {pos} sender={self.sender()}')
@@ -568,3 +572,7 @@ class MonarchSystem(QObject):
 
         if not preview_window.preview_widget.is_playing() and preview_window_state.is_max_speed:
            preview_window_signals.switch_speed_slot.emit()
+
+    def __on_update_screenshot_folder(self, screenshot_folder_str: str):
+        self.state.app_config.last_screenshot_folder = pathlib.Path(screenshot_folder_str)
+

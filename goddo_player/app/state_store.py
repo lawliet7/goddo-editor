@@ -11,6 +11,7 @@ from tinydb.table import Table
 
 from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
+from goddo_player.utils.file_utils import get_default_screenshot_folder_path
 from goddo_player.utils.mru_priority_set import MRUPrioritySet
 from goddo_player.utils.time_frame_utils import build_time_str, frames_to_time_components
 from goddo_player.utils.video_path import VideoPath
@@ -77,10 +78,23 @@ class PreviewWindowState:
 @dataclass
 class AppConfig:
     extra_frames_in_secs_config: int = field(default=PlayerConfigs.default_extra_frames_in_secs)
+    last_screenshot_folder: pathlib.Path = field(default_factory=get_default_screenshot_folder_path)
 
     def as_dict(self):
-        return asdict(self)
+        return {
+            'extra_frames_in_secs_config': self.extra_frames_in_secs_config,
+            'last_screenshot_folder': str(self.last_screenshot_folder),
+        }
 
+    @staticmethod
+    def from_dict(json_dict):
+        app_config = AppConfig()
+
+        if 'extra_frames_in_secs_config' in json_dict:
+            app_config.extra_frames_in_secs_config = json_dict['extra_frames_in_secs_config']
+        
+        if 'last_screenshot_folder' in json_dict:
+            app_config.last_screenshot_folder = pathlib.Path(json_dict['last_screenshot_folder'])
 
 @dataclass
 class FileListStateItem:
@@ -344,6 +358,7 @@ class StateStore(QObject):
             table_files: Table = db.table('files')
             table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
+            table_app_config: Table = db.table('app_config')
 
             table_files.truncate()
             for _, file in enumerate(self.file_list.files):
@@ -362,6 +377,9 @@ class StateStore(QObject):
             table_timelines.truncate()
             table_timelines.insert(self.timeline.as_dict())
 
+            table_app_config.truncate()
+            table_app_config.insert(self.app_config.as_dict())
+
         # db.close()
 
         if is_existing_file:
@@ -372,7 +390,7 @@ class StateStore(QObject):
         if len(all) > 0:
             return all.pop()
 
-    def load_file(self, video_path: VideoPath, handle_file_fn, handle_clip_fn, handle_prev_wind_fn, handle_prev_wind_output_fn, handle_timeline_fn):
+    def load_file(self, video_path: VideoPath, handle_app_config_fn, handle_file_fn, handle_clip_fn, handle_prev_wind_fn):
         logging.info(f'loading {video_path}')
         # todo msg box to select save file
 
@@ -387,6 +405,9 @@ class StateStore(QObject):
             table_files: Table = db.table('files')
             table_clips: Table = db.table('clips')
             table_timelines: Table = db.table('timelines')
+            table_app_config: Table = db.table('app_config')
+
+            handle_app_config_fn(table_app_config.all()[0])
 
             all_files = table_files.all()
             for file_dict in all_files:

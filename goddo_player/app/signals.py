@@ -94,6 +94,7 @@ class StateStoreSignals(QObject):
     timeline_set_clipboard_clip_slot = pyqtSignal(VideoClip)
     timeline_clear_clipboard_clip_slot = pyqtSignal()
     activate_all_windows_slot = pyqtSignal(str)
+    update_screenshot_folder_slot = pyqtSignal(str)
 
     fn_repo = SignalFunctionRepo()
 

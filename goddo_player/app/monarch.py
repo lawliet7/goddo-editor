@@ -458,9 +458,6 @@ class MonarchSystem(QObject):
 
 
         def handle_timeline_fn(timeline_dict, preview_output_window_dict):
-            for clip_dict in timeline_dict['clips']:
-                self.signals.add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
-
             if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
                 if width_of_one_min > PlayerConfigs.timeline_initial_width_of_one_min:
@@ -471,16 +468,28 @@ class MonarchSystem(QObject):
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for _ in range(iterations):
                         self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
-            
-            if timeline_dict.get('selected_clip_index') > -1:
-                self.signals.timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
 
-            if timeline_dict.get('clipboard_clip'):
+            selected_clip_index = timeline_dict.get('selected_clip_index')
+            opened_clip_index = timeline_dict.get('opened_clip_index')
+
+            for (i, clip_dict) in enumerate(timeline_dict['clips']):
+                if clip_dict['video_path'] in self.state.file_list.files_dict:
+                    self.signals.add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
+                else:
+                    if selected_clip_index > -1 and i <= selected_clip_index:
+                        selected_clip_index = selected_clip_index - 1
+                    if opened_clip_index > -1 and i <= opened_clip_index:
+                        opened_clip_index = opened_clip_index - 1
+            
+            if selected_clip_index > -1:
+                self.signals.timeline_select_clip.emit(selected_clip_index)
+
+            if timeline_dict.get('clipboard_clip') and timeline_dict.get('clipboard_clip')['video_path'] in self.state.file_list.files_dict:
                 self.signals.timeline_set_clipboard_clip_slot.emit(VideoClip.from_dict(timeline_dict.get('clipboard_clip')))
 
-            if timeline_dict.get('opened_clip_index') > -1:
-                idx = timeline_dict.get('opened_clip_index')
-                opened_clip = VideoClip.from_dict(timeline_dict['clips'][idx])
+            if opened_clip_index > -1:
+                # opened_clip = VideoClip.from_dict(timeline_dict['clips'][opened_clip_index])
+                opened_clip = self.state.timeline.clips[opened_clip_index]
 
                 def fn():
                     self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -489,7 +498,7 @@ class MonarchSystem(QObject):
                         handle_prev_wind_output_fn(preview_output_window_dict)
 
                 fn_id = self.signals.fn_repo.push(fn)
-                self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip, fn_id)
+                self.signals.timeline_clip_double_click_slot.emit(opened_clip_index, opened_clip, fn_id)
 
         def handle_app_config_fn(app_config_dict):
             self.signals.update_screenshot_folder_slot.emit(app_config_dict['last_screenshot_folder'])

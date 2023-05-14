@@ -133,7 +133,7 @@ class ListClipScrollArea(QScrollArea):
         self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
 
 
-    def eventFilter(self, obj, event: 'QEvent') -> bool:
+    def eventFilter(self, obj, event) -> bool:
         if event.type() == QMouseEvent.Enter:
             self.item_widget.list_widget.blockSignals(True)
             return True

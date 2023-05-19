@@ -540,7 +540,8 @@ class MonarchSystem(QObject):
 
         if self.sender() is self.signals.preview_window_output:
             clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-            timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
+            runtime_dict = self.state.file_runtime_details_dict[str(clip.video_path)]
+            timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(runtime_dict.total_frames)
 
             if timeline_out_frame != new_pos:
                 new_clip = VideoClip(name=clip.name, video_path=clip.video_path, frame_in_out=preview_window_state.frame_in_out)

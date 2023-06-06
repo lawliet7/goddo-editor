@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMessageBox, QInputDialog
+from typing import List, Tuple
+from PyQt5.QtWidgets import QMessageBox, QInputDialog, QPushButton
 
 
 def show_error_box(parent, msg, title='Error'):
@@ -9,3 +10,13 @@ def show_info_box(parent, msg, title, buttons=QMessageBox.Ok):
 
 def show_input_msg_box(parent, msg, title):
     return QInputDialog.getText(parent, title, msg)
+
+def show_custom_msg_box(parent, icon: QMessageBox.Icon, title: str, msg: str, btns: List[Tuple[str,QMessageBox.ButtonRole]]) -> Tuple[QMessageBox,List[QPushButton]]:
+    msg_box = QMessageBox(icon=icon, title=title, msg=msg, parent=parent)
+
+    btn_ids = []
+    for (btn_txt,btn_action) in btns:
+        btn_ids.append(msg_box.addButton(btn_txt, btn_action))
+    msg_box.exec_()
+
+    return msg_box, btn_ids

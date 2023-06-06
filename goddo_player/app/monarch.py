@@ -1,11 +1,12 @@
 import logging
 import os
 import pathlib
+import sys
 from time import time
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
-from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel, QMessageBox
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import SignalFunctionId, StateStoreSignals, PlayCommand, PositionType
@@ -19,7 +20,7 @@ from goddo_player.preview_window.preview_window_output import PreviewWindowOutpu
 from goddo_player.list_window.tabbed_list_window import TabbedListWindow
 from goddo_player.timeline_window.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
-from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.utils.message_box_utils import show_error_box, show_custom_msg_box
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import activate_window
 
@@ -329,8 +330,21 @@ class MonarchSystem(QObject):
                 self.tabbed_list_window.videos_tab.add_video(video_path)
                 self.state.file_runtime_details_dict[video_path.str()] = FileRuntimeDetails(video_path,fps,total_frames)
             elif not os.path.exists(video_path.str()):
-                show_error_box(self.tabbed_list_window.videos_tab,
-                            f"file not found! - {video_path.str()}")
+                msg_box = QMessageBox(QMessageBox.Critical , 'File not found', f"File is no longer there, it may have been deleted or moved!\n\n{video_path.str()}")
+
+                remove_btn = msg_box.addButton('Remove associated clips', QMessageBox.ActionRole)
+                retarget_btn = msg_box.addButton('Retarget video', QMessageBox.ActionRole)
+                exit_btn = msg_box.addButton('Exit', QMessageBox.ActionRole)
+                btn_id = msg_box.exec_()
+
+                if msg_box.clickedButton() == remove_btn:
+                    pass
+                elif msg_box.clickedButton() == exit_btn:
+                    logging.info('file gone, quiting program...')
+                    sys.exit(1)
+                elif msg_box.clickedButton() == retarget_btn:
+                    print('you blew it')
+
             else:
                 show_error_box(self.tabbed_list_window.videos_tab,
                             f"your system doesn't support file format dropped! - {video_path.str()}")

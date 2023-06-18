@@ -407,7 +407,9 @@ class StateStore(QObject):
             table_timelines: Table = db.table('timelines')
             table_app_config: Table = db.table('app_config')
 
-            handle_app_config_fn(table_app_config.all()[0])
+            all_config = table_app_config.all()
+            for config in all_config:  # there is only 1 config, this is just to avoid the out of bound error for old saves
+                handle_app_config_fn(config)
 
             all_files = table_files.all()
             for file_dict in all_files:

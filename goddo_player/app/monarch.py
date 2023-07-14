@@ -1,11 +1,12 @@
 import logging
 import os
 import pathlib
+import sys
 from time import time
 
 import cv2
 from PyQt5.QtCore import QObject, QUrl, QTimer
-from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QLabel, QMessageBox
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import SignalFunctionId, StateStoreSignals, PlayCommand, PositionType
@@ -19,7 +20,7 @@ from goddo_player.preview_window.preview_window_output import PreviewWindowOutpu
 from goddo_player.list_window.tabbed_list_window import TabbedListWindow
 from goddo_player.timeline_window.timeline_window import TimelineWindow
 from goddo_player.utils.enums import IncDec
-from goddo_player.utils.message_box_utils import show_error_box
+from goddo_player.utils.message_box_utils import show_error_box, show_custom_msg_box
 from goddo_player.utils.url_utils import file_to_url
 from goddo_player.utils.window_util import activate_window
 
@@ -329,8 +330,21 @@ class MonarchSystem(QObject):
                 self.tabbed_list_window.videos_tab.add_video(video_path)
                 self.state.file_runtime_details_dict[video_path.str()] = FileRuntimeDetails(video_path,fps,total_frames)
             elif not os.path.exists(video_path.str()):
-                show_error_box(self.tabbed_list_window.videos_tab,
-                            f"file not found! - {video_path.str()}")
+                msg_box = QMessageBox(QMessageBox.Critical , 'File not found', f"File is no longer there, it may have been deleted or moved!\n\n{video_path.str()}")
+
+                remove_btn = msg_box.addButton('Remove associated clips', QMessageBox.ActionRole)
+                retarget_btn = msg_box.addButton('Retarget video', QMessageBox.ActionRole)
+                exit_btn = msg_box.addButton('Exit', QMessageBox.ActionRole)
+                btn_id = msg_box.exec_()
+
+                if msg_box.clickedButton() == remove_btn:
+                    pass
+                elif msg_box.clickedButton() == exit_btn:
+                    logging.info('file gone, quiting program...')
+                    sys.exit(1)
+                elif msg_box.clickedButton() == retarget_btn:
+                    print('you blew it')
+
             else:
                 show_error_box(self.tabbed_list_window.videos_tab,
                             f"your system doesn't support file format dropped! - {video_path.str()}")
@@ -342,9 +356,9 @@ class MonarchSystem(QObject):
 
     def __on_add_clip(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
-        clip_item = self.state.clip_list.create_file_item(video_clip)
+        clip_item = self.state.clip_list.create_file_item(clip_name, video_clip)
         self.state.clip_list.add_clip_item(clip_item)
-        self.tabbed_list_window.clips_tab.add_clip(video_clip)
+        self.tabbed_list_window.clips_tab.add_clip(clip_item.video_clip)
         self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
         
@@ -458,9 +472,6 @@ class MonarchSystem(QObject):
 
 
         def handle_timeline_fn(timeline_dict, preview_output_window_dict):
-            for clip_dict in timeline_dict['clips']:
-                self.signals.add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
-
             if timeline_dict.get('width_of_one_min'):
                 width_of_one_min = timeline_dict['width_of_one_min']
                 if width_of_one_min > PlayerConfigs.timeline_initial_width_of_one_min:
@@ -471,16 +482,28 @@ class MonarchSystem(QObject):
                     iterations = int((PlayerConfigs.timeline_initial_width_of_one_min - width_of_one_min) / 6)
                     for _ in range(iterations):
                         self.signals.timeline_update_width_of_one_min_slot.emit(IncDec.DEC)
-            
-            if timeline_dict.get('selected_clip_index') > -1:
-                self.signals.timeline_select_clip.emit(timeline_dict.get('selected_clip_index'))
 
-            if timeline_dict.get('clipboard_clip'):
+            selected_clip_index = timeline_dict.get('selected_clip_index')
+            opened_clip_index = timeline_dict.get('opened_clip_index')
+
+            for (i, clip_dict) in enumerate(timeline_dict['clips']):
+                if clip_dict['video_path'] in self.state.file_list.files_dict:
+                    self.signals.add_timeline_clip_slot.emit(VideoClip.from_dict(clip_dict), -1)
+                else:
+                    if selected_clip_index > -1 and i <= selected_clip_index:
+                        selected_clip_index = selected_clip_index - 1
+                    if opened_clip_index > -1 and i <= opened_clip_index:
+                        opened_clip_index = opened_clip_index - 1
+            
+            if selected_clip_index > -1:
+                self.signals.timeline_select_clip.emit(selected_clip_index)
+
+            if timeline_dict.get('clipboard_clip') and timeline_dict.get('clipboard_clip')['video_path'] in self.state.file_list.files_dict:
                 self.signals.timeline_set_clipboard_clip_slot.emit(VideoClip.from_dict(timeline_dict.get('clipboard_clip')))
 
-            if timeline_dict.get('opened_clip_index') > -1:
-                idx = timeline_dict.get('opened_clip_index')
-                opened_clip = VideoClip.from_dict(timeline_dict['clips'][idx])
+            if opened_clip_index > -1:
+                # opened_clip = VideoClip.from_dict(timeline_dict['clips'][opened_clip_index])
+                opened_clip = self.state.timeline.clips[opened_clip_index]
 
                 def fn():
                     self.signals.preview_window_output.play_cmd_slot.emit(PlayCommand.PAUSE)
@@ -489,7 +512,7 @@ class MonarchSystem(QObject):
                         handle_prev_wind_output_fn(preview_output_window_dict)
 
                 fn_id = self.signals.fn_repo.push(fn)
-                self.signals.timeline_clip_double_click_slot.emit(idx, opened_clip, fn_id)
+                self.signals.timeline_clip_double_click_slot.emit(opened_clip_index, opened_clip, fn_id)
 
         def handle_app_config_fn(app_config_dict):
             self.signals.update_screenshot_folder_slot.emit(app_config_dict['last_screenshot_folder'])
@@ -531,7 +554,8 @@ class MonarchSystem(QObject):
 
         if self.sender() is self.signals.preview_window_output:
             clip = self.state.timeline.clips[self.state.timeline.opened_clip_index]
-            timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(clip.total_frames)
+            runtime_dict = self.state.file_runtime_details_dict[str(clip.video_path)]
+            timeline_out_frame = clip.frame_in_out.get_resolved_out_frame(runtime_dict.total_frames)
 
             if timeline_out_frame != new_pos:
                 new_clip = VideoClip(name=clip.name, video_path=clip.video_path, frame_in_out=preview_window_state.frame_in_out)

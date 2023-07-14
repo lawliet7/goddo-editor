@@ -356,9 +356,9 @@ class MonarchSystem(QObject):
 
     def __on_add_clip(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
-        clip_item = self.state.clip_list.create_file_item(video_clip)
+        clip_item = self.state.clip_list.create_file_item(clip_name, video_clip)
         self.state.clip_list.add_clip_item(clip_item)
-        self.tabbed_list_window.clips_tab.add_clip(video_clip)
+        self.tabbed_list_window.clips_tab.add_clip(clip_item.video_clip)
         self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
         

@@ -140,6 +140,9 @@ class VideoClip:
 
     def get_key(self):
         return f'{self.name}|{self.video_path.str()}'
+    
+    def copy_with_new_name(self, new_name: str):
+        return VideoClip(new_name, video_path=self.video_path, frame_in_out=self.frame_in_out)
 
     @staticmethod
     def from_dict(json_dict):
@@ -196,8 +199,9 @@ class ClipListState:
         }
 
     @staticmethod
-    def create_file_item(video_clip):
-        return ClipListStateItem(video_clip)
+    def create_file_item(clip_name: str, video_clip: VideoClip):
+        video_clip_copy = VideoClip.copy_with_new_name(video_clip, clip_name)
+        return ClipListStateItem(video_clip_copy)
 
     def add_clip_item(self, item: ClipListStateItem):
         logging.debug(f'before adding {self.clips}')

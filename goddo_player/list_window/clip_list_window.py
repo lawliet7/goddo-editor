@@ -5,9 +5,9 @@ import imutils
 import numpy as np
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QMimeData
-from PyQt5.QtGui import QDrag, QMouseEvent, QPixmap, QKeyEvent
-from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QMimeData, QEvent
+from PyQt5.QtGui import QDrag, QMouseEvent, QPixmap, QKeyEvent, QContextMenuEvent
+from PyQt5.QtWidgets import QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea, QMenu
 from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils import open_cv_utils
@@ -16,6 +16,7 @@ from goddo_player.utils.enums import PositionType
 from goddo_player.utils.event_helper import is_key_with_modifiers
 from goddo_player.app.signals import PlayCommand, StateStoreSignals
 from goddo_player.app.state_store import ClipListStateItem, StateStore, VideoClip
+from goddo_player.utils.message_box_utils import show_error_box, show_input_msg_box
 from goddo_player.utils.video_path import VideoPath
 from goddo_player.utils.draw_utils import numpy_to_pixmap
 from goddo_player.widgets.base_qwidget import BaseQWidget
@@ -124,13 +125,15 @@ class ListClipScrollArea(QScrollArea):
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         logging.info(f'double click @ {event.pos()}')
         
-        def remove_tag(tag):
-            self.signals.remove_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+        if event.buttons() == Qt.LeftButton:
 
-        def add_tag(tag):
-            self.signals.add_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+            def remove_tag(tag):
+                self.signals.remove_clip_tag_slot.emit(self.item_widget.video_clip, tag)
 
-        self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
+            def add_tag(tag):
+                self.signals.add_clip_tag_slot.emit(self.item_widget.video_clip, tag)
+
+            self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
 
 
     def eventFilter(self, obj, event) -> bool:
@@ -158,38 +161,41 @@ class ClipListWidget(QListWidget):
         self.setMinimumWidth(500)
 
         self.signals: StateStoreSignals = StateStoreSignals()
-
-    # @staticmethod
-    # def __should_accept_drop(video_path: VideoPath):
-    #     if video_path.ext().lower() in PlayerConfigs.supported_video_exts:
-    #         return True
-    #     else:
-    #         return False
-
-    # def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-    #     logging.info(f'drag enter: {event.mimeData().urls()}')
-    #     mime_data = event.mimeData()
-    #     if mime_data.hasUrls():
-    #         for url in mime_data.urls():
-    #             if not self.__should_accept_drop(VideoPath(url)):
-    #                 return
-    #         event.accept()
-
-    # # parent class prevents accepting
-    # def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
-    #     pass
-
-    # def dropEvent(self, event: QtGui.QDropEvent) -> None:
-    #     for url in event.mimeData().urls():
-    #         self.signals.add_clip_slot.emit(VideoPath(url))
-
-    #         # on windows (according to stackoverflow), you cannot activate window from different process so if we drop file from windows explorer we cannot activate
-    #         # activateWindow() works fine but if we call QApplication.activeWindow(), it returns None as if activate window is still one from other process
-    #         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+        self.state: StateStore = StateStore()
 
     def get_all_items(self) -> List[QListWidgetItem]:
         return self.findItems('*', Qt.MatchWildcard)
 
+    def eventFilter(self, obj, event: 'QEvent') -> bool:
+        # print(event)
+        # print(event.type())
+        # print(QEvent.ContextMenu)
+        if event.type() == QEvent.ContextMenu: 
+            # print(event)
+            # print(obj)
+            item_widget = obj
+
+            menu = QMenu(self)
+            change_clip_name_action = menu.addAction("change clip name")
+            action = menu.exec_(event.globalPos())
+            if action == change_clip_name_action:
+                logging.info('creating clip')
+
+                text, ok = show_input_msg_box(self, 'Enter new clip name', 'new clip name: ')
+                if ok:
+                    if len(text.strip()) > 2:
+                        # clip = self.state.timeline.clips[found_idx]
+                        # self.signals.add_clip_slot.emit(text.strip(), clip)
+                        print(item_widget.clip_name_label.text())
+                        print(text)
+                        print('--')
+                        self.signals.change_clip_name_slot.emit(text, item_widget.video_clip)
+                    else:
+                        show_error_box(self, 'Please enter more than 2 characters')
+
+            return True
+
+        return super().eventFilter(obj, event)
 
 class ScreenshotThread(QRunnable):
     def __init__(self, video_clip: VideoClip, signal, item: QListWidgetItem):

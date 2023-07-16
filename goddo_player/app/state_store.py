@@ -209,6 +209,29 @@ class ClipListState:
         self.clips_dict[item.video_clip.get_key()] = item
         logging.debug(f'after adding {self.clips}')
 
+    def change_clip_name(self, new_name: str, existing_clip: VideoClip):
+        old_clip_key = existing_clip.get_key()
+
+        if old_clip_key not in self.clips_dict:
+            raise Exception(f'Unable to find clip in clip dict.  clip passed in: {existing_clip}, clip dict: {self.clips_dict}')
+
+        # don't think there's a find method, hard to debug without key details
+        idx = -1
+        for (i, clip_item) in enumerate(self.clips):
+            if clip_item.video_clip.get_key() == old_clip_key:
+                idx = i
+                break
+        if idx == -1:
+            raise Exception(f'Unable to find clip in clip list.  clip passed in: {existing_clip}, clip list: {self.clips}')
+
+        new_clip_item = ClipListState.create_file_item(new_name, existing_clip)
+        new_clip_key = new_clip_item.video_clip.get_key()
+
+        del self.clips_dict[old_clip_key]
+        self.clips_dict[new_clip_key] = new_clip_item
+
+        self.clips[idx] = new_clip_item
+
 
 @dataclass
 class FileListState:

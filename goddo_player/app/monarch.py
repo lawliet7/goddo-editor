@@ -60,6 +60,7 @@ class MonarchSystem(QObject):
         self.signals.add_video_tag_slot.connect(self.__on_add_video_tag)
         self.signals.remove_video_tag_slot.connect(self.__on_remove_video_tag)
         self.signals.add_clip_slot.connect(self.__on_add_clip)
+        self.signals.change_clip_name_slot.connect(self.__on_change_clip_name)
         self.signals.add_clip_tag_slot.connect(self.__on_add_clip_tag)
         self.signals.remove_clip_tag_slot.connect(self.__on_remove_clip_tag)
         self.signals.save_slot.connect(self.__on_save_file)
@@ -361,6 +362,11 @@ class MonarchSystem(QObject):
         self.tabbed_list_window.clips_tab.add_clip(clip_item.video_clip)
         self.tabbed_list_window.setActiveTabAsClipList()
         self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+
+    def __on_change_clip_name(self, clip_name: str, video_clip: VideoClip):
+        self.state.clip_list.change_clip_name(clip_name, video_clip)
+        clip_item_widget = self.tabbed_list_window.clips_tab.clip_list_dict[video_clip.get_key()]
+        clip_item_widget.clip_name_label.setText(clip_name)
         
 
     def __on_save_file(self, video_path: VideoPath):

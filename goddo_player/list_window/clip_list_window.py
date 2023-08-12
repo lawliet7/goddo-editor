@@ -181,7 +181,7 @@ class ClipListWidget(QListWidget):
             if action == change_clip_name_action:
                 logging.info('creating clip')
 
-                text, ok = show_input_msg_box(self, 'Enter new clip name', 'new clip name: ')
+                text, ok = show_input_msg_box(self, 'Enter new clip name', 'new clip name: ', default_text=item_widget.clip_name_label.text())
                 if ok:
                     if len(text.strip()) > 2:
                         # clip = self.state.timeline.clips[found_idx]

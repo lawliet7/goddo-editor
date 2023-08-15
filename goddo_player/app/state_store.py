@@ -9,7 +9,7 @@ from PyQt5.QtCore import QObject, QUrl
 from tinydb import TinyDB
 from tinydb.table import Table
 
-from goddo_player.app.app_constants import WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
+from goddo_player.app.app_constants import BOOKMARK_NAME_CURRENT, WINDOW_NAME_SOURCE, WINDOW_NAME_OUTPUT
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.utils.file_utils import get_default_screenshot_folder_path
 from goddo_player.utils.mru_priority_set import MRUPrioritySet
@@ -100,16 +100,18 @@ class AppConfig:
 class FileListStateItem:
     name: VideoPath
     tags: List[str] = field(default_factory=list)
+    bookmarks: Dict[str,int] = field(default_factory=dict)
 
     def as_dict(self):
         return {
             "name": self.name.str(),
             "tags": self.tags,
+            "bookmarks": self.bookmarks,
         }
 
     @staticmethod
     def from_dict(json_dict):
-        return FileListStateItem(name=file_to_url(json_dict['name'], json_dict['tags']))
+        return FileListStateItem(file_to_url(json_dict['name']), json_dict['tags'], json_dict['bookmarks'])
 
     def add_tag(self, tag: str):
         new_tags = self.tags[:]
@@ -123,6 +125,9 @@ class FileListStateItem:
             return idx
         else:
             return -1
+        
+    def set_bookmark(self, frame_no, name=BOOKMARK_NAME_CURRENT):
+        self.bookmarks[name] = frame_no
 
 
 @dataclass(frozen=True)

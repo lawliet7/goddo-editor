@@ -144,7 +144,7 @@ class VideoClip:
         }
 
     def get_key(self):
-        return f'{self.name}|{self.video_path.str()}'
+        return f'{self.name}|{self.video_path.str()}|{self.frame_in_out.in_frame}|{self.frame_in_out.in_frame}'
     
     def copy_with_new_name(self, new_name: str):
         return VideoClip(new_name, video_path=self.video_path, frame_in_out=self.frame_in_out)

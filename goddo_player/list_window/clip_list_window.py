@@ -123,7 +123,7 @@ class ListClipScrollArea(QScrollArea):
         self.tag_dialog_box = TagDialogBox()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        logging.info(f'double click @ {event.pos()}')
+        logging.info(f'double click @ {event.pos()} with btn {event.buttons()}')
         
         if event.buttons() == Qt.LeftButton:
 

@@ -5,9 +5,9 @@ import cv2
 import imutils
 import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QEvent
 from PyQt5.QtGui import QDragEnterEvent, QMouseEvent, QPixmap, QKeyEvent
-from PyQt5.QtWidgets import (QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea)
+from PyQt5.QtWidgets import QListWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QListWidgetItem, QScrollArea, QMenu
 from goddo_player.preview_window.frame_in_out import FrameInOut
 from goddo_player.utils import open_cv_utils
 
@@ -100,17 +100,19 @@ class ListFileScrollArea(QScrollArea):
         self.tag_dialog_box = TagDialogBox()
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        logging.info(f'double click @ {event.pos()}')
+        logging.info(f'double click @ {event.pos()} with btn {event.buttons()}')
         
-        def remove_tag(tag):
-            self.signals.remove_video_tag_slot.emit(self.item_widget.video_path, tag)
+        if event.buttons() == Qt.LeftButton:
 
-        def add_tag(tag):
-            self.signals.add_video_tag_slot.emit(self.item_widget.video_path, tag)
+            def remove_tag(tag):
+                self.signals.remove_video_tag_slot.emit(self.item_widget.video_path, tag)
 
-        self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
+            def add_tag(tag):
+                self.signals.add_video_tag_slot.emit(self.item_widget.video_path, tag)
 
-    def eventFilter(self, obj, event: 'QEvent') -> bool:
+            self.tag_dialog_box.open_modal_dialog(self.item_widget.get_tags(), add_tag, remove_tag)
+
+    def eventFilter(self, obj, event: QEvent) -> bool:
         if event.type() == QMouseEvent.Enter:
             self.item_widget.list_widget.blockSignals(True)
             return True
@@ -119,7 +121,7 @@ class ListFileScrollArea(QScrollArea):
             return True
         return super().eventFilter(obj, event)
 
-    def event(self, event: QtCore.QEvent) -> bool:
+    def event(self, event: QEvent) -> bool:
         if event.type() == QMouseEvent.Enter:
             return True
         elif event.type() == QMouseEvent.Leave:

@@ -278,7 +278,7 @@ class PreviewWindow(QWidget):
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if is_key_press(event, Qt.Key_Left):
             self.get_preview_window_signal().play_cmd_slot.emit(PlayCommand.PAUSE)
-            self.get_preview_window_signal().seek_slot.emit(-5, PositionType.RELATIVE)
+            self.get_preview_window_signal().seek_slot.emit(-1, PositionType.RELATIVE)
         else:
             super().keyPressEvent(event)
 

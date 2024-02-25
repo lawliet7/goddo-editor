@@ -357,11 +357,14 @@ class MonarchSystem(QObject):
 
     def __on_add_clip(self, clip_name: str, video_clip: VideoClip):
         logging.info('add clip')
-        clip_item = self.state.clip_list.create_file_item(clip_name, video_clip)
-        self.state.clip_list.add_clip_item(clip_item)
-        self.tabbed_list_window.clips_tab.add_clip(clip_item.video_clip)
-        self.tabbed_list_window.setActiveTabAsClipList()
-        self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+        if video_clip.get_key(clip_name) not in self.state.clip_list.clips_dict:
+            clip_item = self.state.clip_list.create_file_item(clip_name, video_clip)
+            self.state.clip_list.add_clip_item(clip_item)
+            self.tabbed_list_window.clips_tab.add_clip(clip_item.video_clip)
+            self.tabbed_list_window.setActiveTabAsClipList()
+            self.signals.activate_all_windows_slot.emit('tabbed_list_window')
+        else:
+            show_error_box(self, 'clip with same timeframe already exists', 'Duplicate clip')
 
     def __on_change_clip_name(self, clip_name: str, video_clip: VideoClip):
         self.state.clip_list.change_clip_name(clip_name, video_clip)

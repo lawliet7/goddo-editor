@@ -10,6 +10,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QScrollArea, QMainWindow, QSizePolicy
 
 from goddo_player.app.app_constants import VIDEO_CLIP_DRAG_MIME_TYPE
+from goddo_player.timeline_window.video_process_dialogbox import VideoProcessDialogBox
 from goddo_player.utils.event_helper import common_event_handling, is_key_press, is_key_with_modifiers
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.signals import StateStoreSignals
@@ -40,6 +41,8 @@ class TimelineWindow(QMainWindow):
         self.scroll_area.setMinimumHeight(360)
         self.setCentralWidget(self.scroll_area)
 
+        self.process_dialog_box = VideoProcessDialogBox()
+
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
 
@@ -61,7 +64,8 @@ class TimelineWindow(QMainWindow):
         common_event_handling(event, self.signals, self.state)
 
         if is_key_with_modifiers(event, Qt.Key_P, ctrl=True):
-            self.__process()
+            self.process_dialog_box.open_modal_dialog()
+            #self.__process()
         elif is_key_press(event, Qt.Key_Delete):
             if self.state.timeline.selected_clip_index >= 0:
                 self.signals.timeline_delete_selected_clip_slot.emit()
@@ -110,6 +114,7 @@ class TimelineWindow(QMainWindow):
             file_path = clip.video_path.str()
             output_path = os.path.join(tmp_dir, f'{i:04}.mp4')
             cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -cbr 15 "{output_path}"'
+            # cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -c copy "{output_path}"'
             logging.info(f'executing cmd: {cmd}')
             subprocess.call(cmd, shell=True)
 

@@ -1,7 +1,8 @@
+import datetime
 import logging
 import pathlib
 import time
-from typing import List
+from typing import Callable, List
 
 from PyQt5.QtGui import QMouseEvent, QKeyEvent
 from PyQt5.QtCore import QRect, Qt, QEvent, QPoint
@@ -52,7 +53,7 @@ class VideoProcessDialogBox(QDialog):
         v_layout.addLayout(h_layout)
 
         ok_btn = QPushButton('ok')
-        ok_btn.clicked.connect(self.close)
+        ok_btn.clicked.connect(self._process_file)
         cancel_btn = QPushButton('cancel')
         cancel_btn.clicked.connect(self.close)
         h_layout2 = QHBoxLayout()
@@ -62,27 +63,29 @@ class VideoProcessDialogBox(QDialog):
 
         self.setLayout(v_layout)
 
-    def open_modal_dialog(self):
-        logging.info('opening dialog')
-        # logging.info(f'flow layout count {self.flow_layout.count()}')
+        self._processing_fn = None
 
-        # self.add_tag_fn = add_tag_fn
-        # self.remove_tag_fn = remove_tag_fn
-        # self.orig_tags = tags[:]
-        # for tag in tags:
-        #     self._add_tag(tag)
-        # logging.info(f'flow layout count after adding tags {self.flow_layout.count()}')
-        # self.input_box.setFocus()
+    def _get_default_output_file_path(self):
+        base_video_folder = PlayerConfigs.base_output_folder.joinpath('Videos')
+        save_file_name_no_ext = pathlib.Path(str(self.state.cur_save_file)).stem
+        output_file_name = f'output_{save_file_name_no_ext}_{datetime.datetime.now().strftime("%y%m%d%H%M%S")}.mp4'
+
+        return base_video_folder.joinpath(output_file_name)
+
+    def open_modal_dialog(self, processing_fn: Callable[[str], None]):
+        logging.info('opening dialog')
+
+        self.input_box.setText(str(self._get_default_output_file_path()))
+        self._processing_fn = processing_fn
+
         self.exec_()
 
     def _choose_output_file(self):
-        base_video_folder = PlayerConfigs.base_output_folder.joinpath('Videos')
-        save_file_name_no_ext = pathlib.Path(str(self.state.cur_save_file)).stem
-        output_file_name = f'output_{save_file_name_no_ext}_{time.time()}.mp4'
-        file, ext = QFileDialog.getSaveFileName(self, 'Save output video file', str(base_video_folder.joinpath(output_file_name)), "*.mp4;;*.mkv","*.mp4")
+        file, ext = QFileDialog.getSaveFileName(self, 'Save output video file', self.input_box.text(), "*.mp4;;*.mkv","*.mp4")
 
         if file:
-            print(file)
+            logging.info(f'====== {file}')
+            self.input_box.setText(file)
 
     def _close(self):
         # for tag in self.orig_tags:
@@ -93,11 +96,20 @@ class VideoProcessDialogBox(QDialog):
         #     logging.info(f'adding tag {tag}')
         #     self.add_tag_fn(tag)
         
+        self._processing_fn = None
+
         self.close()
 
     def closeEvent(self, event):
         logging.info("dialog closing")
         # self._cleanup()
+
+    def _process_file(self):
+        logging.info(f'====== processing {self.input_box.text()}')
+
+        self._processing_fn(self.input_box.text())
+
+        self._close()
 
     # def keyPressEvent(self, event: QKeyEvent) -> None:
     #     if is_key_press(event, Qt.Key_Escape):

@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 import pickle
 import platform
@@ -100,42 +101,43 @@ class TimelineWindow(QMainWindow):
         self.resize_timeline_widget()
 
     def __process(self, output_file_path: Path):
-        import os
-
-        # tmp_dir = os.path.join('', 'output', 'tmp')
-        # from pathlib import Path
-        # Path(tmp_dir).mkdir(parents=True, exist_ok=True)
-        # for f in os.listdir(tmp_dir):
-        #     os.remove(os.path.join(tmp_dir, f))
-
         tmp_dir_path = PlayerConfigs.base_output_folder.joinpath('tmp')
+        Path(tmp_dir_path).mkdir(parents=True, exist_ok=True)
 
-        # TODO: find way to get fps for clip
+        clips_path = []
 
-        # for i, clip in enumerate(self.state.timeline.clips):
-        #     start_time = clip.frame_in_out.get_resolved_in_frame() / clip.fps
-        #     end_time = clip.frame_in_out.get_resolved_out_frame(clip.total_frames) / clip.fps
-        #     file_path = clip.video_path.str()
-        #     output_path = tmp_dir_path.join(f'{i:04}.mp4')
-        #     cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -cbr 15 "{output_path}"'
-        #     # cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -c copy "{output_path}"'
-        #     logging.info(f'executing cmd: {cmd}')
-        #     subprocess.call(cmd, shell=True)
+        for i, clip in enumerate(self.state.timeline.clips):
+            file_runtime_details = self.state.file_runtime_details_dict[str(clip.video_path)]
+            start_time = clip.frame_in_out.get_resolved_in_frame() / file_runtime_details.fps
+            end_time = clip.frame_in_out.get_resolved_out_frame(file_runtime_details.total_frames) / file_runtime_details.fps
+            file_path = clip.video_path.str()
+            output_path = tmp_dir_path.joinpath(f'{i:04}.mp4')
 
-        #     logging.info(f'{i} - {clip}')
-        #     logging.info(f'{file_path} - {output_path} - {cmd}')
+            # -y = automatically say yes to overwrite file
+            # -hide_banner = hide ffmpeg banner
+            # -crf 15 = quality
+            cmd = f'ffmpeg -y -hide_banner -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -crf 15 "{output_path}"'
+            # cmd = f'ffmpeg -ss {start_time:.3f} -i "{file_path}" -to {end_time - start_time:.3f} -c copy "{output_path}"'
 
-        # concat_file_path = os.path.join(tmp_dir, 'concat.txt')
-        # tmp_vid_files = [f"file '{os.path.abspath(os.path.join(tmp_dir, f))}'\n" for f in os.listdir(tmp_dir)]
-        # with open(concat_file_path, mode='w', encoding='utf-8') as f:
-        #     f.writelines(tmp_vid_files)
-        # logging.info('\n'.join(tmp_vid_files))
+            clips_path.append(output_path)
+
+            logging.info(f'executing cmd: {cmd}')
+            subprocess.call(cmd, shell=True)
+
+            logging.info(f'{i} - {clip}')
+            logging.info(f'{file_path} - {output_path} - {cmd}')
+
+        concat_file_path = tmp_dir_path.joinpath('concat.txt')
+        tmp_vid_files = [f"file '{f}'\n" for f in clips_path]
+        with open(concat_file_path, mode='w', encoding='utf-8') as f:
+            f.writelines(tmp_vid_files)
+        logging.info('\n'.join(tmp_vid_files))
 
         # output_file_path = os.path.join(tmp_dir, '..',  f'output_{time.time()}.mp4')
-        # cmd = f'ffmpeg -f concat -safe 0 -i "{concat_file_path}" -c copy "{output_file_path}"'
-        # logging.info(f'executing cmd: {cmd}')
-        # subprocess.call(cmd, shell=True)
-        # logging.info('output generated!!')
+        cmd = f'ffmpeg -f concat -safe 0 -i "{concat_file_path}" -c copy "{output_file_path}"'
+        logging.info(f'executing cmd: {cmd}')
+        subprocess.call(cmd, shell=True)
+        logging.info('output generated!!')
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if len(event.mimeData().data(VIDEO_CLIP_DRAG_MIME_TYPE)) > 0:

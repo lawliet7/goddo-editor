@@ -15,7 +15,7 @@ class PlayerConfigs:
     max_volume = 1
     max_tags_in_dropdown = 1000
 
-    base_output_folder = pathlib.Path(__file__).parent.parent.joinpath('output')
+    base_output_folder = pathlib.Path(__file__).parent.parent.parent.joinpath('output')
 
     # a.json on goddo player's root / saves
     default_save_file = base_output_folder.parent.joinpath('saves').joinpath('a.json').resolve()

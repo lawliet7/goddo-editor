@@ -1,13 +1,9 @@
 import datetime
 import logging
 import pathlib
-import time
-from typing import Callable, List
+from typing import Callable
 
-from PyQt5.QtGui import QMouseEvent, QKeyEvent
-from PyQt5.QtCore import QRect, Qt, QEvent, QPoint
-from PyQt5.QtGui import QPaintEvent, QPainter, QColor, QPen, QMouseEvent
-from PyQt5.QtWidgets import QLabel, QFrame, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFileDialog, QDialog, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QFileDialog, QDialog, QLineEdit, QPushButton
 
 from goddo_player.app.player_configs import PlayerConfigs
 from goddo_player.app.state_store import StateStore
@@ -23,23 +19,10 @@ class VideoProcessDialogBox(QDialog):
 
         self.state = StateStore()
 
-        self.setWindowTitle("Enter Tags")
+        self.setWindowTitle("Process Video")
         self.setModal(True)
 
         v_layout = QVBoxLayout()
-        
-        # widget = QWidget()
-        # flow = FlowLayout(margin=1)
-        # widget.setLayout(flow)
-        # self.flow_layout = flow
-
-        # scroll = QScrollArea(self)
-        # scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        # scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # scroll.setWidgetResizable(True)
-        # scroll.setWidget(widget)
-
-        # v_layout.addWidget(scroll)
 
         h_layout = QHBoxLayout()
         self.input_box = QLineEdit(self)
@@ -67,6 +50,8 @@ class VideoProcessDialogBox(QDialog):
 
     def _get_default_output_file_path(self):
         base_video_folder = PlayerConfigs.base_output_folder.joinpath('Videos')
+        pathlib.Path(base_video_folder).mkdir(parents=True, exist_ok=True)
+
         save_file_name_no_ext = pathlib.Path(str(self.state.cur_save_file)).stem
         output_file_name = f'output_{save_file_name_no_ext}_{datetime.datetime.now().strftime("%y%m%d%H%M%S")}.mp4'
 
@@ -88,44 +73,19 @@ class VideoProcessDialogBox(QDialog):
             self.input_box.setText(file)
 
     def _close(self):
-        # for tag in self.orig_tags:
-        #     logging.info(f'removing tag {tag}')
-        #     self.remove_tag_fn(tag)
-
-        # for tag in self.tags:
-        #     logging.info(f'adding tag {tag}')
-        #     self.add_tag_fn(tag)
-        
-        self._processing_fn = None
-
+        self._cleanup()
         self.close()
 
     def closeEvent(self, event):
         logging.info("dialog closing")
-        # self._cleanup()
+        self._cleanup()
 
     def _process_file(self):
-        logging.info(f'====== processing {self.input_box.text()}')
+        logging.info(f'processing {self.input_box.text()}')
 
         self._processing_fn(self.input_box.text())
 
         self._close()
 
-    # def keyPressEvent(self, event: QKeyEvent) -> None:
-    #     if is_key_press(event, Qt.Key_Escape):
-    #         logging.info("dialog closing")
-    #         self._cleanup()
-
-    #     super().keyPressEvent(event)
-
-    # def _cleanup(self):
-    #     logging.info(f'cleaning up tags {self.tags}')
-    #     while self.tags:
-    #         tag = self.tags[0]
-    #         logging.info(f'cleaning up, deleting tag {tag}')
-    #         self._delete_tag(tag)
-
-    #     self.tags = []
-    #     self.orig_tags = []
-    #     self.input_box.clear()
-    #     self.video_path = None
+    def _cleanup(self):
+        self._processing_fn = None
